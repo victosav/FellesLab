@@ -168,7 +168,9 @@ class Mac050(Communications):
         values = self.read(self.address, self.PARAMETER[parameter])
         print values        
         pulses = translations.hextodec(values)
+        print "asdf"
         rpm = constants.READ_ARPM/constants.RAPPS*pulses
+        print "asdf"
         rpm = translations.rounding(rpm)
         if self.verbose: 
             if rpm == 0:
