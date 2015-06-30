@@ -32,6 +32,7 @@ __license__ = "GPL.v3"
 __date__      = "$Date: 2015-06-23 (Tue, 23 Jun 2015) $"
 
 import minimalmodbus
+from utils import scan_ports
 
 class DummySerial(object):
     """
@@ -71,20 +72,9 @@ class DummyModbus(object):
     def read_bit(self, channel):
         return None
 
-
-# instrument.serial.port          # this is the serial port name
-# instrument.serial.baudrate = 19200   # Baud
-# instrument.serial.bytesize = 8
-# instrument.serial.parity   = serial.PARITY_NONE
-# instrument.serial.stopbits = 1
-# instrument.serial.timeout  = 0.05   # seconds
-# 
-# instrument.address     # this is the slave address number
-# instrument.mode = minimalmodbus.MODE_RTU   # rtu or ascii mode
-
 # 'read_bit', 'read_float', 'read_long', 'read_register', 'read_registers', 'read_string', 'write_bit', 'write_float', 'write_long', 'write_register', 'write_registers', 'write_string'
 
-# ================================= Class ==================================== #
+# ================================= Class =================================== #
 class AdamModule(object):
     """
     Parent class for ADAM modules
@@ -93,7 +83,7 @@ class AdamModule(object):
          * portname (string, e.g. '/dev/ttyUSB1'): port name 
          * slaveaddress (integer): slave address in the range 1 to 247
     """
-    def __new__(cls=None, dummy=False):
+    def __new__(cls=None, dummy=False, *args, **kwargs):
         """
         New
         """
@@ -104,37 +94,61 @@ class AdamModule(object):
 
         return cls.__new__(cls)
 
-    def __init__(self, dummy=False, *args, **kwargs):
+    def __init__(self, dummy=False, module=None, *args, **kwargs):
         """
         Constructor
         """
-        super(AdamModule, self).__init__(*args, **kwargs)
-#         if not kwargs.has_key('portname'):
-#             try:
-#                 # search for port 
-#                 pass
-#             except:
-#                 Exception("Signal portname on the ADAM module is missing")
-# 
-#         if not kwargs.has_key('slaveaddress'):
-#             Exception("Missing ADAM module's address")
-#         if child:
-#             minimalmodbus.Instrument.__init__(self, *args, **kwargs)
-#         else:
-#             DummyModbus()
+        print kwargs
+        if not kwargs.has_key('portname'):
+            # Search for port
+            # TODO: Implement possibility for adding a "hint" e.g. 'USB', use
+            #       regex to match "hint" to portnames.
+            for port in list(scan_ports()):
+                try:
+                    self.sensor = module(port, channel)
+                    if self.sensor.is_correct_module():
+                        break
+                except:
+                    Exception("Signal portname on the ADAM module is missing")
 
+        if not kwargs.has_key('slaveaddress'):
+            Exception("Missing ADAM module's address")
+
+        super(AdamModule, self).__init__(*args, **kwargs)
+
+    # ------------------------------- Method -------------------------------- #
+    def Configure(self, **config):
+        """
+        Configuration method for changing the following parameters:
+          port = str       # serial port name
+          baudrate = int   # 9600 (default) or 19200
+          bytesize = int   # 8 (default) or 16
+          parity   = str   # serial.PARITY_NONE (default)
+          stopbits = int   # 1 (default)
+          timeout  = float # 0.05 (default) 
+          address          # this is the slave address number
+          mode = str       # minimalmodbus.MODE_RTU,   'rtu' (default) or
+                             minimalmodbus.MODE_ASCII, 'ascii' mode
+        
+        The method is inked by __init__ when called as:
+            xxxModule(portname, slaveaddress, config={ key:val} )
+        using the keys listed above.
+        """
+        for k,v in config.iteritems():
+            self.serial.k = v
+    # ------------------------------- Method -------------------------------- #
     def module_name(self):
         """
         Read name from module
         """
         return self.read_register(210) # child.moduleName
-
+    # ------------------------------- Method -------------------------------- #
     def module_version(self):
         """
             Read module version
         """
         return self.read_register(212) # child.moduleVersion
-
+    # ------------------------------- Method -------------------------------- #
     def is_correct_module(self):
         """
             Check if the module class is correct 
@@ -143,7 +157,7 @@ class AdamModule(object):
             return True
         else:
             return False
-
+    # ------------------------------- Method -------------------------------- #
     def is_valid_channel(self, channel, number_of_channels):
         """
             Check if channel is valid
@@ -160,17 +174,18 @@ class AdamModule(object):
             print('Channel input outside available channels: [0, ' + str(number_of_channels) + ']')
             return False
 
-# ================================= Class ==================================== #
+# ================================= Class =================================== #
 class AnalogIn(AdamModule):
     """
         Class for analog input ADAM modules
     """
+    # ------------------------------- Method -------------------------------- #
     def __init__(self, *args, **kwargs):   
         """
             Constructor
         """ 
         AdamModule.__init__(self, *args, **kwargs)
-
+    # ------------------------------- Method -------------------------------- #
     def get_analog_in(self, channel=-1):
         """
             Getter method
@@ -181,13 +196,13 @@ class AnalogIn(AdamModule):
             return self.read_register(self.analog_in_start_channel - 1 + channel)
         else:
             print('Channel out of range')
-        
+    # ------------------------------- Method -------------------------------- #
     def set_type_analog_in(self, channel, value):
         """
             Setter method
         """
         return self.write_register(self.type_analog_in_start_channel - 1 + channel, value)
-
+    # ------------------------------- Method -------------------------------- #
     def get_type_analog_in(self, channel=-1):
         """
             Getter method
@@ -198,25 +213,25 @@ class AnalogIn(AdamModule):
             return self.read_register(self.type_analog_in_start_channel - 1 + channel)
         else:
             print('Channel out of range')
-
+    # ------------------------------- Method -------------------------------- #
     def get_burn_out_signal(self, channel):
         """
             Burn signal
         """
         return self.read_bit(self.burn_out_signal_start_channel - 1 + channel)
 
-# ================================= Class ==================================== #
+# ================================= Class =================================== #
 class AnalogOut(AdamModule):
     analog_out_start_channel = 1
     type_analog_out_start_channel = 201
     analog_out_number_of_channels = 8
-
+    # ------------------------------- Method -------------------------------- #
     def set_analog_out(self, channel, value):
         """
             Setter
         """
         return self.write_register(self.analog_out_start_channel - 1 + channel, value)
-
+    # ------------------------------- Method -------------------------------- #
     def get_analog_out(self, channel=-1):
         """
             Getter
@@ -227,13 +242,13 @@ class AnalogOut(AdamModule):
             return self.read_register(self.analog_out_start_channel - 1 + channel)
         else:
             print('Channel out of range')
-
+    # ------------------------------- Method -------------------------------- #
     def set_type_analog_out(self, channel, value):
         """
             Setter
         """
         return self.read_register(self.analog_out_start_channel - 1 + channel, value)
-
+    # ------------------------------- Method -------------------------------- #
     def get_type_analog_out(self, channel=False):
         """
             Getter
@@ -245,28 +260,28 @@ class AnalogOut(AdamModule):
         else:
             print('Channel out of range')
 
-# ================================= Class ==================================== #
+# ================================= Class =================================== #
 class DigitalIn(AdamModule):
     diginal_in_start_channel = 1
     digital_in_number_of_channels = 8
-
+    # ------------------------------- Method -------------------------------- #
     def get_digital_in(self, channel):
         """
             Getter
         """
         return self.read_bit(self.diginal_in_start_channel - 1 + channel)
 
-# ================================= Class ==================================== #
+# ================================= Class =================================== #
 class DigitalOut(AdamModule):
     digital_out_start_channel = 17
     digital_out_number_of_channels = 8
-
+    # ------------------------------- Method -------------------------------- #
     def set_digital_out(self, channel, value):
         """
             Setter
         """
         return self.write_bit(self.digital_out_start_channel - 1 + channel, value)
-
+    # ------------------------------- Method -------------------------------- #
     def get_digital_out(self, channel):
         """
             Getter
@@ -301,13 +316,13 @@ class Adam4117(AnalogIn):
     # B:         20
     # J:         14
 
-# ================================= Class ==================================== #
+# ================================= Class =================================== #
 class Adam4019(AnalogIn):
     """
         ADAM4019 sugar class
     """
 
-    # ---------------------------- Method ------------------------------------ #
+    # ---------------------------- Method ----------------------------------- #
     def __init__(self, *args, **kwargs):
         """
         Constructor

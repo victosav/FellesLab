@@ -33,7 +33,8 @@ __date__      = "$Date: 2015-06-23 (Tue, 23 Jun 2015) $"
 
 
 # Classes
-from wx import Frame, Button, StaticText, StaticLine, Panel, TextCtrl, SpinCtrl#, SpinCtrlDouble
+from wx import Frame, Button, StaticText, StaticLine, Panel, TextCtrl,\
+               SpinCtrl, App #, SpinCtrlDouble
 # Sizes
 from wx import DefaultSize, VERTICAL, HORIZONTAL, GridSizer, BoxSizer, EXPAND,\
                ALL, CENTER
@@ -45,12 +46,47 @@ from wx import DefaultPosition
 from wx import EVT_BUTTON,ID_ANY, EVT_SPINCTRL #, EVT_SPINCTRLDOUBLE
 #
 from FellesLab.Equipment import Sensor
+#
+from threading import Thread
+#
+from wx.lib.pubsub import setuparg1
+from wx.lib.pubsub import pub
+
+# =============================== Class ====================================== #
+class Sampler(Thread):
+    def __init__(self, source, target, *args, **kwargs):
+        self.target = target
+        self.source = source
+        super(Sampler, self).__init__(None)
+
+    def run(self):
+        self.target()
+
+# =============================== Class ====================================== #
+class FellesApp(App):
+    """
+    Application
+    """
+    def __init__(self, redirect=True, filename=None):
+        print "App __init__"
+        super(FellesApp, self).__init__(redirect, filename)
+
+    def OnInit(self):
+        #self.frame = Frame(parent=None, title='Sparse')
+        #self.frame.Show()
+        #self.SetTopWindow(self.frame)
+        print >> sys.stderr, "A pretend error message"
+        return True
+
+    def OnExit(self):
+        print "On exit"
 
 # =============================== Class ====================================== #
 class FellesFrame(Frame):
     """
         Frame Class
     """
+    timer = Sampler
     # ------------------------------- Method --------------------------------- #  
     def __init__(self, parent=None, *args, **kwargs):
 
@@ -75,10 +111,12 @@ class FellesFrame(Frame):
             kwargs['pos'] = DefaultPosition
 
         super(FellesFrame, self).__init__(parent, *args, **kwargs)
-
+        self.timer = Sampler(self, self.UpdateFrame)
+        
+        pub.subscribe(self.UpdateFrame,"Sampled %s" %(self.GetLabel()))
+        print self.GetLabel()
     # ------------------------------- Method --------------------------------- #
     def InitUI(self):
-        print event
         NotImplementedError("User interface is not implemented")
 
     # ------------------------------- Method --------------------------------- #
@@ -95,9 +133,15 @@ class FellesFrame(Frame):
     def OnExit(self, event):
         print event
         NotImplementedError("Exit method is not implemented")
-    # ------------------------------- Method --------------------------------- #  
+    # ------------------------------- Method --------------------------------- #
     def OnQuitApp(self, event):
         print event
+        NotImplementedError("Quit method is not implemented")
+    # ------------------------------- Method --------------------------------- #
+    def UpdateFrame(self):
+        NotImplementedError("Quit method is not implemented")
+    # ------------------------------- Method --------------------------------- #  
+    def ASDF(self, reference):
         NotImplementedError("Quit method is not implemented")
 
 # =============================== Class ====================================== #
@@ -107,14 +151,14 @@ class FellesButton(Button):
     """
     # ------------------------------- Method --------------------------------- #
     def __init__(self, *args, **kwargs):
-        
+
         # Check for source
         if not kwargs.has_key('source'):
             self.source = None
         else:
             self.source = kwargs['source']
             del kwargs['source']
-        
+
         # Check for target, provide dummy output if there is none
         if not kwargs.has_key('target'):
             import DummyOutput
@@ -149,7 +193,10 @@ class FellesButton(Button):
 
 
 # =============================== Class ====================================== #
-class FellesTextInput(SpinCtrl):#Double):
+class FellesTextInput(SpinCtrl):#(SpinCtrlDouble):
+    """
+        Class
+    """
     # ------------------------------- Method --------------------------------- #
     def __init__(self, *args, **kwargs):
 
@@ -175,7 +222,8 @@ class FellesTextInput(SpinCtrl):#Double):
 
         super(FellesTextInput, self).__init__(*args, **kwargs)
         
-        self.Bind(EVT_SPINCTRL, self.OnSetpointChange)#(EVT_SPINCTRLDOUBLE, self.OnSetpointChange)
+        self.Bind(EVT_SPINCTRL, self.OnSetpointChange)
+#        self.Bind(EVT_SPINCTRLDOUBLE, self.OnSetpointChange)
     # ------------------------------- Method --------------------------------- #
     def OnSetpointChange(self, event):
         self.target(self, self.source)
@@ -187,7 +235,5 @@ class FellesLabel(StaticText):
     """
     # ------------------------------- Method --------------------------------- #  
     def __init__(self, *args, **kwargs):
-
         super(FellesLabel, self).__init__(*args, **kwargs)
-
 

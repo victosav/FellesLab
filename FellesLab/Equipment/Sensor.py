@@ -32,18 +32,33 @@ __license__ = "GPL.v3"
 __date__      = "$Date: 2015-06-23 (Tue, 23 Jun 2015) $"
 
 
-from wx import Frame
 from threading import Thread
 from multiprocessing import Process
 from time import sleep, time
 import weakref
 from collections import namedtuple
+from adam_modules import *
+from wx.lib.pubsub import setuparg1
+from wx.lib.pubsub import pub
+
+
 from random import random
 
-# ================================ Class ==================================== #
-class module(object):
-    def get_sample(self):
-        return random()
+
+def sensorTypes():
+    """
+    
+    Temperature: list( <weakref at ; to obj.instances>] )
+    Volume: list( <weakref at ; to obj.instances> )
+    """
+
+    types = {}
+    for s in Sensor.___refs___:
+        if not types.has_key(s().__class__.__name__):
+            types[s().__class__.__name__] = [s]
+        else:
+            types[s().__class__.__name__].append(s)
+    return types
 # ================================ Class ==================================== #
 # class DataStorage(namedtuple):
 #     """
@@ -79,12 +94,7 @@ class RealTimeData(namedtuple('RealTimeData', 'min max val')):
 class SensorMetaInformation(dict):
     def __init__(self, *args, **kwargs):
         super(SensorMetaInformation).__init__(*args, **kwargs)
-# ================================ Class ==================================== #
-class Adam4019:
-    def __init__(self, *args, **kwargs):
-        pass
-    def __call__(self):
-        return random()
+
 # ================================ Class ==================================== #
 class StopAtOutputValue:
     def __init__(self, *args, **kwargs):
@@ -129,7 +139,7 @@ class Sensor(dict):
 
         # Check for label
         if not kwargs.has_key('label'):
-            kwargs['label'] = '%s %d' %(self.__class__.__name__, len(self.___refs___))
+            kwargs['label'] = '%s %d' %(self.__class__.__name__, len(sensorTypes()[self.__class__.__name__]) )
 
         # Check for unit
         if not kwargs.has_key('unit'):
@@ -155,12 +165,12 @@ class Sensor(dict):
             for (index,event) in enumerate(kwargs['events']):
                 kwargs['events'][index] = event(self)
 
-
         self.process = self.thread(target=self.StartSampling)
         self.metadata = namedtuple('MetaData', kwargs.keys())(**kwargs)
         self.data = RealTimeData(1,2,3)
 
         super(Sensor, self).__init__(*args, **kwargs)
+
         self.Idle_sampling()
 
     # ------------------------------- Method -------------------------------- #
@@ -176,18 +186,17 @@ class Sensor(dict):
         """
         time()
         self.process.start()
-#        self.process.join()
 
     # ------------------------------- Method -------------------------------- #
     def StartSampling(self, event=None):
         """
             asdf
         """
-
         while self.SAMPLING:
             sleep(self['sample_speed'])
             print "Sampling speed %.2f from %s" %(round(self['sample_speed'],2), self['label'])
             self.Change_rate()
+            pub.sendMessage("Sampled %s" %(self['label']), True)
 #            self.data.val = 1
 #            print self.data
 

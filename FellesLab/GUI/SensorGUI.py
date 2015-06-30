@@ -61,70 +61,57 @@ def sensorTypes():
     return types
 
 
-def InitiateSensors():
-     for s in Sensor.___refs___:
-         s().StartSampling()
-    
-def StopSensors():
-     for s in Sensor.___refs___:
-         s().StopSampling()
-
-
 # =============================== Class ====================================== #
-class FellesSensorGUI(FellesFrame):
+class SensorFrame(FellesFrame):
     """
-        Class
+        Button Class
     """
-    # ------------------------------- Method --------------------------------- #  
-    def __init__(self, *args, **kwargs):
-        Windows = sensorTypes()
-        print Windows
+    # ------------------------------- Method --------------------------------- #
+    def __init__(self, parent=None, *args, **kwargs):
+        super(SensorFrame, self).__init__( *args, **kwargs)
+        
+        self.sensors = sensorTypes()[self.GetLabel()]
 
-        super(FellesSensorGUI, self).__init__( *args, **kwargs)
+        self.gLabel = dict()
+        self.gValue = dict()
 
         self.InitUI()
-    
+        self.Show()
+#        self.timer.start()
     # ------------------------------- Method --------------------------------- #
     def InitUI(self):
-        
-        # adding panel for cross-platform appearance 
-        self.panel = wx.Panel(self, ID_ANY)
+
+        self.panel = Panel(self, ID_ANY)
 
         # adding sizers
-        top_sizer       = BoxSizer(VERTICAL)
-        title_sizer     = BoxSizer(HORIZONTAL)
-        grid_sizer      = GridSizer(rows=2, cols=2, hgap=5, vgap=5)
-        input_sizer     = BoxSizer(HORIZONTAL)
-        button_sizer    = BoxSizer(HORIZONTAL)
-        
-        # adding GUI widgets
-        self.label_name = StaticText(self.panel, label='{sensor} Sensor'.format(sensor=self.obj.__class__.__name__) )
+        top_sizer = BoxSizer(VERTICAL)
+        title_sizer = BoxSizer(HORIZONTAL)
+        grid_sizer = GridSizer(rows=len(self.sensors)+1, cols=2, hgap=5, vgap=5)
 
-        self.label_description_speed = FellesLabel(self.panel, label='{label}'.format(label=self.GetLabel()))
-        self.label_speed = FellesLabel(self.panel, label='{unit}'.format(unit=self.obj['unit']))
+        self.gLabel = { s()['label']: StaticText(self, label=s()['label']) for s in self.sensors }
+        self.gValue = { s()['label']: StaticText(self, label=str(s().TEST)) for s in self.sensors }
 
-        self.label_setpoint = FellesLabel(self.panel, label='{msmnt} [{unit}]'.format(msmnt=self.obj.__class__.__name__,unit=self.obj['unit']))
-        
+        for s in self.sensors:
+            grid_sizer.Add( self.gLabel[s()['label']] , 0, ALL, 5)
+            grid_sizer.Add( self.gValue[s()['label']] , 0, ALL, 5)            
+
         # arranging and sizing the widgets 
         # alignment of title
-        title_sizer.Add(self.label_name, 0, ALL, 5)
-
-        # arrangement of the pump setpoint and pump speed 
-        grid_sizer.Add(self.label_setpoint, 0, ALL, 5)
-        grid_sizer.Add(self.label_description_speed, 0, ALL, 5)
-        grid_sizer.Add(self.label_speed, 0, ALL, 5)
+        title_sizer.Add(StaticText(self, label=self.GetTitle()), 0, ALL, 5)
 
         # overall arrangement of the panel
         top_sizer.Add(title_sizer, 0, CENTER)
         top_sizer.Add(StaticLine(self.panel), 0, ALL|EXPAND, 5)
         top_sizer.Add(grid_sizer, 0, ALL|CENTER, 5)
-        top_sizer.Add(StaticLine(self.panel), 0, ALL|EXPAND, 5)
-        top_sizer.Add(button_sizer, 0, ALL|CENTER, 5)
 
-        # assigning the sizer to the panel
-        self.panel.SetSizer(top_sizer)
-
-        # fit the sizer to the panel
+        self.panel.SetSizerAndFit(top_sizer)
         top_sizer.Fit(self)
+        self.top_sizer = top_sizer
 
+    # ------------------------------- Method --------------------------------- #
+    def UpdateFrame(self, event):
+        print event
+        for s in self.sensors:
+            self.gValue[s()['label']].SetLabel('%.2f %s'%(s().TEST,str(s()['unit'])))
 
+        self.top_sizer.Fit(self)
