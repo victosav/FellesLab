@@ -1,3 +1,5 @@
+**Note:** The repository uses a ".gitinclude" file, **not** gitignore, i.e. all files are ignored by default.
+
 ```
 oooooooooooo       oooo oooo                    ooooo                 .o8
 `888'     `8       `888 `888                    `888'                "888
@@ -24,7 +26,7 @@ oooooooooooo       oooo oooo                    ooooo                 .o8
                       \/                          \/
 ```
 
-** Currently under development, repository is for the moment only for convenience. Future versions will be stored as a Python module  **
+**Currently under development, repository is for the moment only for convenience. Future versions will be stored as a Python module**
 
 Contains:
 ---------
