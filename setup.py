@@ -14,8 +14,8 @@ o888o     `Y8bod8P'o888oo888o`Y8bod8P'8""888P'  o888ooooood8`Y888""8o `Y8bod8P'
 @author:       Sigve Karolius
 @organization: Department of Chemical Engineering, NTNU, Norway
 @contact:      sigveka@ntnu.no
-@license:      Free (GPL.v3), although credit is appreciated
-@requires:     Python 2.7.x or higher
+@license:      Free (GPL.v3)
+@requires:     Python 2.7.6 or higher
 @since:        18.06.2015
 @version:      2.7
 @todo 1.0:
@@ -23,3 +23,30 @@ o888o     `Y8bod8P'o888oo888o`Y8bod8P'8""888P'  o888ooooood8`Y888""8o `Y8bod8P'
 @note:
 
 """
+
+from distutils.core import setup
+
+setup(
+    name='FellesLab',
+    version='0.01',
+    description='Laboratory Framework',
+    author='Sigve Karolius',
+    url='https//sigveka.github.io/FellesLab',
+    packages=['FellesLab','adam_modules','mac_motor_module'],
+      long_description="""\
+      FellesLab is a framework for reading information between lab units...
+      """,
+      classifiers=[
+        "License :: GNU General Public License (GPL)"
+        "Programming Language :: Python"
+        "Development Status :: 0 - Beta"
+        "Intended Audience :: Inhouse use"
+        "Topic :: Systems engineering"
+      ],
+      keywords='modbus networking laboratory',
+      license='GPL',
+      install_requires=[
+        'setuptools',
+        'minimalmodbus',
+      ],
+)

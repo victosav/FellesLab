@@ -23,3 +23,5 @@ o888o     `Y8bod8P'o888oo888o`Y8bod8P'8""888P'  o888ooooood8`Y888""8o `Y8bod8P'
 @note:
 
 """
+
+from Sensor import Sensor, Temperature, Voltage
