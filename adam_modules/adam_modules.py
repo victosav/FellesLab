@@ -29,13 +29,20 @@ __author__  = "Sigve Karolius"
 __email__   = "<firstname>ka<at>ntnu<dot>no"
 __license__ = "GPL.v3"
 
-#__revision__  = "$Rev: 155 $"
 __date__      = "$Date: 2015-06-23 (Tue, 23 Jun 2015) $"
 
-from minimalmodbus import Instrument
-# 'read_bit', 'read_float', 'read_long', 'read_register', 'read_registers', 'read_string', 'write_bit', 'write_float', 'write_long', 'write_register', 'write_registers', 'write_string'
+import minimalmodbus
 
 class DummySerial(object):
+    """
+    Dummy class impersonating a serial connection
+    """
+    port = 'Dummy' # serial port name
+    baudrate = 9600 # Transfer rate: bits/s
+    bytesize = 8 # bits in a byte
+    parity = minimalmodbus.serial.PARITY_NONE # the same as: 'N'
+    timeout = 0.05 # seconds
+    mode = minimalmodbus.MODE_RTU # or minimalmodbus.MODE_ASCII # <=> 'rtu' or 'ascii'
     def flushOutput(self):
         pass
     def flushInput(self):
@@ -43,10 +50,15 @@ class DummySerial(object):
     def write(self, message):
         pass
     def read(self):
-        return b'Blaah'
+        return 'Blaah'
 
 class DummyModbus(object):
-    def __init__(self, portname, slaveaddress):
+    """
+    Dummy class impersonating any Adam module
+    """
+    from random import random
+
+    def __init__(self, portname='portname', slaveaddress='slaveaddress'):
         self.serial = DummySerial()
     def read_register(self, channel):
         return None
@@ -60,18 +72,6 @@ class DummyModbus(object):
         return None
 
 
-
-USE_DUMMY_MODBUS = False
-
-if USE_DUMMY_MODBUS:
-    minimalmodbus.Instrument = DummyModbus
-
-class input:
-    pass
-
-class output:
-    pass
-
 # instrument.serial.port          # this is the serial port name
 # instrument.serial.baudrate = 19200   # Baud
 # instrument.serial.bytesize = 8
@@ -82,8 +82,10 @@ class output:
 # instrument.address     # this is the slave address number
 # instrument.mode = minimalmodbus.MODE_RTU   # rtu or ascii mode
 
+# 'read_bit', 'read_float', 'read_long', 'read_register', 'read_registers', 'read_string', 'write_bit', 'write_float', 'write_long', 'write_register', 'write_registers', 'write_string'
+
 # ================================= Class ==================================== #
-class AdamModule(Instrument):
+class AdamModule(object):
     """
     Parent class for ADAM modules
     
@@ -91,23 +93,35 @@ class AdamModule(Instrument):
          * portname (string, e.g. '/dev/ttyUSB1'): port name 
          * slaveaddress (integer): slave address in the range 1 to 247
     """
-# 'read_bit', 'read_float', 'read_long', 'read_register', 'read_registers', 'read_string', 'write_bit', 'write_float', 'write_long', 'write_register', 'write_registers', 'write_string'
+    def __new__(cls=None, dummy=False):
+        """
+        New
+        """
+        if not dummy:
+            cls = minimalmodbus.Instrument
+        else:
+            cls = DummyModbus
 
-    def __init__(self, child=None, *args, **kwargs):
+        return cls.__new__(cls)
+
+    def __init__(self, dummy=False, *args, **kwargs):
         """
         Constructor
         """
-        if not kwargs.has_key('portname'):
-            try:
-                # search for port 
-                pass
-            except:
-                Exception("Signal portname on the ADAM module is missing")
-
-        if not kwargs.has_key('slaveaddress'):
-            Exception("Missing ADAM module's address")
-        
-        Instrument.__init__(self, *args, **kwargs)
+        super(AdamModule, self).__init__(*args, **kwargs)
+#         if not kwargs.has_key('portname'):
+#             try:
+#                 # search for port 
+#                 pass
+#             except:
+#                 Exception("Signal portname on the ADAM module is missing")
+# 
+#         if not kwargs.has_key('slaveaddress'):
+#             Exception("Missing ADAM module's address")
+#         if child:
+#             minimalmodbus.Instrument.__init__(self, *args, **kwargs)
+#         else:
+#             DummyModbus()
 
     def module_name(self):
         """
