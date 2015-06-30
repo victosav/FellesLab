@@ -1,5 +1,3 @@
-# Felles Lab repository
-
 ```
 oooooooooooo       oooo oooo                    ooooo                 .o8
 `888'     `8       `888 `888                    `888'                "888
@@ -25,10 +23,30 @@ oooooooooooo       oooo oooo                    ooooo                 .o8
            _______/  \  ___|   |_/    \_|   |_____  /  \_____
                       \/                          \/
 ```
-Contains:
 
+** Currently under development, repository is for the moment only for convenience. Future versions will be stored as a Python module  **
+
+Contains:
+---------
 * Drivers for (advantec) Adam modules
 * Drivers for Pump Motors
 * Standardised classes for various sensor types and equipment
 * GUI framework
+
+Requires:
+---------
+* Python v.2.7.6+ ( **NOT** Python 3)
+* wxPython
+* minimalmodbus
+
+Install procedure (Ubuntu):
+---------------------------
+
+```{.bash}
+sudo apt-get python-pip 
+```
+
+```{.bash}
+sudo pip install minimalmodbus
+```
 
