@@ -44,7 +44,7 @@ from wx import DefaultPosition
 # Events
 from wx import EVT_BUTTON,ID_ANY, EVT_SPINCTRL #, EVT_SPINCTRLDOUBLE
 #
-from Sensor import Sensor
+from FellesLab.Equipment import Sensor
 
 # =============================== Class ====================================== #
 class FellesFrame(Frame):

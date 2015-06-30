@@ -38,7 +38,7 @@ from wx import EVT_BUTTON, ID_ANY#, EVT_SPINCTRLDOUBLE
 # Basic GUI classes
 from GUI import FellesFrame, FellesButton, FellesTextInput, FellesLabel
 #
-from Sensor import Sensor
+from FellesLab.Equipment import Sensor
 
 def findSensor(_id):
     for s in Sensor.___refs___:
