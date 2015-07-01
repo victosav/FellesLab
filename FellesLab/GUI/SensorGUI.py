@@ -42,6 +42,7 @@ from FellesLab.Equipment import *
 #
 from wx.lib.pubsub import setuparg1
 from wx.lib.pubsub import pub
+#
 
 
 def findSensor(_id):
@@ -95,7 +96,7 @@ class SensorFrame(FellesFrame):
         grid_sizer = GridSizer(rows=len(self.sensors)+1, cols=2, hgap=5, vgap=5)
 
         self.gLabel = { s()['label']: StaticText(self, label=s()['label']) for s in self.sensors }
-        self.gValue = { s()['label']: StaticText(self, label=str(s().TEST)) for s in self.sensors }
+        self.gValue = { s()['label']: StaticText(self, label=str(s()['Data'].val)) for s in self.sensors }
 
         for s in self.sensors:
             grid_sizer.Add( self.gLabel[s()['label']] , 0, ALL, 5)
@@ -116,8 +117,12 @@ class SensorFrame(FellesFrame):
 
     # ------------------------------- Method --------------------------------- #
     def UpdateFrame(self, sender=None, args=None):
+        """
+        Method for updating GUI
+        """
         print sender
-#         for s in self.sensors:
-#             self.gValue[s()['label']].SetLabel('%.2f %s'%(s().TEST,str(s()['unit'])))
-# 
-#         self.top_sizer.Fit(self)
+        for s in self.sensors:
+            print s()['Data'].val
+            self.gValue[s()['label']].SetLabel('%.2f %s'%(s()['Data'].val, str(s()['unit'])))
+
+        self.top_sizer.Fit(self)

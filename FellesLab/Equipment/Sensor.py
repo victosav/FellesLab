@@ -27,8 +27,6 @@ o888o     `Y8bod8P'o888oo888o`Y8bod8P'8""888P'  o888ooooood8`Y888""8o `Y8bod8P'
 __author__  = "Sigve Karolius"
 __email__   = "<firstname>ka<at>ntnu<dot>no"
 __license__ = "GPL.v3"
-
-#__revision__  = "$Rev: 155 $"
 __date__      = "$Date: 2015-06-23 (Tue, 23 Jun 2015) $"
 
 
@@ -91,6 +89,10 @@ class RealTimeData(namedtuple('RealTimeData', 'min max val')):
         print self.val # "Sensor reading %.2f" %(self.val)
 
 # ================================ Class ==================================== #
+class Data:
+    val = 0.00
+
+# ================================ Class ==================================== #
 class SensorMetaInformation(dict):
     def __init__(self, *args, **kwargs):
         super(SensorMetaInformation).__init__(*args, **kwargs)
@@ -100,12 +102,12 @@ class ExtendedRef(weakref.ref):
     """
     Weakreference class
     """
-    def __init__(self, ref, callback=None):
-        self.ref = ref
-        super(ExtendedRef, self).__init__(ref, callback)
+    def __init__(self, referee, callback=None):
+        self.referee = referee
+        super(ExtendedRef, self).__init__(referee, callback)
 
     def __call__(self):
-        return self.ref
+        return self.referee()
 
 # ================================ Class ==================================== #
 class Sensor(dict):
@@ -126,7 +128,8 @@ class Sensor(dict):
         """
         constructor
         """
-        self.___refs___.append(ExtendedRef(self)) # Add instance to references
+        
+        kwargs['Data'] = Data()
 
         # Instance variables, when edited will only affect the specific sensor
         if not kwargs.has_key('module'):
@@ -164,18 +167,16 @@ class Sensor(dict):
 
         self.process = self.thread(target=self.StartSampling)
         self.metadata = namedtuple('MetaData', kwargs.keys())(**kwargs)
-        self.data = RealTimeData(1,2,3)
+#        self.data = RealTimeData(1,2,3)
 
         super(Sensor, self).__init__(*args, **kwargs)
-
+        self.___refs___.append(ExtendedRef(self)) # Add instance to references
         self.Idle_sampling()
 
     # ------------------------------- Method -------------------------------- #
     def __call__(self):
-        pass
-    # ------------------------------- Method -------------------------------- #
-    def Identify(self):
         return self
+
     # ------------------------------- Method -------------------------------- #
     def Idle_sampling(self):
         """
@@ -193,7 +194,8 @@ class Sensor(dict):
             sleep(self['sample_speed'])
             print "Sampling speed %.2f from %s" %(round(self['sample_speed'],2), self['label'])
             self.Change_rate()
-
+            self['Data'].val = random()
+            print self['Data'].val
 #            self.data.val = 1
 #            print self.data
 
@@ -205,7 +207,6 @@ class Sensor(dict):
         """
         print "Terminating process '%s'" %(self['label'])
         #self.process.terminate()
-    # ------------------------------- Method -------------------------------- #
 
     # ------------------------------- Method -------------------------------- #
     def Change_rate(self, event=None):
@@ -218,6 +219,13 @@ class Sensor(dict):
         if self['sample_speed'] < 0.1:
             self.SAMPLING = False
 
+    # ------------------------------- Method -------------------------------- #
+    def __repr__(self):
+        return '<%s.%s sensor_instance at %s>' % (
+            self.__class__.__module__,
+            self.__class__.__name__,
+            hex(id(self))
+        )
 # ================================ Class ==================================== #
 class Temperature(Sensor):
     """
@@ -225,7 +233,6 @@ class Temperature(Sensor):
     """
     # ------------------------------- Method -------------------------------- #
     def __init__(self, *args, **kwargs):
-        self.TEST = 0000
         super(Temperature, self).__init__(*args, **kwargs)
 
 # ================================ Class ==================================== #
@@ -235,5 +242,4 @@ class Voltage(Sensor):
     """
     # ------------------------------- Method -------------------------------- #
     def __init__(self, *args, **kwargs):
-        self.TEST = 0000
         super(Voltage, self).__init__(*args, **kwargs)

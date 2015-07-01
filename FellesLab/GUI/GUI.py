@@ -51,16 +51,27 @@ from threading import Thread
 #
 from wx.lib.pubsub import setuparg1
 from wx.lib.pubsub import pub
+#
+from time import sleep, time
 
 # =============================== Class ====================================== #
 class Sampler(Thread):
     def __init__(self, source, target, *args, **kwargs):
-        self.target = target
-        self.source = source
+        """
+        
+        """
+        self.target = target # Target method in 'source'
+        self.source = source # Instance from which the call originates
         super(Sampler, self).__init__(None)
 
     def run(self):
-        self.target()
+        TODO =True
+        GUI_UPDATE_RATE = 1 # How often the GUI is updated
+        # TODO: Need to create a way for the window to start/sto sampling
+        #       !!! right now this is causing a bug !!!
+        while TODO:
+            self.target(self) # Call target
+            sleep(GUI_UPDATE_RATE)
 
 # =============================== Class ====================================== #
 class FellesApp(App):
@@ -137,9 +148,6 @@ class FellesFrame(Frame):
     # ------------------------------- Method --------------------------------- #
     def UpdateFrame(self):
         NotImplementedError("Quit method is not implemented")
-    # ------------------------------- Method --------------------------------- #  
-    def ASDF(self, reference):
-        NotImplementedError("Quit method is not implemented")
 
 # =============================== Class ====================================== #
 class FellesButton(Button):
@@ -190,7 +198,7 @@ class FellesButton(Button):
 
 
 # =============================== Class ====================================== #
-class FellesTextInput(SpinCtrl):#(SpinCtrlDouble):
+class FellesTextInput(SpinCtrl): #(SpinCtrlDouble):
     """
         Class
     """

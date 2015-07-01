@@ -34,6 +34,7 @@ __date__      = "$Date: 2015-06-23 (Tue, 23 Jun 2015) $"
 import minimalmodbus
 from utils import scan_ports
 
+# ================================= Class =================================== #
 class DummySerial(object):
     """
     Dummy class impersonating a serial connection
@@ -53,26 +54,66 @@ class DummySerial(object):
     def read(self):
         return 'Blaah'
 
+# ================================= Class =================================== #
 class DummyModbus(object):
     """
     Dummy class impersonating any Adam module
     """
     from random import random
 
-    def __init__(self, portname='portname', slaveaddress='slaveaddress'):
+    def __init__(self, *args, **kwargs):
+        self.slaveaddress = 'slaveaddress'
+        self.portname = 'portname'
         self.serial = DummySerial()
+    # ------------------------------- Method -------------------------------- #
     def read_register(self, channel):
-        return None
+        return random()
+    # ------------------------------- Method -------------------------------- #
     def read_registers(self, channel, number_of_channels):
         return list()
-    def write_register(self, channel, value):
-        pass
-    def write_bit(self, channel, value):
-        pass
+    # ------------------------------- Method -------------------------------- #
     def read_bit(self, channel):
         return None
+    # ------------------------------- Method -------------------------------- #
+    def read_float(self, channel):
+        return random()
+    # ------------------------------- Method -------------------------------- #
+    def read_long(self, channel):
+        return random()
+    # ------------------------------- Method -------------------------------- #
+    def read_string(self, channel):
+        return random()
+    # ------------------------------- Method -------------------------------- #
+    def write_float(self, channel, value):
+        pass
+    # ------------------------------- Method -------------------------------- #
+    def write_long(self, channel, value):
+        pass
+    # ------------------------------- Method -------------------------------- #
+    def write_registers(self, channel, value):
+        pass
+    # ------------------------------- Method -------------------------------- #
+    def write_string(self, channel, value):
+        pass
+    # ------------------------------- Method -------------------------------- #
+    def write_register(self, channel, value):
+        pass
+    # ------------------------------- Method -------------------------------- #
+    def write_bit(self, channel, value):
+        pass
 
-# 'read_bit', 'read_float', 'read_long', 'read_register', 'read_registers', 'read_string', 'write_bit', 'write_float', 'write_long', 'write_register', 'write_registers', 'write_string'
+# ================================= Class =================================== #
+class Instrument(minimalmodbus.Instrument, object):
+    """
+    Sugar class. 
+    
+    Why?
+      minimalmodbus.Instrument is an old-style class, does not work with __new__
+      or super()
+    """
+    # ------------------------------- Method -------------------------------- #
+    def __init__(self, *args, **kwargs):
+        super(Instrument, self).__init__(self)
 
 # ================================= Class =================================== #
 class AdamModule(object):
@@ -83,39 +124,48 @@ class AdamModule(object):
          * portname (string, e.g. '/dev/ttyUSB1'): port name 
          * slaveaddress (integer): slave address in the range 1 to 247
     """
-    def __new__(cls=None, dummy=False, *args, **kwargs):
+    def __new__(cls, mode='Instrument', *args, **kwargs):
         """
-        New
-        """
-        if not dummy:
-            cls = minimalmodbus.Instrument
-        else:
-            cls = DummyModbus
+        Creator.
+        called !!before!! __init__, returns instance.
+        
+        Changes the "type" of the class according to "mode", default is to
+        attempt connecting to the AdamModule, however, it is possible to
+        add an argument "Dummy" for "simulating" the Adam module.
 
-        return cls.__new__(cls)
+        This is how it looks like:
+          < adam_modules.adam_modules.MODULE + MODE object at ... >
+            MODULE: Adam4019 etc...
+            MODE: Dummy or Instrument
+        """
+        addCls = {'Dummy': DummyModbus, 'Instrument': Instrument}[mode]
+        cls = type(cls.__name__ + '+' + addCls.__name__, (cls, addCls), {})
+ 
+        return  super(AdamModule, cls).__new__(cls)
 
-    def __init__(self, dummy=False, module=None, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         """
-        Constructor
+        Constructor.
         """
-        print kwargs
+
+        if ('slaveaddress') not in kwargs:
+            Exception("Required arguments are missing")
+
         if not kwargs.has_key('portname'):
             # Search for port
             # TODO: Implement possibility for adding a "hint" e.g. 'USB', use
             #       regex to match "hint" to portnames.
             for port in list(scan_ports()):
                 try:
-                    self.sensor = module(port, channel)
-                    if self.sensor.is_correct_module():
+                    super(AdamModule, self).__init__(portname=port, slaveaddress=kwargs['slaveaddress']) 
+                    if self.is_correct_module():
                         break
                 except:
                     Exception("Signal portname on the ADAM module is missing")
+        else:
+            super(AdamModule, self).__init__(portname=kwargs['portname'], slaveaddress=kwargs['slaveaddress'])
 
-        if not kwargs.has_key('slaveaddress'):
-            Exception("Missing ADAM module's address")
-
-        super(AdamModule, self).__init__(*args, **kwargs)
-
+        #self.Configure()
     # ------------------------------- Method -------------------------------- #
     def Configure(self, **config):
         """
@@ -288,7 +338,7 @@ class DigitalOut(AdamModule):
         """
         return self.read_bit(self.digital_out_start_channel - 1 + channel)
 
-# ================================= Class ==================================== #
+# ================================= Class =================================== #
 class Adam4117(AnalogIn):
     """
     Adam-4117
@@ -298,7 +348,13 @@ class Adam4117(AnalogIn):
     type_analog_in_start_channel = 201
     burn_out_signal_start_channel = 1
     analog_in_number_of_channels = 8
-
+    # ---------------------------- Method ----------------------------------- #
+    def __init__(self, *args, **kwargs):
+        """
+        Constructor
+        """
+        kwargs['module'] = self
+        super(Adam4117, self).__init__(self, *args, **kwargs)
     # Type       Code
     # +/- 100mV: 2
     # +/-500 mV: 3
@@ -332,11 +388,11 @@ class Adam4019(AnalogIn):
 #            type_analog_in_start_channel = 201,
 #            burn_out_signal_start_channel = 1,
 #            analog_in_number_of_channels = 8
+        kwargs['module'] = self
+        super(Adam4019, self).__init__(self, *args, **kwargs)
 
-        AnalogIn.__init__(self, *args, **kwargs)
 
-
-# ================================= Class ==================================== #
+# ================================= Class =================================== #
 class Adam4024(AnalogOut, DigitalIn):
     """
     ADAM4024
@@ -348,7 +404,11 @@ class Adam4024(AnalogOut, DigitalIn):
     analog_in_number_of_channels = 4
     diginal_in_start_channel = 1
     digital_in_number_of_channels = 4
-
+    # ---------------------------- Method ----------------------------------- #
+    def __init__(self, *args, **kwargs):
+        """
+        Constructor
+        """
     # Analog out signal range is 0 to 409[5 or 6]
     # should scale such that value goes from 0 to 1
 
@@ -356,8 +416,9 @@ class Adam4024(AnalogOut, DigitalIn):
     # 48: 0~20 mA
     # 49: +/- 10V
     # 50: 4~20 mA
-
-# ================================= Class ==================================== #
+        kwargs['module'] = self
+        super(Adam4024, self).__init__(self, *args, **kwargs)
+# ================================= Class =================================== #
 class Adam4055(DigitalIn, DigitalOut):
     """
     ADAM4055
@@ -367,8 +428,15 @@ class Adam4055(DigitalIn, DigitalOut):
     digital_out_number_of_channels = 8
     diginal_in_start_channel = 1
     digital_in_number_of_channels = 8
+    # ---------------------------- Method ----------------------------------- #
+    def __init__(self, *args, **kwargs):
+        """
+        Constructor
+        """
+        kwargs['module'] = self
+        super(Adam4055, self).__init__(self, *args, **kwargs)
 
-# ================================= Class ==================================== #
+# ================================= Class =================================== #
 class Adam4069(DigitalOut):
     """
     ADAM4069
@@ -376,3 +444,10 @@ class Adam4069(DigitalOut):
     name = None
     digital_out_start_channel = 17
     digital_out_number_of_channels = 8
+    # ---------------------------- Method ----------------------------------- #
+    def __init__(self, *args, **kwargs):
+        """
+        Constructor
+        """
+        kwargs['module'] = self
+        super(Adam4069, self).__init__(self, *args, **kwargs)
