@@ -96,10 +96,6 @@ class SensorMetaInformation(dict):
         super(SensorMetaInformation).__init__(*args, **kwargs)
 
 # ================================ Class ==================================== #
-class StopAtOutputValue:
-    def __init__(self, *args, **kwargs):
-        print "Simulation will be stopped at..."
-# ================================ Class ==================================== #
 class ExtendedRef(weakref.ref):
     """
     Weakreference class
@@ -110,6 +106,7 @@ class ExtendedRef(weakref.ref):
 
     def __call__(self):
         return self.ref
+
 # ================================ Class ==================================== #
 class Sensor(dict):
     """
@@ -196,7 +193,7 @@ class Sensor(dict):
             sleep(self['sample_speed'])
             print "Sampling speed %.2f from %s" %(round(self['sample_speed'],2), self['label'])
             self.Change_rate()
-            pub.sendMessage("Sampled %s" %(self['label']), True)
+
 #            self.data.val = 1
 #            print self.data
 
@@ -216,6 +213,8 @@ class Sensor(dict):
             asdf
         """
         self['sample_speed'] -= random()
+        print "Changing rate"
+        pub.sendMessage("s", random())
         if self['sample_speed'] < 0.1:
             self.SAMPLING = False
 

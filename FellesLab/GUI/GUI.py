@@ -112,9 +112,6 @@ class FellesFrame(Frame):
 
         super(FellesFrame, self).__init__(parent, *args, **kwargs)
         self.timer = Sampler(self, self.UpdateFrame)
-        
-        pub.subscribe(self.UpdateFrame,"Sampled %s" %(self.GetLabel()))
-        print self.GetLabel()
     # ------------------------------- Method --------------------------------- #
     def InitUI(self):
         NotImplementedError("User interface is not implemented")

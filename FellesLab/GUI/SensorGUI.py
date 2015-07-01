@@ -38,7 +38,11 @@ from wx import EVT_BUTTON, ID_ANY#, EVT_SPINCTRLDOUBLE
 # Basic GUI classes
 from GUI import FellesFrame, FellesButton, FellesTextInput, FellesLabel
 #
-from FellesLab.Equipment import Sensor
+from FellesLab.Equipment import *
+#
+from wx.lib.pubsub import setuparg1
+from wx.lib.pubsub import pub
+
 
 def findSensor(_id):
     for s in Sensor.___refs___:
@@ -69,7 +73,7 @@ class SensorFrame(FellesFrame):
     # ------------------------------- Method --------------------------------- #
     def __init__(self, parent=None, *args, **kwargs):
         super(SensorFrame, self).__init__( *args, **kwargs)
-        
+
         self.sensors = sensorTypes()[self.GetLabel()]
 
         self.gLabel = dict()
@@ -77,7 +81,9 @@ class SensorFrame(FellesFrame):
 
         self.InitUI()
         self.Show()
-#        self.timer.start()
+
+        pub.subscribe(self.UpdateFrame, "s")
+        self.timer.start()
     # ------------------------------- Method --------------------------------- #
     def InitUI(self):
 
@@ -93,7 +99,7 @@ class SensorFrame(FellesFrame):
 
         for s in self.sensors:
             grid_sizer.Add( self.gLabel[s()['label']] , 0, ALL, 5)
-            grid_sizer.Add( self.gValue[s()['label']] , 0, ALL, 5)            
+            grid_sizer.Add( self.gValue[s()['label']] , 0, ALL, 5)
 
         # arranging and sizing the widgets 
         # alignment of title
@@ -109,9 +115,9 @@ class SensorFrame(FellesFrame):
         self.top_sizer = top_sizer
 
     # ------------------------------- Method --------------------------------- #
-    def UpdateFrame(self, event):
-        print event
-        for s in self.sensors:
-            self.gValue[s()['label']].SetLabel('%.2f %s'%(s().TEST,str(s()['unit'])))
-
-        self.top_sizer.Fit(self)
+    def UpdateFrame(self, sender=None, args=None):
+        print sender
+#         for s in self.sensors:
+#             self.gValue[s()['label']].SetLabel('%.2f %s'%(s().TEST,str(s()['unit'])))
+# 
+#         self.top_sizer.Fit(self)
