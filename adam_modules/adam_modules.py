@@ -15,7 +15,7 @@ o888o     `Y8bod8P'o888oo888o`Y8bod8P'8""888P'  o888ooooood8`Y888""8o `Y8bod8P'
 @author:       Sigve Karolius
 @organization: Department of Chemical Engineering, NTNU, Norway
 @contact:      sigveka@ntnu.no
-@license:      Free (GPL.v3), although credit is appreciated
+@license:      Free (GPL.v3)
 @requires:     Python 2.7.x or higher
 @since:        18.06.2015
 @version:      2.7
@@ -124,11 +124,11 @@ class AdamModule(object):
          * portname (string, e.g. '/dev/ttyUSB1'): port name 
          * slaveaddress (integer): slave address in the range 1 to 247
     """
-    def __new__(cls, mode='Instrument', *args, **kwargs):
+    def __new__(cls, base='Instrument', *args, **kwargs):
         """
         Creator.
         called !!before!! __init__, returns instance.
-        
+
         Changes the "type" of the class according to "mode", default is to
         attempt connecting to the AdamModule, however, it is possible to
         add an argument "Dummy" for "simulating" the Adam module.
@@ -138,9 +138,9 @@ class AdamModule(object):
             MODULE: Adam4019 etc...
             MODE: Dummy or Instrument
         """
-        addCls = {'Dummy': DummyModbus, 'Instrument': Instrument}[mode]
+        addCls = {'Dummy': DummyModbus, 'Instrument': Instrument}[base]
         cls = type(cls.__name__ + '+' + addCls.__name__, (cls, addCls), {})
- 
+
         return  super(AdamModule, cls).__new__(cls)
 
     def __init__(self, *args, **kwargs):
@@ -151,13 +151,16 @@ class AdamModule(object):
         if ('slaveaddress') not in kwargs:
             Exception("Required arguments are missing")
 
+        if ('mode') not in kwargs:
+          kwargs['mode'] = 'rtu'
+
         if not kwargs.has_key('portname'):
             # Search for port
             # TODO: Implement possibility for adding a "hint" e.g. 'USB', use
             #       regex to match "hint" to portnames.
             for port in list(scan_ports()):
                 try:
-                    super(AdamModule, self).__init__(portname=port, slaveaddress=kwargs['slaveaddress']) 
+                    super(AdamModule, self).__init__(portname=port, slaveaddress=kwargs['slaveaddress'], mode=kwargs['mode'])
                     if self.is_correct_module():
                         break
                 except:
