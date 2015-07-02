@@ -112,8 +112,8 @@ class Instrument(minimalmodbus.Instrument, object):
       or super()
     """
     # ------------------------------- Method -------------------------------- #
-    def __init__(self, *args, **kwargs):
-        super(Instrument, self).__init__(self)
+    def __init__(self, portname, slaveaddress, mode=minimalmodbus.MODE_RTU):
+        super(Instrument, self).__init__(portname, slaveaddress, mode)
 
 # ================================= Class =================================== #
 class AdamModule(object):
@@ -154,19 +154,19 @@ class AdamModule(object):
         if ('mode') not in kwargs:
           kwargs['mode'] = 'rtu'
 
-        if not kwargs.has_key('portname'):
+        if not kwargs.has_key('port'):
             # Search for port
             # TODO: Implement possibility for adding a "hint" e.g. 'USB', use
             #       regex to match "hint" to portnames.
             for port in list(scan_ports()):
                 try:
-                    super(AdamModule, self).__init__(portname=port, slaveaddress=kwargs['slaveaddress'], mode=kwargs['mode'])
+                    super(AdamModule, self).__init__(port, kwargs['slaveaddress'], mode=kwargs['mode'])
                     if self.is_correct_module():
                         break
                 except:
                     Exception("Signal portname on the ADAM module is missing")
         else:
-            super(AdamModule, self).__init__(portname=kwargs['portname'], slaveaddress=kwargs['slaveaddress'])
+            super(AdamModule, self).__init__(kwargs['port'], kwargs['slaveaddress'], mode=kwargs['mode'])
 
         #self.Configure()
     # ------------------------------- Method -------------------------------- #
