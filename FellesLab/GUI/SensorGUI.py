@@ -1,9 +1,9 @@
 # -*- coding: ascii -*-
 """
 
-oooooooooooo       oooo oooo                    ooooo                 .o8      
-`888'     `8       `888 `888                    `888'                "888      
- 888       .ooooo.  888  888  .ooooo.  .oooo.o   888         .oooo.   888oooo. 
+oooooooooooo       oooo oooo                    ooooo                 .o8
+`888'     `8       `888 `888                    `888'                "888
+ 888       .ooooo.  888  888  .ooooo.  .oooo.o   888         .oooo.   888oooo.
  888oooo8 d88' `88b 888  888 d88' `88bd88(  "8   888        `P  )88b  d88' `88b
  888    " 888ooo888 888  888 888ooo888`"Y88b.    888         .oP"888  888   888
  888      888    .o 888  888 888    .oo.  )88b   888       od8(  888  888   888
@@ -14,13 +14,13 @@ o888o     `Y8bod8P'o888oo888o`Y8bod8P'8""888P'  o888ooooood8`Y888""8o `Y8bod8P'
 @author:       Sigve Karolius
 @organization: Department of Chemical Engineering, NTNU, Norway
 @contact:      sigveka@ntnu.no
-@license:      Free (GPL.v3), although credit is appreciated  
+@license:      Free (GPL.v3)
 @requires:     Python 2.7.x or higher
 @since:        18.06.2015
 @version:      2.7
-@todo 1.0:     
-@change:       
-@note:         
+@todo 1.0:
+@change:
+@note:
 
 """
 
@@ -38,21 +38,17 @@ from wx import EVT_BUTTON, ID_ANY#, EVT_SPINCTRLDOUBLE
 # Basic GUI classes
 from GUI import FellesFrame, FellesButton, FellesTextInput, FellesLabel
 #
-from FellesLab.Equipment import *
+from FellesLab.Equipment import Sensor#, sensorTypes
 #
 from wx.lib.pubsub import setuparg1
 from wx.lib.pubsub import pub
 #
-
-
-def findSensor(_id):
-    for s in Sensor.___refs___:
-        if s()['_id'] == _id:
-            return s
-
+#from FellesLab.Utils.SupportFunctions import sensorTypes
+from FellesLab.Utils.DataStorage import *
+from random import random
+# ............................... Function .................................. #
 def sensorTypes():
     """
-    
     Temperature: list( <weakref at ; to obj.instances>] )
     Volume: list( <weakref at ; to obj.instances> )
     """
@@ -64,7 +60,6 @@ def sensorTypes():
         else:
             types[s().__class__.__name__].append(s)
     return types
-
 
 # =============================== Class ====================================== #
 class SensorFrame(FellesFrame):
@@ -87,7 +82,6 @@ class SensorFrame(FellesFrame):
         self.timer.start()
     # ------------------------------- Method --------------------------------- #
     def InitUI(self):
-
         self.panel = Panel(self, ID_ANY)
 
         # adding sizers
@@ -96,7 +90,7 @@ class SensorFrame(FellesFrame):
         grid_sizer = GridSizer(rows=len(self.sensors)+1, cols=2, hgap=5, vgap=5)
 
         self.gLabel = { s()['label']: StaticText(self, label=s()['label']) for s in self.sensors }
-        self.gValue = { s()['label']: StaticText(self, label=str(s()['Data'].val)) for s in self.sensors }
+        self.gValue = { s()['label']: StaticText(self, label=str(SensorRealTimeData[s()['label']])) for s in self.sensors }
 
         for s in self.sensors:
             grid_sizer.Add( self.gLabel[s()['label']] , 0, ALL, 5)
@@ -120,9 +114,10 @@ class SensorFrame(FellesFrame):
         """
         Method for updating GUI
         """
-        print sender
         for s in self.sensors:
-            print s()['Data'].val
-            self.gValue[s()['label']].SetLabel('%.2f %s'%(s()['Data'].val, str(s()['unit'])))
+
+            print SensorRealTimeData[s()['label']]
+            print SensorRealTimeData.__repr__
+            self.gValue[s()['label']].SetLabel('%.2f %s'%(random(), str(s()['unit'])))#SensorRealTimeData[s()['label']], str(s()['unit'])))
 
         self.top_sizer.Fit(self)

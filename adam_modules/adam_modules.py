@@ -377,17 +377,15 @@ class Adam4019(AnalogIn):
     """
         ADAM4019 sugar class
     """
-
+    analog_in_start_channel = 1,
+    type_analog_in_start_channel = 201,
+    burn_out_signal_start_channel = 1,
+    analog_in_number_of_channels = 8
     # ---------------------------- Method ----------------------------------- #
     def __init__(self, *args, **kwargs):
         """
         Constructor
         """
-
-#            analog_in_start_channel = 1,
-#            type_analog_in_start_channel = 201,
-#            burn_out_signal_start_channel = 1,
-#            analog_in_number_of_channels = 8
         kwargs['module'] = self
         super(Adam4019, self).__init__(self, *args, **kwargs)
 

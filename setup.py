@@ -34,7 +34,7 @@ setup(
     url='https//sigveka.github.io/FellesLab',
     packages=['FellesLab','adam_modules','mac_motor_module'],
     package_dir={'FellesLab':'FellesLab','adam_modules':'adam_modules','mac_motor_module':'mac_motor_module'},
-    package_data={'FellesLab': ['Equipment/*.py','GUI/*.py'] , 'adam_modules':['utils/*.py']},
+    package_data={'FellesLab': ['Equipment/*.py','GUI/*.py','Utils/*.py'] , 'adam_modules':['utils/*.py']},
       long_description="""\
       FellesLab is a framework for reading information between lab units...
       """,
@@ -47,8 +47,4 @@ setup(
       ],
       keywords='modbus networking laboratory',
       license='GPL',
-      install_requires=[
-        'setuptools',
-        'minimalmodbus',
-      ],
 )
