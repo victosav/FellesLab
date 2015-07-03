@@ -45,7 +45,9 @@ from wx.lib.pubsub import pub
 #
 #from FellesLab.Utils.SupportFunctions import sensorTypes
 from FellesLab.Utils.DataStorage import *
+
 from random import random
+
 # ............................... Function .................................. #
 def sensorTypes():
     """
@@ -93,10 +95,10 @@ class SensorFrame(FellesFrame):
         self.gValue = { s()['label']: StaticText(self, label=str(SensorRealTimeData[s()['label']])) for s in self.sensors }
 
         for s in self.sensors:
-            grid_sizer.Add( self.gLabel[s()['label']] , 0, ALL, 5)
-            grid_sizer.Add( self.gValue[s()['label']] , 0, ALL, 5)
+            grid_sizer.Add( self.gLabel[s()['label']] , 0, ALL, 5 )
+            grid_sizer.Add( self.gValue[s()['label']] , 0, ALL, 5 )
 
-        # arranging and sizing the widgets 
+        # arranging and sizing the widgets
         # alignment of title
         title_sizer.Add(StaticText(self, label=self.GetTitle()), 0, ALL, 5)
 
@@ -118,6 +120,7 @@ class SensorFrame(FellesFrame):
 
             print SensorRealTimeData[s()['label']]
             print SensorRealTimeData.__repr__
-            self.gValue[s()['label']].SetLabel('%.2f %s'%(random(), str(s()['unit'])))#SensorRealTimeData[s()['label']], str(s()['unit'])))
+            self.gValue[s()['label']].SetLabel('%.2f %s'%(random(), str(s()['unit'])))
+#            self.gValue[s()['label']].SetLabel('%.2f %s'%(SensorRealTimeData[s()['label']], str(s()['unit'])))
 
         self.top_sizer.Fit(self)
