@@ -23,7 +23,9 @@ o888o     `Y8bod8P'o888oo888o`Y8bod8P'8""888P'  o888ooooood8`Y888""8o `Y8bod8P'
 @note:
 
 """
-
-import Equipment
-import GUI
-import Utils
+from Equipment import *
+from GUI import *
+from Utils import *
+#import Equipment
+#import GUI
+#import Utils
