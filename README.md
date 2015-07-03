@@ -18,12 +18,16 @@ oooooooooooo       oooo oooo                    ooooo                 .o8
                    Department of Chemical Engineering
              Norwegian University of Science and Technology
 
-                             .            .
-                            / \          / \
-                           /   \   /\   /   \
-                   /\      |   |  /  \  |   |        /\
-           _______/  \  ___|   |_/    \_|   |_____  /  \_____
-                      \/                          \/
+                                .            .
+                               / \          / \
+                              /   \   /\   /   \
+                              |   |  /  \  |   |
+                       .______|   |_/    \_|   |______.
+                     _/                                \_
+          /\        |                                    |        /\
+    _____/  \  _____|                                    |_____  /  \_____
+             \/                                                \/
+
 ```
 
 **Currently under development, repository is for the moment only for convenience. Future versions will be stored as a Python module**
