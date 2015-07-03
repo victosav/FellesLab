@@ -52,7 +52,7 @@ class DummySerial(object):
     def write(self, message):
         pass
     def read(self):
-        return 'Blaah'
+        return 'FooBar'
 
 # ================================= Class =================================== #
 class DummyModbus(object):
@@ -129,12 +129,12 @@ class AdamModule(object):
         Creator.
         called !!before!! __init__, returns instance.
 
-        Changes the "type" of the class according to "mode", default is to
+        Changes the "type" of the class according to 'base', default is to
         attempt connecting to the AdamModule, however, it is possible to
         add an argument "Dummy" for "simulating" the Adam module.
 
         This is how it looks like:
-          < adam_modules.adam_modules.MODULE + MODE object at ... >
+          < adam_modules.adam_modules.'MODULE' + 'BASE' object at ... >
             MODULE: Adam4019 etc...
             MODE: Dummy or Instrument
         """
