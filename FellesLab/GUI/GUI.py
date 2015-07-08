@@ -30,6 +30,7 @@ __license__ = "GPL.v3"
 __date__      = "$Date: 2015-06-23 (Tue, 23 Jun 2015) $"
 
 
+import wx
 # Classes
 from wx import Frame, Button, StaticText, StaticLine, Panel, TextCtrl,\
                SpinCtrl, App #, SpinCtrlDouble
@@ -41,61 +42,55 @@ from wx import DEFAULT_FRAME_STYLE, TE_MULTILINE, SYSTEM_MENU, CAPTION, CLOSE_BO
 # Positions
 from wx import DefaultPosition
 # Events
-from wx import EVT_BUTTON,ID_ANY, EVT_SPINCTRL #, EVT_SPINCTRLDOUBLE
+from wx import EVT_BUTTON,ID_ANY, EVT_SPINCTRL, EVT_CLOSE #, EVT_SPINCTRLDOUBLE
 #
 from FellesLab.Equipment import Sensor
-#
-from threading import Thread
 #
 from wx.lib.pubsub import setuparg1
 from wx.lib.pubsub import pub
 #
 from time import sleep, time
+#
+from FellesLab.Utils.SupportClasses import ExtendedRef, GuiUpdater
 
-# =============================== Class ====================================== #
-class Sampler(Thread):
-    def __init__(self, source, target, *args, **kwargs):
-        """
-        
-        """
-        self.target = target # Target method in 'source'
-        self.source = source # Instance from which the call originates
-        super(Sampler, self).__init__(None)
 
-    def run(self):
-        TODO =True
-        GUI_UPDATE_RATE = 0.1 # How often the GUI is updated
-        # TODO: Need to create a way for the window to start/sto sampling
-        #       !!! right now this is causing a bug !!!
-        while TODO:
-            self.target(self) # Call target
-            sleep(GUI_UPDATE_RATE)
+# ............................... Function .................................. #
+def sensorTypes():
+    """
+    Temperature: list( <weakref at ; to obj.instances>] )
+    Volume: list( <weakref at ; to obj.instances> )
+    """
+
+    types = {}
+    for s in Sensor.___refs___:
+        if not types.has_key(s().__class__.__name__):
+            types[s().__class__.__name__] = [s]
+        else:
+            types[s().__class__.__name__].append(s)
+    return types
+
 
 # =============================== Class ====================================== #
 class FellesApp(App):
     """
-    Application
+    
     """
-    def __init__(self, redirect=True, filename=None):
-        print "App __init__"
-        super(FellesApp, self).__init__(redirect, filename)
-
+    def __init__(self):
+        super(FellesApp, self).__init__()
+    
     def OnInit(self):
-        #self.frame = Frame(parent=None, title='Sparse')
-        #self.frame.Show()
-        #self.SetTopWindow(self.frame)
-        print >> sys.stderr, "A pretend error message"
+        MainFrame = Frame(None, -1, "Main ")
+        MainFrame.Show()
         return True
-
-    def OnExit(self):
-        print "On exit"
 
 # =============================== Class ====================================== #
 class FellesFrame(Frame):
     """
         Frame Class
     """
-    timer = Sampler
+    sample_rate = 1.12 # Default sampling rate
+    timer = GuiUpdater
+    SAMPLING = True
     # ------------------------------- Method --------------------------------- #  
     def __init__(self, parent=None, *args, **kwargs):
 
@@ -120,29 +115,66 @@ class FellesFrame(Frame):
             kwargs['pos'] = DefaultPosition
 
         super(FellesFrame, self).__init__(parent, *args, **kwargs)
-        self.timer = Sampler(self, self.UpdateFrame)
+# 
+#         # Setting sampling speed (four cases are possible):
+#         # 1. User provides 'sample_rate' but not 'sample_speed'
+#         if kwargs.has_key('sample_rate') and not kwargs.has_key('sample_speed'):
+#             self.sample_speed = kwargs['sample_rate']
+#         # 2. User does not provide 'sample_rate', but 'sample_speed'
+#         elif not kwargs.has_key('sample_rate') and kwargs.has_key('sample_speed'):
+#             self.sample_speed = kwargs['sample_speed']
+#         # 3. User provides both 'sample_rate' and 'sample_speed'
+#         elif kwargs.has_key('sample_rate') and kwargs.has_key('sample_speed'):
+#             print "Provided both sample speed and sample rate"
+#             self.sample_speed = kwargs['sample_rate']
+#         # 4. User provides neither 'sample_rate' or 'sample_speed'
+#         else:
+#             self.sample_speed = self.sample_rate # Default use "sample rate"
+
+        self.timer = GuiUpdater(group=None, target=self.UpdateFrame, source=self)
+        self.Bind(EVT_CLOSE, self.OnClose)
+
     # ------------------------------- Method --------------------------------- #
     def InitUI(self):
         NotImplementedError("User interface is not implemented")
 
     # ------------------------------- Method --------------------------------- #
     def OnClose(self, event):
-        print event
-        NotImplementedError("Close method is not implemented")
 
-    # ------------------------------- Method --------------------------------- #
-    def OnMove(self, event):
-        print event
-        NotImplementedError("Move method is not implemented")
+        if event.CanVeto():# and self.fileNotSaved:
 
-    # ------------------------------- Method --------------------------------- #    
-    def OnExit(self, event):
-        print event
-        NotImplementedError("Exit method is not implemented")
-    # ------------------------------- Method --------------------------------- #
-    def OnQuitApp(self, event):
-        print event
-        NotImplementedError("Quit method is not implemented")
+            if wx.MessageBox("The file has not been saved... continue closing?",
+                             "Please confirm",
+                             wx.ICON_QUESTION | wx.YES_NO) != wx.YES:
+
+                event.Veto()
+                return None
+
+        print "Stopping frame %s" %(self.__class__.__name__)
+        
+        # Terminate sampling thread
+        self.SAMPLING = False
+        # Wait to destroy window until thread is terminated
+        while self.timer.isAlive():
+            pass
+        # Destroy window
+        self.Destroy()
+
+#     # ------------------------------- Method --------------------------------- #
+#     def OnMove(self, event):
+#         print event
+#         NotImplementedError("Move method is not implemented")
+# 
+#     # ------------------------------- Method --------------------------------- #    
+#     def OnExit(self, event):
+#         self.SAMPLING = False
+#         print "Stopping frame %s" %(self.__class__.__name__)
+# 
+#     # ------------------------------- Method --------------------------------- #
+#     def OnQuitApp(self):
+#         self.SAMPLING = False
+#         print "Stopping frame %s" %(self.__class__.__name__)
+
     # ------------------------------- Method --------------------------------- #
     def UpdateFrame(self):
         NotImplementedError("Quit method is not implemented")

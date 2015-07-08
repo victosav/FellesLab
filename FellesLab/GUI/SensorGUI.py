@@ -45,8 +45,10 @@ from wx.lib.pubsub import pub
 #
 #from FellesLab.Utils.SupportFunctions import sensorTypes
 from FellesLab.Utils.DataStorage import *
+from FellesLab.Utils.SupportClasses import *
 
 from random import random
+
 
 # ............................... Function .................................. #
 def sensorTypes():
@@ -68,6 +70,7 @@ class SensorFrame(FellesFrame):
     """
         Button Class
     """
+    
     # ------------------------------- Method --------------------------------- #
     def __init__(self, parent=None, *args, **kwargs):
         super(SensorFrame, self).__init__( *args, **kwargs)
@@ -80,8 +83,8 @@ class SensorFrame(FellesFrame):
         self.InitUI()
         self.Show()
 
-        pub.subscribe(self.UpdateFrame, "s")
         self.timer.start()
+
     # ------------------------------- Method --------------------------------- #
     def InitUI(self):
         self.panel = Panel(self, ID_ANY)
@@ -90,7 +93,13 @@ class SensorFrame(FellesFrame):
         top_sizer = BoxSizer(VERTICAL)
         title_sizer = BoxSizer(HORIZONTAL)
         grid_sizer = GridSizer(rows=len(self.sensors)+1, cols=2, hgap=5, vgap=5)
-
+        
+        # NOTE: s() executes the __call__ method in the ExtendedRef class,
+        #       which in turn executes the __call__ method in the Sensor class.
+        #       Finally, the Sensor returns a dictionary (self).
+        #
+        #       This means that s()['label'] is simply a way of looking up the
+        #       'label' key of a Sensor.         
         self.gLabel = { s()['label']: StaticText(self, label=s()['label']) for s in self.sensors }
         self.gValue = { s()['label']: StaticText(self, label=str(SensorRealTimeData[s()['label']])) for s in self.sensors }
 
@@ -117,10 +126,6 @@ class SensorFrame(FellesFrame):
         Method for updating GUI
         """
         for s in self.sensors:
-
-            print SensorRealTimeData[s()['label']]
-            print SensorRealTimeData.__repr__
-            self.gValue[s()['label']].SetLabel('%.2f %s'%(random(), str(s()['unit'])))
-#            self.gValue[s()['label']].SetLabel('%.2f %s'%(SensorRealTimeData[s()['label']], str(s()['unit'])))
+            self.gValue[s()['label']].SetLabel('%.2f %s'%(SensorRealTimeData[s()['label']], str(s()['unit'])))
 
         self.top_sizer.Fit(self)

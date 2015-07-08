@@ -31,14 +31,11 @@ from threading import Thread
 from multiprocessing import Process
 from time import sleep, time
 from adam_modules import *
-from wx.lib.pubsub import setuparg1
-from wx.lib.pubsub import pub
-#
-from random import random
 
 #from FellesLab.Utils.SupportFunctions import sensorTypes
-from FellesLab.Utils.SupportClasses import ExtendedRef
+from FellesLab.Utils.SupportClasses import *
 from FellesLab.Utils.DataStorage import *
+
 
 # ............................... Function .................................. #
 def sensorTypes():
@@ -62,11 +59,10 @@ class Sensor(dict):
     """
     # Class variables, when edited will affect **all** sensors
     sample_rate = 1.7 # Default sampling rate
-    # data = RealTimeData # Data History
     SAMPLING = True # Default start sampling
-    thread = Process #
-    Data = RealTimeData()
+    thread = FellesSampler #
     Meta = MetaData()
+
     # List of object instances
     ___refs___ = []
 
@@ -75,6 +71,8 @@ class Sensor(dict):
         """
         constructor
         """
+        self.___refs___.append(ExtendedRef(self)) # Add instance to references
+
         # Instance variables, when edited will only affect the specific sensor
         if not kwargs.has_key('module'):
             Exception("The address if the Adam module")
@@ -110,12 +108,15 @@ class Sensor(dict):
             for (index,event) in enumerate(kwargs['events']):
                 kwargs['events'][index] = event(self)
 
-        self.process = self.thread(target=self.StartSampling)
+        # Create instance of process, **not** started here.
+        self.process = self.thread(group=None, target=self.StartSampling, source=self)
+        
         SensorRealTimeData[kwargs['label']] = 0.0
 
 
         super(Sensor, self).__init__(*args, **kwargs)
-        self.___refs___.append(ExtendedRef(self)) # Add instance to references
+
+        # Start process in "idle" mode, i.e. without storing data
         self.Idle_sampling()
 
     # ------------------------------- Method -------------------------------- #
@@ -127,7 +128,8 @@ class Sensor(dict):
         """
             asdf
         """
-        time()
+        self.time = time()
+        self.calls = 0
         self.process.start()
 
     # ------------------------------- Method -------------------------------- #
@@ -135,32 +137,19 @@ class Sensor(dict):
         """
             asdf
         """
-        while self.SAMPLING:
-            sleep(self['sample_speed'])
-            print "Sampling speed %.2f from %s" %( round(self['sample_speed'], 2), self['label'])
-            self.Change_rate()
-            SensorRealTimeData[self['label']] = random()
-            print SensorRealTimeData[self['label']] 
-            print SensorRealTimeData.__repr__
-        self.StopSampling()
+        SensorRealTimeData.__setitem__(self, self['label'], self.module.get_analog_in())
+
+        self.calls += 1
+        if self.calls > 10:
+            self.SAMPLING=False
+
     # ------------------------------- Method -------------------------------- #
     def StopSampling(self, event=None):
         """
            asdf
         """
-        print "Terminating process '%s'" %(self['label'])
-        #self.process.terminate()
-
-    # ------------------------------- Method -------------------------------- #
-    def Change_rate(self, event=None):
-        """
-            asdf
-        """
-        self['sample_speed'] -= random()
-        print "Changing rate"
-        pub.sendMessage("s", random())
-        if self['sample_speed'] < 0.1:
-            self.SAMPLING = False
+        print "Process '%s' terminated by event: '%s'" %(self['label'], event)
+        event.stop()
 
     # ------------------------------- Method -------------------------------- #
     def __repr__(self):
@@ -169,10 +158,11 @@ class Sensor(dict):
             self.__class__.__name__,
             hex(id(self))
         )
+
 # ================================ Class ==================================== #
 class Temperature(Sensor):
     """
-        Temperature sensor class
+        Syntactic sugar... 
     """
     # ------------------------------- Method -------------------------------- #
     def __init__(self, *args, **kwargs):
@@ -181,7 +171,7 @@ class Temperature(Sensor):
 # ================================ Class ==================================== #
 class Voltage(Sensor):
     """
-        Voltage sensor class
+        Syntactic sugar... 
     """
     # ------------------------------- Method -------------------------------- #
     def __init__(self, *args, **kwargs):

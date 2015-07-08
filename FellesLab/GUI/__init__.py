@@ -24,5 +24,5 @@ o888o     `Y8bod8P'o888oo888o`Y8bod8P'8""888P'  o888ooooood8`Y888""8o `Y8bod8P'
 
 """
 
-from GUI import FellesFrame, FellesButton, FellesTextInput, FellesLabel
+from GUI import FellesFrame, FellesButton, FellesTextInput, FellesLabel, FellesApp
 from SensorGUI import SensorFrame

@@ -33,6 +33,7 @@ __date__      = "$Date: 2015-06-23 (Tue, 23 Jun 2015) $"
 
 import minimalmodbus
 from utils import scan_ports
+from random import random
 
 # ================================= Class =================================== #
 class DummySerial(object):
@@ -59,7 +60,6 @@ class DummyModbus(object):
     """
     Dummy class impersonating any Adam module
     """
-    from random import random
 
     def __init__(self, *args, **kwargs):
         self.slaveaddress = 'slaveaddress'
@@ -70,7 +70,7 @@ class DummyModbus(object):
         return random()
     # ------------------------------- Method -------------------------------- #
     def read_registers(self, channel, number_of_channels):
-        return list()
+        return random()
     # ------------------------------- Method -------------------------------- #
     def read_bit(self, channel):
         return None

@@ -22,6 +22,17 @@ o888o     `Y8bod8P'o888oo888o`Y8bod8P'8""888P'  o888ooooood8`Y888""8o `Y8bod8P'
 @change:
 @note:
 
+[manual](http://minimalmodbus.sourceforge.net/minimalmodbus.pdf)
+
+Data type in slave |      Read       | Function |      Write       | Function| 
+-------------------|-----------------|----------|------------------|---------|
+Bit                | read_bit()      | 2 [or 1] | write_bit()      |  5 [15] | 
+Register Integer   | read_register() | 3 [or 4] | write_register() | 16 [ 6] | 
+Long (32bits=2regs)| read_long()     | 3 [or 4] | write_long()     | 16      | 
+Float(32 or 64bits)| read_float()    | 3 [or 4] | write_float()    | 16      | 
+String             | read_string()   | 3 [or 4] | write_string()   | 16      | 
+Registers Integers | read_registers()| 3 [or 4] | write_registers()| 16      | 
+
 """
 
 import minimalmodbus
@@ -143,7 +154,7 @@ class AlicatModule(Device):
         return  super(AlicatModule, cls).__new__(cls)
 
     # ------------------------------- Method -------------------------------- #
-    def __init__(self, port="/dev/ttyUSB0", baudrate=19200, address="A", timeout=0.25)
+    def __init__(self, port="/dev/ttyUSB0", baudrate=19200, address="A", timeout=0.25):
         """
         Connects with the appropriate USB / serial port.
 

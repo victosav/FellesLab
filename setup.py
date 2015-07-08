@@ -32,9 +32,9 @@ setup(
     description='Laboratory Framework',
     author='Sigve Karolius',
     url='https//sigveka.github.io/FellesLab',
-    packages=['FellesLab','adam_modules','mac_motor_module', 'alicat'],
+    packages=['FellesLab','adam_modules','mac_motor_module', 'alicat_devices'],
     install_requires=["pyserial","minimalmodbus"],
-    package_dir={ 'FellesLab':'FellesLab', 'adam_modules':'adam_modules', 'mac_motor_module':'mac_motor_module', 'alicat_devices':'alicat'},
+    package_dir={ 'FellesLab':'FellesLab', 'adam_modules':'adam_modules', 'mac_motor_module':'mac_motor_module', 'alicat_devices':'alicat_devices'},
     package_data={'FellesLab': ['Equipment/*.py','GUI/*.py','Utils/*.py'] , 'adam_modules':['utils/*.py']},
       long_description="""\
       FellesLab is a framework for reading information between lab units...
