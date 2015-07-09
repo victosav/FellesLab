@@ -55,32 +55,48 @@ class FellesPlot(wx.Frame):
         self.ymax = min( [ max(c().data.history['data']) for c in self.candidates ] )
 
         # setting up plot
-        self.plotpanel = wxmplot.PlotPanel(parent=self, size=(500, 350), dpi=100)
-        self.plotpanel.messenger = self.write_message
+        self.plot_panel = wxmplot.PlotPanel(parent=self, size=(500, 350), dpi=100)
+        self.plot_panel.messenger = self.write_message
 
         # adding sizer
         self.panel_sizer = wx.BoxSizer()
-        self.panel_sizer.Add(self.plotpanel)
+        self.panel_sizer.Add(self.plot_panel)
 
         # assigning the sizer to the panel
         self.SetSizer(self.panel_sizer)
 
-        # Retrieve plot data
-        self.plots = {}
-        print self.PlotData()
-        for id,dct in self.PlotData().iteritems():
-            #self.plots[id] = self.plotpanel.oplot(
-            self.plotpanel.oplot(
-                                   dct['x'],
-                                   dct['y'],
-                                   side ='left',
-                                   label = dct['label'],
-                                   color = dct['color'],
-                                   show_legend=True,
-                                   style = 'solid',
-                                   draw=False,
-                                   grid=True,
-                                 )
+        self.plotIDs = [ c().ID for c in self.candidates ]
+#         self.plots = {}
+#         data = self.PlotData()
+#         for i,id in enumerate(self.plotIDs):
+#             if i == 0:
+#                 self.plots[id] = self.plot_panel.plot(
+#                 #self.plot_panel.oplot(
+#                                    data[id]['x'],
+#                                    data[id]['y'],
+#                                    side ='left',
+#                                    label = data[id]['label'],
+#                                    color = data[id]['color'],
+# #                                   show_legend=True,
+#                                    marker = 'None',
+#                                    drawstyle='line',
+#                                    style = 'solid',
+#                                    grid=True,
+#                                  )
+#             else:
+#                 self.plots[id] = self.plot_panel.oplot(
+#                 #self.plot_panel.oplot(
+#                                    data[id]['x'],
+#                                    data[id]['y'],
+#                                    side ='left',
+#                                    label = data[id]['label'],
+#                                    color = data[id]['color'],
+#                                    show_legend=True,
+#                                    marker = 'None',
+#                                    drawstyle='line',
+#                                    style = 'solid',
+#                                    grid=True,
+#                                  )
 
         # fit the sizer to the panel
         self.Fit()
@@ -97,11 +113,27 @@ class FellesPlot(wx.Frame):
         # Retrieve plot data
         data = self.PlotData()
 
-#         for id in data.iterkeys():
-#             #self.plots[id] = self.plotpanel.update_line(0, data[id]['x'], data[id]['y'], side ='left')
-#             self.plotpanel.update_line(0, data[id]['x'], data[id]['y'], draw=False)
+        for id in self.plotIDs:
+                self.plot_panel.oplot(
+                #self.plot_panel.oplot(
+                                   data[id]['x'],
+                                   data[id]['y'],
+                                   side ='left',
+                                   label = data[id]['label'],
+                                   color = data[id]['color'],
+#                                   show_legend=True,
+                                   marker = 'None',
+                                   drawstyle='line',
+                                   style = 'solid',
+                                   grid=True,
+                                 )
 
-        self.plotpanel.set_xylims([ floor(min( [ min(data[id]['x']) for id in data.iterkeys()] )),\
+ #           self.plots[id] = self.plot_panel.update_line(0, data[id]['x'], data[id]['y'] )
+
+            #self.plot_panel.update_line(0, data[id]['x'], data[id]['y'], draw=True)
+
+
+        self.plot_panel.set_xylims([ floor(min( [ min(data[id]['x']) for id in data.iterkeys()] )),\
                                     ceil( max( [ max(data[id]['x']) for id in data.iterkeys()] )),\
                                     floor(min( [ min(data[id]['y']) for id in data.iterkeys()] )),\
                                     ceil( max( [ max(data[id]['y']) for id in data.iterkeys()] ))\
