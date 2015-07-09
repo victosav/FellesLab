@@ -179,6 +179,7 @@ class FellesFrame(Frame):
     def UpdateFrame(self):
         NotImplementedError("Quit method is not implemented")
 
+
 # =============================== Class ====================================== #
 class FellesButton(Button):
     """

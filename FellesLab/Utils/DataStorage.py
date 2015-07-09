@@ -98,11 +98,6 @@ class MetaData(dict):
     def __init__(self, *args, **kwargs):
         super(MetaData, self).__init__(kwargs)
 
-
-# Instatiate data objects
-SensorMetaData = MetaData()
-SensorRealTimeData = RealTimeData()
-
 # ............................... Function .................................. #
 def timeStamp():
     """
@@ -137,83 +132,68 @@ class DataStorage(object):
     * Provide historical data to plotter.
     
     """
+    file_path = '%s/Desktop/'%(os.path.expanduser("~"))
+    
     # ------------------------------- Method -------------------------------- #
-    def __init__(self, file_path='%s/Desktop/'%(os.path.expanduser("~")), store_length=40, remove_length=10):
-        self.store_length = store_length
-        self.remove_length = remove_length
-        self.data_writer = WriteDataToFile('%s/Desktop/'%(os.path.expanduser("~")), timeStamp() )
+    def __init__(self, owner):
+        """
+        args:
+          owner (instance): Parent object to which the DataStorage instance belongs
+        """
+        
+        self.owner = owner
 
-    # ------------------------------- Method -------------------------------- #
-    def add_data(self, new_data):
-        try:
-            for key in new_data:
-                self.data[key].extend(new_data[key])
-        except AttributeError:
-            self.data = dict()
-            for key in new_data:
-                self.data[key] = MyList()
-            self.data_writer.write_header(self.data)
-            self.add_data(new_data)
+        # Create a vector holding historical data for the purpose of plotting.
+        # The length may vary because the sampling speed of the units are 
+        # different. Moreover
+        history_length = xrange(int(round(owner.plot_config['time_span']/owner.meta['sample_speed'])))
+        self.history = {'time': collections.deque( history_length, len(history_length) ),\
+                        'data': collections.deque( history_length, len(history_length) )
+                        }
+        del history_length
 
-        # writing older data to file
-        if self.data[self.data.keys()[0]].length > self.store_length:
-            self.data_writer.write_data(self.remove_data(self.remove_length))
+#        self.writer = WriteData( self )
     
-    # ------------------------------- Method -------------------------------- #
-    def get_data(self):
-        return self.data
-    
-    # ------------------------------- Method -------------------------------- #
-    def remove_data(self, remove_length):
-        data_temp = dict()
-        for key in self.data:
-            data_temp[key] = self.data[key].longpop(length=remove_length)
-        return data_temp
-    
-    # ------------------------------- Method -------------------------------- #
-    def write_and_delete_data(self): 
-    # intended for storing the rest of the data after closing the application
-        print('removing and writing all data')
-        self.data_writer.write_data(self.remove_data(self.data[self.data.keys()[0]].length))
+    def Update(self, time, val):
+        self.history['data'].append(val)
+        self.history['time'].append(time)
+
+        self.val = val
+
+#        self.writer.Write('self')
+
+        return None
+
 
 # =============================== Class ===================================== #
-class WriteDataToFile:
+class WriteData:
     """
     
     """
+    SAVE_PATH = '%s/Desktop/'%(os.path.expanduser("~"))
+    SAVE_NAME = timeStamp()
     # ------------------------------- Method -------------------------------- #
-    def __init__(self, path_to_save_file, name_of_save_file):
+    def __init__(self, parent, save_path=None, save_name=None):
         ''' Create a save object '''
-        self.path_to_save_file = path_to_save_file
-        self.name_of_save_file = name_of_save_file
-    
-    # ------------------------------- Method -------------------------------- #
-    def write_header(self, data):
-        os.chdir(self.path_to_save_file)
-        openfile = open(self.name_of_save_file,'a')
-        
-        header_string = ', '.join(data.keys())
-        
-        openfile.write(str(header_string))
-        openfile.write('\n')
-        openfile.close()
-    
-    # ------------------------------- Method -------------------------------- #
-    def write_data(self, data):
-        ''' When called it will write the data (dict) to the file'''
-        os.chdir(self.path_to_save_file)
-        openfile = open(self.name_of_save_file,'a')
 
-        tmp_list = list()
+        self.parent = parent
 
-        for key in data:
-            tmp_list.append((data[key]))
+        if not save_path:
+            self.savePath = self.SAVE_PATH
+        else:
+            self.savePath = save_path
             
-        tmp_list = zip(*tmp_list)
-        
-        
-        for list_element in tmp_list:
-            list_element = ', '.join(map(str, list_element)) #Separe data by commas
-            openfile.write(str(list_element))
-            openfile.write('\n')
-        openfile.close()
+        if not save_name:
+            self.saveName = self.SAVE_NAME
+        else:
+            self.saveName = save_name
+
+        with open(self.savePath + self.saveName,'a') as self.f:
+            self.f.write( 'time' + ',' + self.parent.__class__.__name__)
+            while parent.owner.SAMPLING:
+                pass
+            self.f.close()
+
+    def Writer(self, parent=None):
+        if parent:
+            self.f.write( str(self.parent.history['time'][-1]) + ',' + str( parent.history['data'][-1]) ) 

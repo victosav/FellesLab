@@ -168,7 +168,14 @@ class AdamModule(object):
         else:
             super(AdamModule, self).__init__(kwargs['port'], kwargs['slaveaddress'], mode=kwargs['mode'])
 
-        #self.Configure()
+        self.metaData = {
+            'port' : 'asdf',#self.serial.port,
+            'baudrate' : 'asdf',#self.serial.baudrate,
+            'bytesize' : 'asdf',#self.serial.bytesize, 
+            'parity' : 'asdf',#self.serial.parity,
+            'timeout' : 'asdf',#self.serial.timeout,
+        }
+
     # ------------------------------- Method -------------------------------- #
     def Configure(self, **config):
         """
@@ -226,6 +233,20 @@ class AdamModule(object):
         else:
             print('Channel input outside available channels: [0, ' + str(number_of_channels) + ']')
             return False
+
+    # ------------------------------- Method -------------------------------- #
+    def __getitem__(self, key):
+        """
+        Method for retrieving meta information
+        """
+        return self.metaData[key]
+        
+    def __setitem__(self, key, val):
+        """
+        Method for setting meta information
+        """
+        self.metaData[key] = val
+        return None
 
 # ================================= Class =================================== #
 class AnalogIn(AdamModule):

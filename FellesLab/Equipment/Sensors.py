@@ -34,7 +34,7 @@ from adam_modules import *
 
 #from FellesLab.Utils.SupportFunctions import sensorTypes
 from FellesLab.Utils.SupportClasses import *
-from FellesLab.Utils.DataStorage import *
+from FellesLab.Utils.DataStorage import MetaData, DataStorage
 
 
 # ............................... Function .................................. #
@@ -60,87 +60,82 @@ class Sensor(dict):
     # Class variables, when edited will affect **all** sensors
     sample_rate = 1.7 # Default sampling rate
     SAMPLING = True # Default start sampling
-    thread = FellesSampler #
-    Meta = MetaData()
+
+    # Create, Objects
+    Sampler = FellesSampler # thread used to perform sampling
+    Meta = MetaData # Dictionary containing meta data
+    Data = DataStorage # Dictionary containing sampling data
 
     # List of object instances
     ___refs___ = []
 
     # ------------------------------- Method -------------------------------- #
-    def __init__(self, *args, **kwargs):
+    def __init__(self, module, meta_data={}, plot_config={}, data_config={}):
         """
         constructor
+        args:
+            module
+            meta_data
+            plot_config
+            data_config
+        
+        class variables:
+        
+        instance variables:
+          self.module (instance)
+          self.Data (instance)
+          self.Meta (instance)
+          self.Sampler (instance)
+          self.thread (instance)
         """
         self.___refs___.append(ExtendedRef(self)) # Add instance to references
 
-        # Instance variables, when edited will only affect the specific sensor
-        if not kwargs.has_key('module'):
-            Exception("The address if the Adam module")
+        self.ID = hex(id(self)) # ID used to look up objects (Will change for each run!)
 
-        self.module = kwargs['module']
+        self.module = module
+        meta_data.update(self.module.metaData) # Add module metadata to kwargs
 
         # Check for label
-        if not kwargs.has_key('label'):
+        if not meta_data.has_key('label'):
             # Result: '<Sensor Type> <INT>', e.g. 'Temperature 1'
-            kwargs['label'] = '%s %d' %(self.__class__.__name__, len(sensorTypes()[self.__class__.__name__]) )
+            meta_data['label'] = '%s %d' %(self.__class__.__name__, len(sensorTypes()[self.__class__.__name__]) )
 
         # Check for unit
-        if not kwargs.has_key('unit'):
-            kwargs['unit'] = ' '
+        if not meta_data.has_key('unit'):
+            meta_data['unit'] = ' '
 
         # Setting sampling speed (four cases are possible):
-        # 1. User provides 'sample_rate' but not 'sample_speed'
-        if kwargs.has_key('sample_rate') and not kwargs.has_key('sample_speed'):
-            self['sample_speed'] = kwargs['sample_rate']
-        # 2. User does not provide 'sample_rate', but 'sample_speed'
-        elif not kwargs.has_key('sample_rate') and kwargs.has_key('sample_speed'):
-            self['sample_speed'] = kwargs['sample_speed']
-        # 3. User provides both 'sample_rate' and 'sample_speed'
-        elif kwargs.has_key('sample_rate') and kwargs.has_key('sample_speed'):
-            print "Provided both sample speed and sample rate"
-            self['sample_speed'] = kwargs['sample_rate']
-        # 4. User provides neither 'sample_rate' or 'sample_speed'
-        else:
-            self['sample_speed'] = self.sample_rate # Default use "sample rate"
+        if not meta_data.has_key('sample_speed'):
+            meta_data['sample_speed'] = self.sample_rate
 
-        # Check for events...
-        if kwargs['events']:
-            for (index,event) in enumerate(kwargs['events']):
-                kwargs['events'][index] = event(self)
-
-        # Create instance of process, **not** started here.
-        self.process = self.thread(group=None, target=self.StartSampling, source=self)
+        self.plot_config = plot_config
+        self.thread = self.Sampler(group=None, target=self.Sample, source=self)
+        self.meta = self.Meta(**meta_data) # Dict object with **static** metadata
+        self.data = self.Data(self) # Dict object reading and writing data, capable of reporting to onClose
         
-        SensorRealTimeData[kwargs['label']] = 0.0
-
-
-        super(Sensor, self).__init__(*args, **kwargs)
-
-        # Start process in "idle" mode, i.e. without storing data
-        self.Idle_sampling()
-
+        self.t0 = time()
+        self.calls = 0
+        self.thread.start()
     # ------------------------------- Method -------------------------------- #
     def __call__(self):
         return self
 
     # ------------------------------- Method -------------------------------- #
-    def Idle_sampling(self):
+    def Timer(self):
         """
             asdf
         """
-        self.time = time()
-        self.calls = 0
-        self.process.start()
+        return self.t0 - time()
 
     # ------------------------------- Method -------------------------------- #
-    def StartSampling(self, event=None):
+    def Sample(self, event=None):
         """
             asdf
         """
-        SensorRealTimeData.__setitem__(self, self['label'], self.module.get_analog_in())
+        self.data.Update( self.Timer(), self.module.get_analog_in() ) 
 
         self.calls += 1
-        if self.calls > 10:
+        if self.calls > 20:
             self.SAMPLING=False
 
     # ------------------------------- Method -------------------------------- #

@@ -31,7 +31,7 @@ import multiprocessing
 
 from threading import Thread
 
-from DataStorage import SensorRealTimeData
+# from DataStorage import SensorRealTimeData
     
 # ================================ Class ==================================== #
 # class FellesNamespace(Namespace):
@@ -76,7 +76,7 @@ class FellesSampler(Thread):
         """
         while self.source.SAMPLING:
             self.target()
-            sleep(self.source['sample_speed'])
+            sleep(self.source.meta['sample_speed'])
 
 
 # ================================ Class ==================================== #

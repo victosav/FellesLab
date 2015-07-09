@@ -24,24 +24,11 @@ o888o     `Y8bod8P'o888oo888o`Y8bod8P'8""888P'  o888ooooood8`Y888""8o `Y8bod8P'
 
 """
 
-# Classes
-from wx import Frame, Button, StaticText, StaticLine, Panel
-# Sizes
-from wx import DefaultSize, VERTICAL, HORIZONTAL, GridSizer, BoxSizer, EXPAND,\
-               ALL, CENTER
-# Styles
-from wx import DEFAULT_FRAME_STYLE
-# Positions
-from wx import DefaultPosition
-# Events
-from wx import EVT_BUTTON, ID_ANY#, EVT_SPINCTRLDOUBLE
-# Basic GUI classes
+import wx
+#
 from GUI import FellesFrame, FellesButton, FellesTextInput, FellesLabel
 #
 from FellesLab.Equipment import Sensor#, sensorTypes
-#
-from wx.lib.pubsub import setuparg1
-from wx.lib.pubsub import pub
 #
 #from FellesLab.Utils.SupportFunctions import sensorTypes
 from FellesLab.Utils.DataStorage import *
@@ -87,34 +74,34 @@ class SensorFrame(FellesFrame):
 
     # ------------------------------- Method --------------------------------- #
     def InitUI(self):
-        self.panel = Panel(self, ID_ANY)
+        self.panel = wx.Panel(self, wx.ID_ANY)
 
         # adding sizers
-        top_sizer = BoxSizer(VERTICAL)
-        title_sizer = BoxSizer(HORIZONTAL)
-        grid_sizer = GridSizer(rows=len(self.sensors)+1, cols=2, hgap=5, vgap=5)
+        top_sizer = wx.BoxSizer(wx.VERTICAL)
+        title_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        grid_sizer = wx.GridSizer(rows=len(self.sensors)+1, cols=2, hgap=5, vgap=5)
         
         # NOTE: s() executes the __call__ method in the ExtendedRef class,
         #       which in turn executes the __call__ method in the Sensor class.
-        #       Finally, the Sensor returns a dictionary (self).
+        #       Finally, the Sensor returns itself.
         #
-        #       This means that s()['label'] is simply a way of looking up the
+        #       This means that s().meta['label'] is simply a way of looking up the
         #       'label' key of a Sensor.         
-        self.gLabel = { s()['label']: StaticText(self, label=s()['label']) for s in self.sensors }
-        self.gValue = { s()['label']: StaticText(self, label=str(SensorRealTimeData[s()['label']])) for s in self.sensors }
+        self.gLabel = { s().meta['label']: wx.StaticText(self, label=s().meta['label']) for s in self.sensors }
+        self.gValue = { s().meta['label']: wx.StaticText(self, label=str(s().data.val)) for s in self.sensors }
 
         for s in self.sensors:
-            grid_sizer.Add( self.gLabel[s()['label']] , 0, ALL, 5 )
-            grid_sizer.Add( self.gValue[s()['label']] , 0, ALL, 5 )
+            grid_sizer.Add( self.gLabel[s().meta['label']] , 0, wx.ALL, 5 )
+            grid_sizer.Add( self.gValue[s().meta['label']] , 0, wx.ALL, 5 )
 
         # arranging and sizing the widgets
         # alignment of title
-        title_sizer.Add(StaticText(self, label=self.GetTitle()), 0, ALL, 5)
+        title_sizer.Add(wx.StaticText(self, label=self.GetTitle()), 0, wx.ALL, 5)
 
         # overall arrangement of the panel
-        top_sizer.Add(title_sizer, 0, CENTER)
-        top_sizer.Add(StaticLine(self.panel), 0, ALL|EXPAND, 5)
-        top_sizer.Add(grid_sizer, 0, ALL|CENTER, 5)
+        top_sizer.Add(title_sizer, 0, wx.CENTER)
+        top_sizer.Add(wx.StaticLine(self.panel), 0, wx.ALL|wx.EXPAND, 5)
+        top_sizer.Add(grid_sizer, 0, wx.ALL|wx.CENTER, 5)
 
         self.panel.SetSizerAndFit(top_sizer)
         top_sizer.Fit(self)
@@ -126,6 +113,13 @@ class SensorFrame(FellesFrame):
         Method for updating GUI
         """
         for s in self.sensors:
-            self.gValue[s()['label']].SetLabel('%.2f %s'%(SensorRealTimeData[s()['label']], str(s()['unit'])))
+            self.gValue[s().meta['label']].SetLabel('%.2f %s'%(s().data.val, str(s().meta['unit'])))
 
         self.top_sizer.Fit(self)
+
+    # ------------------------------- Method --------------------------------- #
+    def ShowPlots(self):
+        """
+        
+        """
+        pass
