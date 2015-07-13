@@ -63,33 +63,61 @@ def findSensors(ID):
 # =============================== Class ====================================== #
 class SensorFrame(FellesFrame):
     """
-        Button Class
+    @summary: Parent class frame for sensors. Each sensor **type**, e.g. 
+              Temperature, will have ONE sensor frame keeping track of the 
+              output from **all** the sensors.
+
+                                    +--------------+
+                                    |  Temperature |
+                                    |              |
+                                    |  T1   298 K  |
+                                    |  T2    25 C  |
+                                    .  :     :  :  .
+                                    .  :     :  :  .
+                                    +--------------+
+
+              The class **must** be initiated **after** **all** sensors have
+              been defined. The reason is that the constructor will locate all
+              sensort
     """
     
     # ------------------------------- Method --------------------------------- #
-    def __init__(self, parent=None, *args, **kwargs):
+    def __init__(self, parent=None, debug=False, *args, **kwargs):
+        """
+        TODO: create debug mode.
+        
+        Constructor method
+        
+        args:
+            title (str): REQUIRED
+        """
         super(SensorFrame, self).__init__( *args, **kwargs)
+        
+        wx.EVT_CLOSE(self, self.StopSamplers)
 
         self.sensors = sensorTypes()[self.GetLabel()]
         
         # Dictionary keeping track of which sensors to plot
         self.plot_config = { s().ID : s().plot_config for s in self.sensors}
-        
-        # findSensors( self.plot_config.keys() )
-        
-        self.gLabel = dict()
-        self.gValue = dict()
 
-        self.InitUI()
-        self.Show()
 
-        self.plot = self.Plot()
-        self.plot.Show()
+        self.gLabel = dict() # Labels, i.e. Sensor 1, 2, ...
+        self.gValue = dict() # Values, i.e. measurements ...
+
+        self.InitUI() # Create frame
+        self.Show()   # Show frame
+
+        self.plot = self.Plot() # Initiate Plot
+        self.plot.Show() # Show frame
 
         self.timer.start()
     # ------------------------------- Method --------------------------------- #
     def InitUI(self):
         self.panel = wx.Panel(self, wx.ID_ANY)
+
+#         closeBtn = wx.Button(self.panel, label="Close")
+#         closeBtn.Bind(wx.EVT_BUTTON, self.onClose)
+
 
         # adding sizers
         top_sizer = wx.BoxSizer(wx.VERTICAL)
@@ -132,13 +160,34 @@ class SensorFrame(FellesFrame):
         for s in self.sensors:
             self.gValue[s().meta['label']].SetLabel('%.2f %s'%(s().data.val, str(s().meta['unit'])))
         self.top_sizer.Fit(self)
-        
-        self.plot.UpdatePlot( )
-        
+        self.plot.UpdatePlot()
 
+    def Dummy(self, *args, **kwargs):
+        pass
+
+    # ------------------------------- Method --------------------------------- #
+    def StopSamplers(self, event):
+        """
+        Method stopping sampler threads AND GUI update thread.
+        """
+        for s in self.sensors:
+            s().SAMPLE = False
+
+        self.timer.target = self.Dummy
+        self.SAMPLE = False
+
+        self.onClose(self)
+        
     # ------------------------------- Method --------------------------------- #
     def Plot(self):
         """
         
         """
         return FellesPlot( parent=self, sensors = self.sensors )
+    # ------------------------------- Method --------------------------------- #
+    def onClose(self, event):
+        """"""
+        print "closing"
+
+        self.plot.onClose(self)
+        self.Destroy()

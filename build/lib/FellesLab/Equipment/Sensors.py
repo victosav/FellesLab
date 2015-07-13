@@ -109,6 +109,7 @@ class Sensor(dict):
             meta_data['sample_speed'] = self.sample_rate
 
         self.plot_config = plot_config
+        self.data_config = data_config
         self.thread = self.Sampler(group=None, target=self.Sample, source=self)
         self.meta = self.Meta(**meta_data) # Dict object with **static** metadata
         self.data = self.Data(self) # Dict object reading and writing data, capable of reporting to onClose
@@ -118,19 +119,28 @@ class Sensor(dict):
         self.thread.start()
     # ------------------------------- Method -------------------------------- #
     def __call__(self):
+        """
+        Magic method, executed when the object is called.
+        
+        returns: 
+            THE object instance
+        """
         return self
 
     # ------------------------------- Method -------------------------------- #
     def Timer(self):
         """
-            asdf
+        Timer method, keeping track of the time since the sampling started
+        
+        returns:
+            Elapsed time
         """
         return time() - self.t0
 
     # ------------------------------- Method -------------------------------- #
     def Sample(self, event=None):
         """
-            asdf
+            
         """
         self.data.Update( self.Timer(), self.module.get_analog_in() )
 
@@ -143,9 +153,14 @@ class Sensor(dict):
         """
            asdf
         """
-        print "Process '%s' terminated by event: '%s'" %(self['label'], event)
-        event.stop()
+        self.SAMPLING = False
 
+        # Make sure the thread terminates
+        while self.Sampler.isAlive():
+            pass
+
+        print "Process '%s' terminated by event: '%s'" %(self['label'], event)
+    
     # ------------------------------- Method -------------------------------- #
     def __repr__(self):
         return '<%s.%s sensor_instance at %s>' % (

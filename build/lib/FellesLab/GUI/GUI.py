@@ -31,23 +31,6 @@ __date__      = "$Date: 2015-06-23 (Tue, 23 Jun 2015) $"
 
 
 import wx
-# Classes
-from wx import Frame, Button, StaticText, StaticLine, Panel, TextCtrl,\
-               SpinCtrl, App #, SpinCtrlDouble
-# Sizes
-from wx import DefaultSize, VERTICAL, HORIZONTAL, GridSizer, BoxSizer, EXPAND,\
-               ALL, CENTER
-# Styles
-from wx import DEFAULT_FRAME_STYLE, TE_MULTILINE, SYSTEM_MENU, CAPTION, CLOSE_BOX
-# Positions
-from wx import DefaultPosition
-# Events
-from wx import EVT_BUTTON,ID_ANY, EVT_SPINCTRL, EVT_CLOSE #, EVT_SPINCTRLDOUBLE
-#
-from FellesLab.Equipment import Sensor
-#
-from wx.lib.pubsub import setuparg1
-from wx.lib.pubsub import pub
 #
 from time import sleep, time
 #
@@ -70,27 +53,100 @@ def sensorTypes():
     return types
 
 
-# =============================== Class ====================================== #
-class FellesApp(App):
-    """
-    
-    """
+class Panel(wx.Panel):
+    def __init__(self, parent, id, pos, size):
+        wx.Panel.__init__(self, parent, id, pos, size) 
+
+class Frame(wx.Frame):
+    def __init__(self, parent, id, title, pos, size, style):
+        wx.Frame.__init__(self, parent, id, title, pos, size, style)
+        framePanel = wx.Panel(self)
+        self.userpanel = Panel(framePanel, -1, (0,0), (300,180))
+        self.userpanel.SetBackgroundColour('Gold')
+
+class FellesApp(wx.App):
+
     def __init__(self):
         super(FellesApp, self).__init__()
-    
-    def OnInit(self):
-        MainFrame = Frame(None, -1, "Main ")
-        MainFrame.Show()
-        return True
+
+        self.InitUI()
+
+    def InitUI(self):
+        wx.App.__init__(self)
+        frame = Frame(None, -1, "Internet Login Tool", (-1,-1), (300,400),\
+        wx.DEFAULT_FRAME_STYLE ^ (wx.RESIZE_BORDER | wx.MAXIMIZE_BOX))
+        frame.Show()
+        self.SetTopWindow(frame)
+
 
 # =============================== Class ====================================== #
-class FellesFrame(Frame):
+class MainFrame(wx.Frame):
+    """
+    
+    """
+    # ------------------------------- Method --------------------------------- #  
+    def __init__(self, parent=None, *args, **kwargs):
+        """
+        Constructor
+        """
+        super(MainFrame, self).__init__(parent, **kwargs)
+        self.Bind(wx.EVT_CLOSE, self.OnClose)
+    
+    def InitUI(self):
+        """
+        Create 
+        """
+        # Create two buttons, Start/Stop sampling
+        # Stop sampling should close all windows and stop all threads
+        pass
+    
+    def StartSampling(self):
+        """
+        Start sampling, i.e. start writing numbers to file(s). 
+        
+        Disable all 
+        """
+        
+        pass
+    
+    def PauseSampling(self):
+        """
+        Pause sampling, i.e. stop writing numbers to file(s), but keep file open.
+        Print warning that the clock is "stupid" and will have sudden "jumps".
+
+        time  msrmnt
+        10.0  12345
+        10.5  54321
+        11.0  24135
+        40.5  41253
+
+        """
+        pass
+
+    def StopSampling(self):
+        """
+        Stop sampling, i.e. stop writing numbers to file(s), close files, 
+        print message, ask for filename, and close all windows. 
+        """
+        pass
+    
+    def OnClose(self, event):
+        """
+        1. StopSampling
+        2. close...
+        """
+        pass
+
+
+# =============================== Class ====================================== #
+class FellesFrame(wx.Frame):
     """
         Frame Class
     """
     sample_rate = 1.2 # Default sampling rate
     timer = GuiUpdater
     SAMPLING = True
+
     # ------------------------------- Method --------------------------------- #  
     def __init__(self, parent=None, *args, **kwargs):
 
@@ -104,35 +160,21 @@ class FellesFrame(Frame):
 
         # Check for size of frame
         if not kwargs.has_key('size'):
-            kwargs['size'] = DefaultSize
+            kwargs['size'] = wx.DefaultSize
 
         # Check for frame style
         if not kwargs.has_key('style'):
-            kwargs['style'] = DEFAULT_FRAME_STYLE
+            kwargs['style'] = wx.DEFAULT_FRAME_STYLE
 
         # Check for frame position
         if not kwargs.has_key('pos'):
-            kwargs['pos'] = DefaultPosition
+            kwargs['pos'] = wx.DefaultPosition
 
         super(FellesFrame, self).__init__(parent, *args, **kwargs)
-# 
-#         # Setting sampling speed (four cases are possible):
-#         # 1. User provides 'sample_rate' but not 'sample_speed'
-#         if kwargs.has_key('sample_rate') and not kwargs.has_key('sample_speed'):
-#             self.sample_speed = kwargs['sample_rate']
-#         # 2. User does not provide 'sample_rate', but 'sample_speed'
-#         elif not kwargs.has_key('sample_rate') and kwargs.has_key('sample_speed'):
-#             self.sample_speed = kwargs['sample_speed']
-#         # 3. User provides both 'sample_rate' and 'sample_speed'
-#         elif kwargs.has_key('sample_rate') and kwargs.has_key('sample_speed'):
-#             print "Provided both sample speed and sample rate"
-#             self.sample_speed = kwargs['sample_rate']
-#         # 4. User provides neither 'sample_rate' or 'sample_speed'
-#         else:
-#             self.sample_speed = self.sample_rate # Default use "sample rate"
+
 
         self.timer = GuiUpdater(group=None, target=self.UpdateFrame, source=self)
-        self.Bind(EVT_CLOSE, self.OnClose)
+        # self.Bind(wx.EVT_CLOSE, self.OnClose)
 
     # ------------------------------- Method --------------------------------- #
     def InitUI(self):
@@ -152,12 +194,6 @@ class FellesFrame(Frame):
 
         print "Stopping frame %s" %(self.__class__.__name__)
         
-        # Terminate sampling thread
-        self.SAMPLING = False
-        # Wait to destroy window until thread is terminated
-        while self.timer.isAlive():
-            pass
-        # Destroy window
         self.Destroy()
 
 #     # ------------------------------- Method --------------------------------- #
@@ -181,7 +217,7 @@ class FellesFrame(Frame):
 
 
 # =============================== Class ====================================== #
-class FellesButton(Button):
+class FellesButton(wx.Button):
     """
         Button Class
     """
@@ -213,7 +249,7 @@ class FellesButton(Button):
         # Create button
         super(FellesButton, self).__init__(*args, **kwargs)
         # Bind button to an event executed on click
-        self.Bind(EVT_BUTTON, self.OnButtonClicked)
+        self.Bind(wx.EVT_BUTTON, self.OnButtonClicked)
     # ------------------------------- Method --------------------------------- #
     def OnButtonClicked(self, event):
         """
@@ -229,7 +265,7 @@ class FellesButton(Button):
 
 
 # =============================== Class ====================================== #
-class FellesTextInput(SpinCtrl): #(SpinCtrlDouble):
+class FellesTextInput(wx.SpinCtrl): #(wx.SpinCtrlDouble):
     """
         Class
     """
@@ -258,14 +294,14 @@ class FellesTextInput(SpinCtrl): #(SpinCtrlDouble):
 
         super(FellesTextInput, self).__init__(*args, **kwargs)
         
-        self.Bind(EVT_SPINCTRL, self.OnSetpointChange)
-#        self.Bind(EVT_SPINCTRLDOUBLE, self.OnSetpointChange)
+        self.Bind(wx.EVT_SPINCTRL, self.OnSetpointChange)
+#        self.Bind(wx.EVT_SPINCTRLDOUBLE, self.OnSetpointChange)
     # ------------------------------- Method --------------------------------- #
     def OnSetpointChange(self, event):
         self.target(self, self.source)
 
 # =============================== Class ====================================== #
-class FellesLabel(StaticText):
+class FellesLabel(wx.StaticText):
     """
         Sugar class
     """

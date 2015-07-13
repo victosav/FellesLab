@@ -155,10 +155,11 @@ class DataStorage(object):
 #        self.writer = WriteData( self )
     
     def Update(self, time, val):
-        self.history['data'].append(val)
+        self.val = self.owner.data_config['calibrationCurve'](val)
+        self.history['data'].append(self.val)
         self.history['time'].append(time)
 
-        self.val = val
+        
 
 #        self.writer.Write('self')
 

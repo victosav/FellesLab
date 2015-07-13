@@ -31,38 +31,20 @@ import multiprocessing
 
 from threading import Thread
 
-# from DataStorage import SensorRealTimeData
-    
-# ================================ Class ==================================== #
-# class FellesNamespace(Namespace):
-#     """
-#     
-#     """
-#     # ------------------------------- Method -------------------------------- #
-#     def __init__(self, *args, **kwargs):
-#         super(FellesNamespace).__init__(*args, **kwargs)
-
-# ================================ Class ==================================== #
-# class FellesManager(SyncManager):
-#     """
-#     Sugar ...
-#     """
-#     # ------------------------------- Method -------------------------------- #
-#     def __init__(self, *args, **kwargs):
-#         """
-#         Constructor
-#         """
-#         super(FellesManager, self).__init__()
-
 # ================================ Class ==================================== #
 class FellesSampler(Thread):
     """
-    Sugar class
+    Thread class.
     """
     # ------------------------------- Method -------------------------------- #
-    def __init__(self, group=None, target=None, *args, **kwargs):
+    def __init__(self, group=None, target=None, source=None):
+        """
+        args:
+            target (callable): Method to execute
+            source (instance): Object to which the thread belongs
+        """
         self.target = target
-        self.source = kwargs['source']
+        self.source = source
 
         super(FellesSampler, self).__init__( )
 
@@ -78,7 +60,6 @@ class FellesSampler(Thread):
             self.target()
             sleep(self.source.meta['sample_speed'])
 
-
 # ================================ Class ==================================== #
 class GuiUpdater(Thread):
     """
@@ -86,7 +67,7 @@ class GuiUpdater(Thread):
     """
     # ------------------------------- Method -------------------------------- #
     def __init__(self, source, target, *args, **kwargs):
-        self.frame = target
+        self.target = target
         self.source = source
 
         super(GuiUpdater, self).__init__(None)
@@ -100,9 +81,10 @@ class GuiUpdater(Thread):
         rate" in the caller. 
         """
         while self.source.SAMPLING:
-            self.frame(self)
+            self.target(self)
             sleep(1)
 
+        self.source.onClose()
 
 # ================================ Class ==================================== #
 class ExtendedRef(weakref.ref):

@@ -44,10 +44,12 @@ class FellesPlot(wx.Frame):
         Constructor
         """
         super(FellesPlot, self).__init__(parent)
-        
+
         # Input: parent, X, Y, 
 
         self.candidates = kwargs['sensors']
+        self.parentFrame = parent
+        wx.EVT_CLOSE(self, self.onClose)
         #self.number_of_lines = len(plot_fields)
         self.first_time = True
 
@@ -157,6 +159,13 @@ class FellesPlot(wx.Frame):
                             }
         return data
 
+    # ------------------------------- Method --------------------------------- #
+    def onClose(self, event):
+        """
+        
+        """
+        print "closing plot"
+        self.Destroy()
 
 if __name__ == '__main__':
     app = wx.App()

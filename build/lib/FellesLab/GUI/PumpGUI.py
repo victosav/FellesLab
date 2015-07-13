@@ -64,12 +64,25 @@ class FellesViewPump(FellesFrame):
 
         # setting initial status of on/off buttons
         self.off()
-     
-    def set_title(self, name='Pump name'):
-    	self.label_name.SetLabel(name)
+    
+    # Pump operations
+    def turn_on_pump(self, pump_name):
+        self.pump[pump_name].set_motormode(1)
+        pub.sendMessage('pump_status_changed', pump_name=pump_name, pump_status='on')
 
-    def set_speed(self, speed=0):
-    	self.label_speed.SetLabel(str(speed))
+    def turn_off_pump(self, pump_name):
+        self.pump[pump_name].set_motormode(0)
+        pub.sendMessage('pump_status_changed', pump_name=pump_name, pump_status='off')
 
-    def set_speed_setpoint(self, setpoint=0):
-    	self.spin_setpoint.SetValue(float(setpoint)) 
+    def set_pump_speed_setpoint(self, pump_name, speed_rpm):
+        self.pump[pump_name].set_velocity(speed_rpm)
+        pub.sendMessage('pump_setpoint_changed', pump_name=pump_name, setpoint_speed=speed_rpm)
+
+    def get_pump_speed_setpoint(self, pump_name):
+        return self.pump[pump_name].get_setvelocity()
+
+    def get_pump_speed(self, pump_name):
+        return self.pump[pump_name].get_actualvelocity()
+    
+
+class Pump(FellesPump) 
