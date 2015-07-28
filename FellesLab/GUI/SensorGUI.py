@@ -59,12 +59,12 @@ def findSensors(ID):
     ID list. sensor.ID
     """
     return [s for s in Sensor.___refs___ if s().ID in ID]
-    
+
 # =============================== Class ====================================== #
 class SensorFrame(FellesFrame):
     """
-    @summary: Parent class frame for sensors. Each sensor **type**, e.g. 
-              Temperature, will have ONE sensor frame keeping track of the 
+    @summary: Parent class frame for sensors. Each sensor **type**, e.g.
+              Temperature, will have ONE sensor frame keeping track of the
               output from **all** the sensors.
 
                                     +--------------+
@@ -80,23 +80,23 @@ class SensorFrame(FellesFrame):
               been defined. The reason is that the constructor will locate all
               sensort
     """
-    
+
     # ------------------------------- Method --------------------------------- #
     def __init__(self, parent=None, debug=False, *args, **kwargs):
         """
         TODO: create debug mode.
-        
+
         Constructor method
-        
+
         args:
             title (str): REQUIRED
         """
         super(SensorFrame, self).__init__( *args, **kwargs)
-        
+
         wx.EVT_CLOSE(self, self.StopSamplers)
 
         self.sensors = sensorTypes()[self.GetLabel()]
-        
+
         # Dictionary keeping track of which sensors to plot
         self.plot_config = { s().ID : s().plot_config for s in self.sensors}
 
@@ -123,15 +123,15 @@ class SensorFrame(FellesFrame):
         top_sizer = wx.BoxSizer(wx.VERTICAL)
         title_sizer = wx.BoxSizer(wx.HORIZONTAL)
         grid_sizer = wx.GridSizer(rows=len(self.sensors)+1, cols=2, hgap=5, vgap=5)
-        
+
         # NOTE: s() executes the __call__ method in the ExtendedRef class,
         #       which in turn executes the __call__ method in the Sensor class.
         #       Finally, the Sensor returns itself.
         #
         #       This means that s().meta['label'] is simply a way of looking up the
-        #       'label' key of a Sensor.         
-        self.gLabel = { s().meta['label']: wx.StaticText(self, label=s().meta['label']) for s in self.sensors }
-        self.gValue = { s().meta['label']: wx.StaticText(self, label=str(s().data.val)) for s in self.sensors }
+        #       'label' key of a Sensor.
+        self.gLabel = { s().meta['label']: FellesLabel(self, wx.ID_ANY, label=s().meta['label'], style=wx.ALIGN_CENTER) for s in self.sensors }
+        self.gValue = { s().meta['label']: FellesLabel(self, wx.ID_ANY, label=str(s().data.val), style=wx.ALIGN_CENTER) for s in self.sensors }
 
         for s in self.sensors:
             grid_sizer.Add( self.gLabel[s().meta['label']] , 0, wx.ALL, 5 )
@@ -139,7 +139,7 @@ class SensorFrame(FellesFrame):
 
         # arranging and sizing the widgets
         # alignment of title
-        title_sizer.Add(wx.StaticText(self, label=self.GetTitle()), 0, wx.ALL, 5)
+        title_sizer.Add(FellesLabel(self, label=self.GetTitle()), 0, wx.ALL, 5)
 
         # overall arrangement of the panel
         top_sizer.Add(title_sizer, 0, wx.CENTER)
@@ -149,8 +149,8 @@ class SensorFrame(FellesFrame):
         self.panel.SetSizerAndFit(top_sizer)
         top_sizer.Fit(self)
         self.top_sizer = top_sizer
-        
-        
+
+
 
     # ------------------------------- Method --------------------------------- #
     def UpdateFrame(self, sender=None, args=None):
@@ -159,7 +159,9 @@ class SensorFrame(FellesFrame):
         """
         for s in self.sensors:
             self.gValue[s().meta['label']].SetLabel('%.2f %s'%(s().data.val, str(s().meta['unit'])))
-        self.top_sizer.Fit(self)
+
+        self.top_sizer.Layout()
+#        self.top_sizer.Fit(self)
         self.plot.UpdatePlot()
 
     def Dummy(self, *args, **kwargs):
@@ -177,11 +179,11 @@ class SensorFrame(FellesFrame):
         self.SAMPLE = False
 
         self.onClose(self)
-        
+
     # ------------------------------- Method --------------------------------- #
     def Plot(self):
         """
-        
+
         """
         return FellesPlot( parent=self, sensors = self.sensors )
     # ------------------------------- Method --------------------------------- #

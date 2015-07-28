@@ -53,6 +53,6 @@ sudo apt-get python-pip
 ```
 
 ```{.bash}
-sudo pip install minimalmodbus
+sudo pip install -U pyserial, minimalmodbus, matplotlib, wxmplot
 ```
 

@@ -25,7 +25,7 @@ o888o     `Y8bod8P'o888oo888o`Y8bod8P'8""888P'  o888ooooood8`Y888""8o `Y8bod8P'
 """
 
 __author__  = "Sigve Karolius"
-__email__   = "<firstname>ka<at>ntnu<dot>no"
+__email__   = "<firstname><dot><lastname><at>ntnu<dot>no"
 __license__ = "GPL.v3"
 __date__      = "$Date: 2015-06-23 (Tue, 23 Jun 2015) $"
 
@@ -52,71 +52,88 @@ def sensorTypes():
             types[s().__class__.__name__].append(s)
     return types
 
-
+# =============================== Class ====================================== #
 class Panel(wx.Panel):
+    """
+    """
+    # ------------------------------- Method --------------------------------- #
     def __init__(self, parent, id, pos, size):
-        wx.Panel.__init__(self, parent, id, pos, size) 
 
+        wx.Panel.__init__(self, parent, id, pos, size)
+    # ------------------------------- Method --------------------------------- #
+    def Buttons(self):
+        self.btn = FellesButton(self, source=None, target=None, label="Dummy" )
+
+
+# =============================== Class ====================================== #
 class Frame(wx.Frame):
     """
-    
+
     """
+    # ------------------------------- Method --------------------------------- #
     def __init__(self, parent, id, title, pos, size, style):
         wx.Frame.__init__(self, parent, id, title, pos, size, style)
         framePanel = wx.Panel(self)
+
         self.userpanel = Panel(framePanel, -1, (0,0), (300,180))
         self.userpanel.SetBackgroundColour('Gold')
 
+
+# =============================== Class ====================================== #
 class FellesApp(wx.App):
     """
-    
+
     """
+    # ------------------------------- Method --------------------------------- #
     def __init__(self):
         super(FellesApp, self).__init__()
 
         self.InitUI()
-
+    # ------------------------------- Method --------------------------------- #
     def InitUI(self):
         wx.App.__init__(self)
         frame = Frame(None, -1, "Main Frame", (-1,-1), (300,400),\
         wx.DEFAULT_FRAME_STYLE ^ (wx.RESIZE_BORDER | wx.MAXIMIZE_BOX))
+
         frame.Show()
         self.SetTopWindow(frame)
+    # ------------------------------- Method --------------------------------- #
+    def Start(self):
+        self.MainLoop(self)
 
 
 # =============================== Class ====================================== #
 class MainFrame(wx.Frame):
     """
-    
+
     """
-    # ------------------------------- Method --------------------------------- #  
+    # ------------------------------- Method --------------------------------- #
     def __init__(self, parent=None, *args, **kwargs):
         """
         Constructor
         """
         super(MainFrame, self).__init__(parent, **kwargs)
         self.Bind(wx.EVT_CLOSE, self.OnClose)
-    
+
     def InitUI(self):
         """
-        Create 
+        Create
         """
         # Create two buttons, Start/Stop sampling
         # Stop sampling should close all windows and stop all threads
         pass
-    
+
     def StartSampling(self):
         """
-        Start sampling, i.e. start writing numbers to file(s). 
-        
-        Disable all 
+        Start sampling, i.e. start writing numbers to file(s).
+
+        Disable all
         """
-        
         pass
-    
+
     def PauseSampling(self):
         """
-        Pause sampling, i.e. stop writing numbers to file(s), but keep file open.
+        Pause sampling, i.e. stop writing numbers to file(s), keep file open.
         Print warning that the clock is "stupid" and will have sudden "jumps".
 
         time  msrmnt
@@ -130,11 +147,11 @@ class MainFrame(wx.Frame):
 
     def StopSampling(self):
         """
-        Stop sampling, i.e. stop writing numbers to file(s), close files, 
-        print message, ask for filename, and close all windows. 
+        Stop sampling, i.e. stop writing numbers to file(s), close files,
+        print message, ask for filename, and close all windows.
         """
         pass
-    
+
     def OnClose(self, event):
         """
         1. StopSampling
@@ -152,10 +169,10 @@ class FellesFrame(wx.Frame):
     timer = GuiUpdater
     SAMPLING = True
 
-    # ------------------------------- Method --------------------------------- #  
+    # ------------------------------- Method --------------------------------- #
     def __init__(self, parent=None, *args, **kwargs):
 
-        # Check for title 
+        # Check for title
         if not kwargs.has_key('title'):
             kwargs['title'] = 'Untitled'
 
@@ -198,19 +215,19 @@ class FellesFrame(wx.Frame):
                 return None
 
         print "Stopping frame %s" %(self.__class__.__name__)
-        
+
         self.Destroy()
 
 #     # ------------------------------- Method --------------------------------- #
 #     def OnMove(self, event):
 #         print event
 #         NotImplementedError("Move method is not implemented")
-# 
-#     # ------------------------------- Method --------------------------------- #    
+#
+#     # ------------------------------- Method --------------------------------- #
 #     def OnExit(self, event):
 #         self.SAMPLING = False
 #         print "Stopping frame %s" %(self.__class__.__name__)
-# 
+#
 #     # ------------------------------- Method --------------------------------- #
 #     def OnQuitApp(self):
 #         self.SAMPLING = False
@@ -225,6 +242,13 @@ class FellesFrame(wx.Frame):
 class FellesButton(wx.Button):
     """
         Button Class
+
+        FellesButton(panel, source, target , label )
+        args:
+          panel (obj) : instance of 'wx.Panel'
+          source (obj): obj. instance (e.g. 'self')
+          target (obj): callable (method OR function)
+          label (str) : label of the button
     """
     # ------------------------------- Method --------------------------------- #
     def __init__(self, *args, **kwargs):
@@ -250,7 +274,7 @@ class FellesButton(wx.Button):
 
         if not kwargs.has_key('label'):
             kwargs['label'] = 'No Label'
-        
+
         # Create button
         super(FellesButton, self).__init__(*args, **kwargs)
         # Bind button to an event executed on click
@@ -298,7 +322,7 @@ class FellesTextInput(wx.SpinCtrl): #(wx.SpinCtrlDouble):
             kwargs['inc'] = 1
 
         super(FellesTextInput, self).__init__(*args, **kwargs)
-        
+
         self.Bind(wx.EVT_SPINCTRL, self.OnSetpointChange)
 #        self.Bind(wx.EVT_SPINCTRLDOUBLE, self.OnSetpointChange)
     # ------------------------------- Method --------------------------------- #
@@ -310,7 +334,7 @@ class FellesLabel(wx.StaticText):
     """
         Sugar class
     """
-    # ------------------------------- Method --------------------------------- #  
+    # ------------------------------- Method --------------------------------- #
     def __init__(self, *args, **kwargs):
         super(FellesLabel, self).__init__(*args, **kwargs)
 

@@ -25,6 +25,7 @@ o888o     `Y8bod8P'o888oo888o`Y8bod8P'8""888P'  o888ooooood8`Y888""8o `Y8bod8P'
 """
 from time import sleep, time
 import weakref
+import wx
 from multiprocessing.managers import SyncManager
 from multiprocessing import Process
 import multiprocessing
@@ -52,9 +53,9 @@ class FellesSampler(Thread):
     def run(self):
         """
         Method started when "instance.start()" is called
-        
-        The thread will call "source.target()" at a rate determined by "sample 
-        rate" in the caller. 
+
+        The thread will call "source.target()" at a rate determined by "sample
+        rate" in the caller.
         """
         while self.source.SAMPLING:
             self.target()
@@ -76,12 +77,15 @@ class GuiUpdater(Thread):
     def run(self):
         """
         Method started when "instance.start()" is called
-        
+
         The thread will call "source.target()" at a rate determined by "sample
-        rate" in the caller. 
+        rate" in the caller.
+
+        NOTE: It is necesary to call target trough wx.CallAfter on Linux.
+         "wx.CallAfter(self.target, self)" is a synonym for "self.taget(self)"
         """
         while self.source.SAMPLING:
-            self.target(self)
+            wx.CallAfter(self.target, self)
             sleep(1)
 
         self.source.onClose()
@@ -89,7 +93,7 @@ class GuiUpdater(Thread):
 # ================================ Class ==================================== #
 class ExtendedRef(weakref.ref):
     """
-    Weakreference class, creates an alias to "referee". 
+    Weakreference class, creates an alias to "referee".
     """
     # ------------------------------- Method -------------------------------- #
     def __init__(self, referee, callback=None):
