@@ -1,13 +1,19 @@
 **Note:** The repository uses a ".gitinclude" file, **not** gitignore, i.e. all files are ignored by default.
 
 ```
-oooooooooooo       oooo oooo                    ooooo                 .o8
-`888'     `8       `888 `888                    `888'                "888
- 888       .ooooo.  888  888  .ooooo.  .oooo.o   888         .oooo.   888oooo.
- 888oooo8 d88' `88b 888  888 d88' `88bd88(  "8   888        `P  )88b  d88' `88b
- 888    " 888ooo888 888  888 888ooo888`"Y88b.    888         .oP"888  888   888
- 888      888    .o 888  888 888    .oo.  )88b   888       od8(  888  888   888
- o888o     `Y8bod8P'o888oo888o`Y8bod8P'8""888P'  o888ooooood8`Y888""8o `Y8bod8P'
+       .O
+      o .
+    aaaaaaa
+    "8.o 8"
+     8. O8
+     8 o.8     ooooooooo      ooo ooo                  oooo             .o8
+  ,adPO .Yba,  `88'   `8      `88 `88                  `88'            "888
+ dP". O  o "Yb  88     .oooo.  88  88  .oooo.  .oooo.o  88      .ooo.  888ooo.
+dP' O . o .O`Yb 88oo8 d88'`88b 88  88 d88'`88b d8(  "8  88     `P  )8b d88'`88b
+8^^^^^^^^^^^^^8 88  " 888oo888 88  88 888oo888` "Y8b.   88      .oP"88 888  888
+Yb,         ,dP 88    888   .o 88  88 888   .oo.  )88b  88    od8(  88 888  888
+ "Ya,_____,aP" o88o   `Y8bd8P'o88oo88o`Y8bd8P'8""888P' o88oood8`Y88""8o`Y8od8P'
+   `"""""""'
 
 
       Python framework for sensor connections and GUI for the "Felles Lab".
