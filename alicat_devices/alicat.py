@@ -1,6 +1,5 @@
 # -*- coding: ascii -*-
 """
-
 oooooooooooo       oooo oooo                    ooooo                 .o8
 `888'     `8       `888 `888                    `888'                "888
  888       .ooooo.  888  888  .ooooo.  .oooo.o   888         .oooo.   888oooo.

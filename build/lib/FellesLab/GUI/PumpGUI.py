@@ -83,6 +83,4 @@ class FellesViewPump(FellesFrame):
 
     def get_pump_speed(self, pump_name):
         return self.pump[pump_name].get_actualvelocity()
-    
-
-class Pump(FellesPump) 
+ 

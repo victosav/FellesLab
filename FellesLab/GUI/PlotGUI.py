@@ -1,6 +1,5 @@
 # -*- coding: ascii -*-
 """
-
 oooooooooooo       oooo oooo                    ooooo                 .o8
 `888'     `8       `888 `888                    `888'                "888
  888       .ooooo.  888  888  .ooooo.  .oooo.o   888         .oooo.   888oooo.
@@ -34,8 +33,34 @@ import wxmplot
 import numpy as np
 from math import floor, ceil
 
+from FellesLab.Equipment import Sensor #, sensorTypes
+
+# ............................... Function .................................. #
+def findSensor(id):
+    """
+    Find a sensor based on "id"
+
+    TODO: implement
+    """
+    for s in Sensor.___refs___:
+        if s().ID == id:
+            return s
+
+# =============================== Class ====================================== #
 class FellesPlot(wx.Frame):
     """
+    Rudimentary class creating a plot frame that is updated dynamically.
+    The class takes one argument "parent".
+    
+     'Unit' .-------------------.
+            |          ____     |
+            |         /    |    |
+            |        /      \/  |
+            |__/\   /           |
+            |    \_/            |
+            |                   |
+            .-------------------.
+                    Time
     
     """
     # ------------------------------- Method --------------------------------- #
@@ -45,20 +70,12 @@ class FellesPlot(wx.Frame):
         """
         super(FellesPlot, self).__init__(parent)
 
-        # Input: parent, X, Y, 
-
-        self.candidates = kwargs['sensors']
-        self.parentFrame = parent
+        self.candidates = kwargs['sensors'] # List of all sensors
+        self.parentFrame = parent # Parent SensorFrame (from SensorGUI.py)
         wx.EVT_CLOSE(self, self.onClose)
-        #self.number_of_lines = len(plot_fields)
-        self.first_time = True
-
-        self.ymin = min( [ min(c().data.history['data']) for c in self.candidates ] )
-        self.ymax = min( [ max(c().data.history['data']) for c in self.candidates ] )
 
         # setting up plot
         self.plot_panel = wxmplot.PlotPanel(parent=self, size=(500, 350), dpi=100)
-        self.plot_panel.messenger = self.write_message
 
         # adding sizer
         self.panel_sizer = wx.BoxSizer()
@@ -67,115 +84,59 @@ class FellesPlot(wx.Frame):
         # assigning the sizer to the panel
         self.SetSizer(self.panel_sizer)
 
-        self.plotIDs = [ c().ID for c in self.candidates ]
-#         self.plots = {}
-#         data = self.PlotData()
-#         for i,id in enumerate(self.plotIDs):
-#             if i == 0:
-#                 self.plots[id] = self.plot_panel.plot(
-#                 #self.plot_panel.oplot(
-#                                    data[id]['x'],
-#                                    data[id]['y'],
-#                                    side ='left',
-#                                    label = data[id]['label'],
-#                                    color = data[id]['color'],
-# #                                   show_legend=True,
-#                                    marker = 'None',
-#                                    drawstyle='line',
-#                                    style = 'solid',
-#                                    grid=True,
-#                                  )
-#             else:
-#                 self.plots[id] = self.plot_panel.oplot(
-#                 #self.plot_panel.oplot(
-#                                    data[id]['x'],
-#                                    data[id]['y'],
-#                                    side ='left',
-#                                    label = data[id]['label'],
-#                                    color = data[id]['color'],
-#                                    show_legend=True,
-#                                    marker = 'None',
-#                                    drawstyle='line',
-#                                    style = 'solid',
-#                                    grid=True,
-#                                  )
+        # plotIDs keeps track over which sensor to plot.
+        #      ID            bool  ,       ID          bool
+        # {'0x7f921e6977a0': False , '0x7f921e696530': True }
+        # (The ID is the address in memory of the sensor object)
+        self.plotIDs = { c().ID : c().plot_config['plot'] for c in self.candidates }
 
         # fit the sizer to the panel
         self.Fit()
 
     # ------------------------------- Method -------------------------------- #
-    def write_message(self, message, panel=0):
-        pass
-
-    # ------------------------------- Method -------------------------------- #
     def UpdatePlot(self):
         """
+        Method for updating the plot frame.
         
+        The sensors in "self.plotIDs" that are not "True" will not be plotted.
         """
-        # Retrieve plot data
-        data = self.PlotData()
 
-        for id in self.plotIDs:
+        for id, plt in self.plotIDs.iteritems():
+            if plt:
                 self.plot_panel.oplot(
-                #self.plot_panel.oplot(
-                                   data[id]['x'],
-                                   data[id]['y'],
-                                   side ='left',
-                                   label = data[id]['label'],
-                                   color = data[id]['color'],
-#                                   show_legend=True,
-                                   marker = 'None',
-                                   drawstyle='line',
-                                   style = 'solid',
-                                   grid=True,
-                                 )
+                                findSensor(id)().data.history['time'],
+                                findSensor(id)().data.history['data'],
+                                side ='left',
+                                label = findSensor(id)().meta['label'],
+                                color = findSensor(id)().plot_config['color'],
+#                               show_legend=True,
+                                marker = 'None',
+                                drawstyle='line',
+                                style = 'solid',
+                                grid=True,
+                                )
 
- #           self.plots[id] = self.plot_panel.update_line(0, data[id]['x'], data[id]['y'] )
-
-            #self.plot_panel.update_line(0, data[id]['x'], data[id]['y'], draw=True)
-
-
-        self.plot_panel.set_xylims([ floor(min( [ min(data[id]['x']) for id in data.iterkeys()] )),\
-                                    ceil( max( [ max(data[id]['x']) for id in data.iterkeys()] )),\
-                                    floor(min( [ min(data[id]['y']) for id in data.iterkeys()] )),\
-                                    ceil( max( [ max(data[id]['y']) for id in data.iterkeys()] ))\
-                                   ])
+        self.plot_panel.set_xylims(\
+          [\
+           floor( min( [ min( findSensor(id)().data.history['time'] )\
+                         for id,plt in self.plotIDs.iteritems() if plt ] ) ),\
+           ceil( max( [ max( findSensor(id)().data.history['time'] )\
+                         for id,plt in self.plotIDs.iteritems() if plt ] ) ),\
+           floor( min( [ min( findSensor(id)().data.history['data'] )\
+                         for id,plt in self.plotIDs.iteritems() if plt ] ) ),\
+           ceil( max( [ max( findSensor(id)().data.history['data'] )\
+                          for id,plt in self.plotIDs.iteritems() if plt ] ) )\
+          ]\
+        )
 
         self.panel_sizer.Fit(self)
-
-    # ------------------------------- Method -------------------------------- #
-    def PlotData(self):
-        """
-        
-        """
-        data = {}
-        for c in self.candidates:
-            if c().plot_config['plot']:
-                data[c().ID] = {
-                            'x': np.array(c().data.history['time']),\
-                            'y': np.array(c().data.history['data']),\
-                        'color': c().plot_config['color'],\
-                        'label': c().meta['label']
-                            }
-        return data
 
     # ------------------------------- Method --------------------------------- #
     def onClose(self, event):
         """
         
         """
-        print "closing plot"
+
+        print "Plot %s closed by event: '%s'" %( self.parentFrame.GetName() ,\
+                                                 event.__class__.__name__)
         self.Destroy()
-
-if __name__ == '__main__':
-    app = wx.App()
-
-    plot = FellesPlot()
-    plot.Show()
-
-    x = np.linspace(0., 20, 1000)
-    y = 5*np.sin(4*x)/(x+6)
-    plot.update_plot(x, y)
-    
-
-    app.MainLoop()

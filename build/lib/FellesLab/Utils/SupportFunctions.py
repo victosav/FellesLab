@@ -1,6 +1,5 @@
 # -*- coding: ascii -*-
 """
-
 oooooooooooo       oooo oooo                    ooooo                 .o8
 `888'     `8       `888 `888                    `888'                "888
  888       .ooooo.  888  888  .ooooo.  .oooo.o   888         .oooo.   888oooo.
@@ -29,21 +28,32 @@ __email__   = "<firstname>ka<at>ntnu<dot>no"
 __license__ = "GPL.v3"
 __date__ = "$Date: 2015-06-23 (Tue, 23 Jun 2015) $"
 
+from time import localtime
+from calendar import weekday
 
 # ............................... Function .................................. #
-def date():
-    pass
+def timeStamp():
+    """
+    Function returning a timestamp (string) in the format:
+                        Wed_Jun_17_hourminsec_year
+    """
+    LT = localtime() # Timestamp information for filename
+    Day = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    Mon = ['Jan','Feb','Mar','Apr','May','Jun',\
+           'Jul','Aug','Sep','Oct','Nov','Dec']
+    return '{D}_{M}_{d}_{h}{m}{s}_{Y}'.format(\
+               D= Day[weekday(LT[0],LT[1],LT[2])], M= Mon[LT[1]-1], d= LT[2],\
+               h= LT[3], m= LT[4], s= LT[5], Y= LT[0] )
 
 # ............................... Function .................................. #
 def findSensor(id):
     """
-    Find a sensor based on "id"
-
-    TODO: implement
+    Find a sensor based on "id", the id is an address in memory for the sensor
+    object.
     """
-    for s in Sensor.___refs___:
-        if s()['id'] == id:
-            return s
+    for sensor in Sensor.___refs___:
+        if sensor()['id'] == id:
+            return sensor
 
 # ............................... Function .................................. #
 def sensorTypes(cls):

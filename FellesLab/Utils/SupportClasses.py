@@ -1,6 +1,5 @@
 # -*- coding: ascii -*-
 """
-
 oooooooooooo       oooo oooo                    ooooo                 .o8
 `888'     `8       `888 `888                    `888'                "888
  888       .ooooo.  888  888  .ooooo.  .oooo.o   888         .oooo.   888oooo.
@@ -23,20 +22,49 @@ o888o     `Y8bod8P'o888oo888o`Y8bod8P'8""888P'  o888ooooood8`Y888""8o `Y8bod8P'
 @note:
 
 """
-from time import sleep, time
+
+import os
+import collections
 import weakref
 import wx
-from multiprocessing.managers import SyncManager
-from multiprocessing import Process
-import multiprocessing
-
+from calendar import weekday
+from time import sleep, time, localtime
 from threading import Thread
+
+
+FILE_PATH = '%s/Desktop/'%(os.path.expanduser("~"))
+#ORCHESTRATOR = MasterClass()
+
+# ================================ Class ==================================== #
+class MasterClass(object):
+    """
+    This class is intended to keep track over objects 
+    """
+    sensors = []
+    equipment = []
+
+    # ------------------------------- Method -------------------------------- #
+    def InitSampling(self):
+        """
+        
+        """
+        pass
+
+    # ------------------------------- Method -------------------------------- #
+    def StopSampling(self):
+        """
+        
+        * Gather ALL DataStorage objects and save the results in a file
+        
+        """
+        pass
 
 # ================================ Class ==================================== #
 class FellesSampler(Thread):
     """
     Thread class.
     """
+
     # ------------------------------- Method -------------------------------- #
     def __init__(self, group=None, target=None, source=None):
         """
@@ -47,7 +75,24 @@ class FellesSampler(Thread):
         self.target = target
         self.source = source
 
-        super(FellesSampler, self).__init__( )
+        super(FellesSampler, self).__init__()
+
+        # Create a vector holding historical data for the purpose of plotting.
+        # The length may vary because the sampling speed of the units are 
+        # different. Moreover
+        history_length = int(round(self.source.plot_config['time_span']/self.source.meta['sample_speed']))
+        self.history = {'time': collections.deque( [], history_length ),\
+                        'data': collections.deque( [], history_length )
+                        }
+        del history_length
+
+    # ------------------------------- Method -------------------------------- #
+    def Update(self, time, val):
+        self.val = self.source.data_config['calibrationCurve'](val)
+        self.history['data'].append(self.val)
+        self.history['time'].append(time)
+
+        return None
 
     # ------------------------------- Method -------------------------------- #
     def run(self):
@@ -56,10 +101,24 @@ class FellesSampler(Thread):
 
         The thread will call "source.target()" at a rate determined by "sample
         rate" in the caller.
+        
+        "source.target" is the method that reads a sample 
+        from the device
         """
+
         while self.source.SAMPLING:
             self.target()
             sleep(self.source.meta['sample_speed'])
+
+        self.Terminate()
+
+    # ------------------------------- Method -------------------------------- #
+    def Terminate(self):
+        """
+        
+        """
+        print 'Stopping sensor %s' %self.source.meta['label']
+
 
 # ================================ Class ==================================== #
 class GuiUpdater(Thread):
@@ -94,7 +153,11 @@ class GuiUpdater(Thread):
 class ExtendedRef(weakref.ref):
     """
     Weakreference class, creates an alias to "referee".
+
+    This is an important class, the example in the __call__ method shows how 
+    to use it.
     """
+
     # ------------------------------- Method -------------------------------- #
     def __init__(self, referee, callback=None):
         self.referee = referee
@@ -102,4 +165,44 @@ class ExtendedRef(weakref.ref):
 
     # ------------------------------- Method -------------------------------- #
     def __call__(self):
+        """
+        Magic method.
+        
+        Returns the object that the class referes to. The practical 
+        implication is that it becomes possible to access the objects methods
+        and variables through the reference class.
+        
+        Understand how to use this class through the following example:
+
+        example.py
+        ----------------------------------------------------------------------
+        import weakref
+
+        class ExtendedRef(weakref.ref):
+
+            def __init__(self, referee, callback=None):
+                self.referee = referee
+                super(ExtendedRef, self).__init__(referee, callback)
+
+            def __call__(self):
+                return self.referee()
+
+        class Referee:
+            message = "References are clever"
+
+            def __call__(self):
+                return self
+
+            def ChangeMessage(self, msg):
+                self.message = msg
+
+        a = Referee()
+        b = ExtendedRef(a)
+
+        print b().message
+        b().ChangeMessage("A different message")
+        print a.message
+        ----------------------------------------------------------------------
+
+        """
         return self.referee()

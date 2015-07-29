@@ -1,6 +1,5 @@
 # -*- coding: ascii -*-
 """
-
 oooooooooooo       oooo oooo                    ooooo                 .o8
 `888'     `8       `888 `888                    `888'                "888
  888       .ooooo.  888  888  .ooooo.  .oooo.o   888         .oooo.   888oooo.
@@ -32,9 +31,9 @@ from multiprocessing import Process
 from time import sleep, time
 from adam_modules import *
 
-#from FellesLab.Utils.SupportFunctions import sensorTypes
+# from FellesLab.Utils.SupportFunctions import sensorTypes
 from FellesLab.Utils.SupportClasses import *
-from FellesLab.Utils.DataStorage import MetaData, DataStorage
+from FellesLab.Utils.DataStorage import DataStorage
 
 
 # ............................... Function .................................. #
@@ -63,21 +62,22 @@ class Sensor(dict):
 
     # Create, Objects
     Sampler = FellesSampler # thread used to perform sampling
-    Meta = MetaData # Dictionary containing meta data
+    Meta = dict # Dictionary containing meta data
     Data = DataStorage # Dictionary containing sampling data
 
     # List of object instances
     ___refs___ = []
 
     # ------------------------------- Method -------------------------------- #
-    def __init__(self, module, meta_data={}, plot_config={}, data_config={}):
+    def __init__(self, module, module_configuration = {}, meta_data={}, gui_configuration={}, data_processing={}):
         """
         constructor
         args:
-            module
+            module : instance 
+            module_configuration
             meta_data
-            plot_config
-            data_config
+            GUI_configuration
+            data_processing
         
         class variables:
         
@@ -95,10 +95,15 @@ class Sensor(dict):
         self.module = module
         meta_data.update(self.module.metaData) # Add module metadata to kwargs
 
-        # Check for label
+        # Check for label, why?
+        # Specific label for a sensor, e.g. 'Inlet Temperature', can be given
+        # in the 'meta_data' argument as follows:
+        #       meta_data = { ... , ... , 'label' : 'Inlet Temperature , ... }
+        # Otherwise an automatically generated label:
+        #       '<Sensor Type> <INT>'
+        # e.g. 'Temperature 3', will be created.
         if not meta_data.has_key('label'):
-            # Result: '<Sensor Type> <INT>', e.g. 'Temperature 1'
-            meta_data['label'] = '%s %d' %(self.__class__.__name__, len(sensorTypes()[self.__class__.__name__]) )
+            meta_data['label'] = '%s %d' %(self.__class__.__name__, len(sensorTypes()[self.__class__.__name__]))
 
         # Check for unit
         if not meta_data.has_key('unit'):
@@ -108,22 +113,22 @@ class Sensor(dict):
         if not meta_data.has_key('sample_speed'):
             meta_data['sample_speed'] = self.sample_rate
 
-        self.plot_config = plot_config
-        self.data_config = data_config
-        self.thread = self.Sampler(group=None, target=self.Sample, source=self)
+        self.plot_config = gui_configuration
+        self.data_config = data_processing
         self.meta = self.Meta(**meta_data) # Dict object with **static** metadata
         self.data = self.Data(self) # Dict object reading and writing data, capable of reporting to onClose
 
         self.t0 = time()
-        self.calls = 0
+        self.thread = self.Sampler(group=None, target=self.Sample, source=self)
         self.thread.start()
+
     # ------------------------------- Method -------------------------------- #
     def __call__(self):
         """
         Magic method, executed when the object is called.
         
-        returns: 
-            THE object instance
+        return: 
+            object instance
         """
         return self
 
@@ -132,7 +137,7 @@ class Sensor(dict):
         """
         Timer method, keeping track of the time since the sampling started
         
-        returns:
+        return:
             Elapsed time
         """
         return time() - self.t0
@@ -140,13 +145,9 @@ class Sensor(dict):
     # ------------------------------- Method -------------------------------- #
     def Sample(self, event=None):
         """
-            
+        
         """
         self.data.Update( self.Timer(), self.module.get_analog_in() )
-
-        self.calls += 1
-        if self.calls > 20:
-            self.SAMPLING=False
 
     # ------------------------------- Method -------------------------------- #
     def StopSampling(self, event=None):
@@ -155,18 +156,26 @@ class Sensor(dict):
         """
         self.SAMPLING = False
 
-        # Make sure the thread terminates
-        while self.Sampler.isAlive():
-            pass
+        print "Process '%s' terminated by event: '%s'" %(self.meta['label'], event)
 
-        print "Process '%s' terminated by event: '%s'" %(self['label'], event)
-    
+    # ------------------------------- Method -------------------------------- #
+    def UpdateSampleSpeed(self, event, caller):
+        """
+        Method updating the sample_speed
+        """
+        print "Updating '%s' sampling speed from '%s to '%s'"\
+             %( self.meta['label'],\
+                self.meta['sample_speed'],\
+                event.GetValue() )
+
+        self.meta['sample_speed'] = event.GetValue()
+
     # ------------------------------- Method -------------------------------- #
     def __repr__(self):
         return '<%s.%s sensor_instance at %s>' % (
             self.__class__.__module__,
             self.__class__.__name__,
-            hex(id(self))
+            self.ID
         )
 
 # ================================ Class ==================================== #
@@ -174,6 +183,7 @@ class Temperature(Sensor):
     """
         Syntactic sugar... 
     """
+
     # ------------------------------- Method -------------------------------- #
     def __init__(self, *args, **kwargs):
         super(Temperature, self).__init__(*args, **kwargs)

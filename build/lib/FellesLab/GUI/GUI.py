@@ -1,6 +1,5 @@
 # -*- coding: ascii -*-
 """
-
 oooooooooooo       oooo oooo                    ooooo                 .o8
 `888'     `8       `888 `888                    `888'                "888
  888       .ooooo.  888  888  .ooooo.  .oooo.o   888         .oooo.   888oooo.
@@ -25,7 +24,7 @@ o888o     `Y8bod8P'o888oo888o`Y8bod8P'8""888P'  o888ooooood8`Y888""8o `Y8bod8P'
 """
 
 __author__  = "Sigve Karolius"
-__email__   = "<firstname>ka<at>ntnu<dot>no"
+__email__   = "<firstname><dot><lastname><at>ntnu<dot>no"
 __license__ = "GPL.v3"
 __date__      = "$Date: 2015-06-23 (Tue, 23 Jun 2015) $"
 
@@ -53,90 +52,129 @@ def sensorTypes():
     return types
 
 
-class Panel(wx.Panel):
-    def __init__(self, parent, id, pos, size):
-        wx.Panel.__init__(self, parent, id, pos, size) 
-
+# =============================== Class ====================================== #
 class Frame(wx.Frame):
+    """
+    
+    """
+    # ------------------------------- Method --------------------------------- #
     def __init__(self, parent, id, title, pos, size, style):
         wx.Frame.__init__(self, parent, id, title, pos, size, style)
-        framePanel = wx.Panel(self)
-        self.userpanel = Panel(framePanel, -1, (0,0), (300,180))
-        self.userpanel.SetBackgroundColour('Gold')
 
+        self.InitUI()
+
+        self.Bind(wx.EVT_CLOSE, self.onClose)
+
+    # ------------------------------- Method --------------------------------- #
+    def InitUI(self):
+        # adding panel for cross-platform appearance 
+        self.panel = wx.Panel(self, wx.ID_ANY)
+        self.obj = {}
+        # adding sizers
+        top_sizer       = wx.BoxSizer(wx.VERTICAL)
+        title_sizer     = wx.BoxSizer(wx.HORIZONTAL)
+        grid_sizer      = wx.GridSizer(rows=1, cols=1)#, hgap=5, vgap=5)
+        input_sizer     = wx.BoxSizer(wx.HORIZONTAL)
+        button_sizer    = wx.BoxSizer(wx.HORIZONTAL)
+
+        # adding GUI widgets
+        self.obj['logo'] = FellesLabel(self.panel, label=\
+'''
+      O.
+       o .
+    aaaaaaaa
+    "8. o 8"
+     8. O 8
+     8 o. 8     ooooooooooo       oooo oooo                   ooooo              .o8
+  ,adP O .Yba,  `888'    `8       `888 `888                   `888'             "888
+ dP". O  o  "Yb  888      .ooooo.  888  888  .ooooo.  .oooo.o  888      .oooo.   888oooo.
+dP' O . o .O `Yb 888ooo8 d88' `88b 888  888 d88' `88bd88(  "8  888     `P  )88b  d88' `88b
+8^^^^^^^^^^^^^^8 888   " 888ooo888 888  888 888ooo888`"Y88b.   888      .oP"888  888   888
+Yb,          ,dP 888     888    .o 888  888 888    .oo.  )88b  888    od8(  888  888   888
+ "Ya,______,aP" o888o    `Y8bod8P'o888oo888o`Y8bod8P'8""888P' o888oood8`Y888""8o `Y8bod8P'
+   `""""""""'
+'''\
+)
+        self.obj['logo'].SetFont(wx.Font(pointSize=14, family=wx.MODERN, style=wx.NORMAL, weight=wx.BOLD, underline=False, faceName=u'Consolas', encoding=wx.FONTENCODING_DEFAULT))
+
+        # wx.Font has the following signature:
+        # wx.Font(pointSize, family, style, weight, underline=False, faceName="", encoding=wx.FONTENCODING_DEFAULT)
+        # family can be:
+        # wx.DECORATIVE, wx.DEFAULT,wx.MODERN, wx.ROMAN, wx.SCRIPT or wx.SWISS.
+        # style can be:
+        # wx.NORMAL, wx.SLANT or wx.ITALIC.
+        # weight can be:
+        # wx.NORMAL, wx.LIGHT, or wx.BOLD
+
+        # Buttons
+        self.start  = FellesButton(self.panel, source=self, target=self.Start , label='Start Sampling')
+        self.stop = FellesButton(self.panel, source=self, target=self.Stop, label='Stop Sampling')
+
+        # arranging and sizing the widgets 
+        grid_sizer.Add(self.obj['logo'], 0, wx.ALL, 5)
+
+        # arrangement of the on/off buttons
+        button_sizer.Add(self.start, 0, wx.ALL, 5)
+        button_sizer.Add(self.stop, 0, wx.ALL, 5)
+
+        # overall arrangement of the panel
+        top_sizer.Add(title_sizer, 0, wx.CENTER)
+        top_sizer.Add(wx.StaticLine(self.panel), 0, wx.ALL|wx.EXPAND, 5)
+        top_sizer.Add(grid_sizer, 0, wx.ALL|wx.CENTER, 5)
+        top_sizer.Add(wx.StaticLine(self.panel), 0, wx.ALL|wx.EXPAND, 5)
+        top_sizer.Add(button_sizer, 0, wx.ALL|wx.CENTER, 5)
+
+        # assigning the sizer to the panel
+        self.panel.SetSizer(top_sizer)
+
+        # fit the sizer to the panel
+        self.Stop(None,None)
+        top_sizer.Fit(self)
+
+    # ------------------------------- Method --------------------------------- #
+    def Start(self, a, b):
+        self.panel.SetBackgroundColour('White')
+        print "Start"
+
+    # ------------------------------- Method --------------------------------- #
+    def Stop(self, a, b):
+        self.panel.SetBackgroundColour('Gray')
+        print "Stop"
+
+    # ------------------------------- Method --------------------------------- #
+    def onClose(self, event):
+        """
+        1. StopSampling
+        2. close...
+        """
+
+        for cls in FellesFrame.__subclasses__():
+            print cls
+
+        self.Destroy()
+
+# =============================== Class ====================================== #
 class FellesApp(wx.App):
-
+    """
+    
+    """
+    # ------------------------------- Method --------------------------------- #
     def __init__(self):
         super(FellesApp, self).__init__()
 
         self.InitUI()
 
+    # ------------------------------- Method --------------------------------- #
     def InitUI(self):
         wx.App.__init__(self)
-        frame = Frame(None, -1, "Internet Login Tool", (-1,-1), (300,400),\
+        frame = Frame(None, -1, "Main Frame", (-1,-1), (300,400),\
         wx.DEFAULT_FRAME_STYLE ^ (wx.RESIZE_BORDER | wx.MAXIMIZE_BOX))
+
         frame.Show()
         self.SetTopWindow(frame)
-
-
-# =============================== Class ====================================== #
-class MainFrame(wx.Frame):
-    """
-    
-    """
-    # ------------------------------- Method --------------------------------- #  
-    def __init__(self, parent=None, *args, **kwargs):
-        """
-        Constructor
-        """
-        super(MainFrame, self).__init__(parent, **kwargs)
-        self.Bind(wx.EVT_CLOSE, self.OnClose)
-    
-    def InitUI(self):
-        """
-        Create 
-        """
-        # Create two buttons, Start/Stop sampling
-        # Stop sampling should close all windows and stop all threads
-        pass
-    
-    def StartSampling(self):
-        """
-        Start sampling, i.e. start writing numbers to file(s). 
-        
-        Disable all 
-        """
-        
-        pass
-    
-    def PauseSampling(self):
-        """
-        Pause sampling, i.e. stop writing numbers to file(s), but keep file open.
-        Print warning that the clock is "stupid" and will have sudden "jumps".
-
-        time  msrmnt
-        10.0  12345
-        10.5  54321
-        11.0  24135
-        40.5  41253
-
-        """
-        pass
-
-    def StopSampling(self):
-        """
-        Stop sampling, i.e. stop writing numbers to file(s), close files, 
-        print message, ask for filename, and close all windows. 
-        """
-        pass
-    
-    def OnClose(self, event):
-        """
-        1. StopSampling
-        2. close...
-        """
-        pass
-
+    # ------------------------------- Method --------------------------------- #
+    def Start(self):
+        self.MainLoop(self)
 
 # =============================== Class ====================================== #
 class FellesFrame(wx.Frame):
@@ -147,10 +185,10 @@ class FellesFrame(wx.Frame):
     timer = GuiUpdater
     SAMPLING = True
 
-    # ------------------------------- Method --------------------------------- #  
+    # ------------------------------- Method --------------------------------- #
     def __init__(self, parent=None, *args, **kwargs):
 
-        # Check for title 
+        # Check for title
         if not kwargs.has_key('title'):
             kwargs['title'] = 'Untitled'
 
@@ -172,7 +210,6 @@ class FellesFrame(wx.Frame):
 
         super(FellesFrame, self).__init__(parent, *args, **kwargs)
 
-
         self.timer = GuiUpdater(group=None, target=self.UpdateFrame, source=self)
         # self.Bind(wx.EVT_CLOSE, self.OnClose)
 
@@ -181,35 +218,8 @@ class FellesFrame(wx.Frame):
         NotImplementedError("User interface is not implemented")
 
     # ------------------------------- Method --------------------------------- #
-    def OnClose(self, event):
-
-        if event.CanVeto():# and self.fileNotSaved:
-
-            if wx.MessageBox("The file has not been saved... continue closing?",
-                             "Please confirm",
-                             wx.ICON_QUESTION | wx.YES_NO) != wx.YES:
-
-                event.Veto()
-                return None
-
-        print "Stopping frame %s" %(self.__class__.__name__)
-        
-        self.Destroy()
-
-#     # ------------------------------- Method --------------------------------- #
-#     def OnMove(self, event):
-#         print event
-#         NotImplementedError("Move method is not implemented")
-# 
-#     # ------------------------------- Method --------------------------------- #    
-#     def OnExit(self, event):
-#         self.SAMPLING = False
-#         print "Stopping frame %s" %(self.__class__.__name__)
-# 
-#     # ------------------------------- Method --------------------------------- #
-#     def OnQuitApp(self):
-#         self.SAMPLING = False
-#         print "Stopping frame %s" %(self.__class__.__name__)
+    def onClose(self, event):
+        pass
 
     # ------------------------------- Method --------------------------------- #
     def UpdateFrame(self):
@@ -220,6 +230,13 @@ class FellesFrame(wx.Frame):
 class FellesButton(wx.Button):
     """
         Button Class
+
+        FellesButton(panel, source, target , label )
+        args:
+          panel (obj) : instance of 'wx.Panel'
+          source (obj): obj. instance (e.g. 'self')
+          target (obj): callable (method OR function)
+          label (str) : label of the button
     """
     # ------------------------------- Method --------------------------------- #
     def __init__(self, *args, **kwargs):
@@ -245,7 +262,7 @@ class FellesButton(wx.Button):
 
         if not kwargs.has_key('label'):
             kwargs['label'] = 'No Label'
-        
+
         # Create button
         super(FellesButton, self).__init__(*args, **kwargs)
         # Bind button to an event executed on click
@@ -265,12 +282,19 @@ class FellesButton(wx.Button):
 
 
 # =============================== Class ====================================== #
-class FellesTextInput(wx.SpinCtrl): #(wx.SpinCtrlDouble):
+class FellesTextInput(wx.SpinCtrlDouble): #(wx.SpinCtrl):
     """
         Class
+        
+    args:
+      target  
+      source 
+      min
+      max
+      initial
     """
     # ------------------------------- Method --------------------------------- #
-    def __init__(self, *args, **kwargs):
+    def __init__(self, parent = None, *args, **kwargs):
 
         self.source = kwargs['source']
         self.target = kwargs['target']
@@ -289,13 +313,17 @@ class FellesTextInput(wx.SpinCtrl): #(wx.SpinCtrlDouble):
         if not kwargs.has_key('initial'):
             kwargs['initial'] = kwargs['min']
 
-        if not kwargs.has_key('inc'):
-            kwargs['inc'] = 1
+        if not kwargs.has_key('value'):
+            kwargs['value'] = '%f' %(kwargs['initial'])
 
-        super(FellesTextInput, self).__init__(*args, **kwargs)
-        
-        self.Bind(wx.EVT_SPINCTRL, self.OnSetpointChange)
-#        self.Bind(wx.EVT_SPINCTRLDOUBLE, self.OnSetpointChange)
+        if not kwargs.has_key('inc'):
+            kwargs['inc'] = 0.01
+
+        super(FellesTextInput, self).__init__(parent, *args, **kwargs)
+
+#        self.Bind(wx.EVT_SPINCTRL, self.OnSetpointChange)
+        self.Bind(wx.EVT_SPINCTRLDOUBLE, self.OnSetpointChange)
+
     # ------------------------------- Method --------------------------------- #
     def OnSetpointChange(self, event):
         self.target(self, self.source)
@@ -305,7 +333,7 @@ class FellesLabel(wx.StaticText):
     """
         Sugar class
     """
-    # ------------------------------- Method --------------------------------- #  
+    # ------------------------------- Method --------------------------------- #
     def __init__(self, *args, **kwargs):
         super(FellesLabel, self).__init__(*args, **kwargs)
 
