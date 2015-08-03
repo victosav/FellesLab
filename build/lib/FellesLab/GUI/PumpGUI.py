@@ -1,14 +1,78 @@
-class FellesViewPump(FellesFrame):
-    """
-        Mmmmmmmm sugar
-    """
-    
-    def __init__(self, obj, *args, **kwargs):
-        
-        self.obj = obj
-        super(FellesViewPump, self).__init__( *args, **kwargs)
+# -*- coding: ascii -*-
+"""
+oooooooooooo       oooo oooo                    ooooo                 .o8
+`888'     `8       `888 `888                    `888'                "888
+ 888       .ooooo.  888  888  .ooooo.  .oooo.o   888         .oooo.   888oooo.
+ 888oooo8 d88' `88b 888  888 d88' `88bd88(  "8   888        `P  )88b  d88' `88b
+ 888    " 888ooo888 888  888 888ooo888`"Y88b.    888         .oP"888  888   888
+ 888      888    .o 888  888 888    .oo.  )88b   888       od8(  888  888   888
+o888o     `Y8bod8P'o888oo888o`Y8bod8P'8""888P'  o888ooooood8`Y888""8o `Y8bod8P'
 
-        self.InitUI()
+
+@summary:      Felles lab GUI graphics parent classes
+@author:       Sigve Karolius
+@organization: Department of Chemical Engineering, NTNU, Norway
+@contact:      sigveka@ntnu.no
+@license:      Free (GPL.v3)
+@requires:     Python 2.7.x or higher
+@since:        18.06.2015
+@version:      2.7
+@todo 1.0:
+@change:
+@note:
+
+"""
+
+import wx
+from wx.lib.pubsub import pub
+
+from GUI import FellesFrame, FellesButton, FellesTextInput, FellesLabel
+from PlotGUI import FellesPlot
+
+from FellesLab.Equipment import Sensor, Pump
+from FellesLab.Utils import sensorTypes, DataStorage
+from FellesLab.Equipment import Sensor 
+from random import random
+
+
+# =============================== Class ====================================== #
+class PumpFrame(FellesFrame):
+    """
+    @summary: Parent class frame for a pump. 
+
+                            +-------------------------+
+                            |          Pump           |
+                            |       Speed      Meta   |
+                            |  Setpt. 100 ^   T 298 K |
+                            |  Mesrd  0.2   Acc 100 ..|
+                            +-------------------------+
+
+    """
+
+    # ------------------------------- Method --------------------------------- #
+    def __init__(self, parent=None, debug=False, *args, **kwargs):
+        """
+        TODO: create debug mode.
+
+        Constructor method
+
+        args:
+            title (str): REQUIRED
+        """
+        super(PumpFrame, self).__init__( *args, **kwargs)
+
+        self.sensors = sensorTypes(Pump)[self.GetLabel()]
+
+        # Dictionary keeping track of which sensors to plot
+#        self.plot_config = { s().ID : s().plot_config for s in self.sensors}
+
+        self.InitUI() # Create frame
+        self.Show()   # Show frame
+
+#        self.plot = FellesPlot(parent=self, sensors = self.sensors) # Initiate Plot
+#        self.plot.Show() # Show frame
+
+        self.timer.start()
 
 
     def InitUI(self):

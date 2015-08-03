@@ -1,6 +1,5 @@
 # -*- coding: ascii -*-
 """
-
 oooooooooooo       oooo oooo                    ooooo                 .o8
 `888'     `8       `888 `888                    `888'                "888
  888       .ooooo.  888  888  .ooooo.  .oooo.o   888         .oooo.   888oooo.
@@ -19,16 +18,29 @@ o888o     `Y8bod8P'o888oo888o`Y8bod8P'8""888P'  o888ooooood8`Y888""8o `Y8bod8P'
 @requires:     Python 2.7.x or higher
 @since:        18.06.2015
 @version:      2.7
-@todo 1.0:
+@TODO 1.0:     Only Adam4019 and 4024 has really been tested...
+@TODO 2.0:     Methods should start with caps, some order in the universe...
+@TODO 3.0:     Write general getter/setter methods for the modules
+@TODO 4.0:     Provide actually helpfull error messages
+@TODO 5.0:     Write a "meta-data" convention to facilitate info to a user...
+@TODO 6.0:     Document!
 @change:
-@note:
+@note: Usage
+
+# import adam module
+from adam_modules import Adam4019
+
+# Connect to adam module:
+module = Adam4019(portname='/dev/ttyUSB0', slaveaddress=9)
+
+# Dummy module for developer use:
+module = Adam4019("Dummy")
 
 """
 
 __author__  = "Sigve Karolius"
 __email__   = "<firstname>ka<at>ntnu<dot>no"
 __license__ = "GPL.v3"
-
 __date__      = "$Date: 2015-06-23 (Tue, 23 Jun 2015) $"
 
 import minimalmodbus
@@ -58,7 +70,7 @@ class DummySerial(object):
 # ================================= Class =================================== #
 class DummyModbus(object):
     """
-    Dummy class impersonating any Adam module
+    Dummy class impersonating a Adam module
     """
 
     def __init__(self, *args, **kwargs):
@@ -107,9 +119,10 @@ class Instrument(minimalmodbus.Instrument, object):
     """
     Sugar class. 
     
-    Why?
-      minimalmodbus.Instrument is an old-style class, does not work with __new__
-      or super()
+    The reason it is used is the following:
+        minimalmodbus.Instrument is an old-style class, does not work with 
+        __new__ or super(). However, by inheriting "object" (new-style) it can 
+        be "tricked" into thinking it is a new-style class...
     """
     # ------------------------------- Method -------------------------------- #
     def __init__(self, portname, slaveaddress, mode=minimalmodbus.MODE_RTU):
@@ -196,31 +209,39 @@ class AdamModule(object):
         """
         for k,v in config.iteritems():
             self.serial.k = v
+
     # ------------------------------- Method -------------------------------- #
     def module_name(self):
         """
         Read name from module
         """
         return self.read_register(210) # child.moduleName
+
     # ------------------------------- Method -------------------------------- #
     def module_version(self):
         """
             Read module version
         """
         return self.read_register(212) # child.moduleVersion
+
     # ------------------------------- Method -------------------------------- #
     def is_correct_module(self):
         """
-            Check if the module class is correct 
+        Check if the module class is correct
+        
+        TODO: This is a bad check, consider simply removing it...
         """
         if self.name == self.module_name(): # 
             return True
         else:
             return False
+
     # ------------------------------- Method -------------------------------- #
     def is_valid_channel(self, channel, number_of_channels):
         """
-            Check if channel is valid
+        Check if channel is valid
+
+        TODO: This is a bad check, consider simply removing it...
         """
         try:
             int(channel)
@@ -240,7 +261,8 @@ class AdamModule(object):
         Method for retrieving meta information
         """
         return self.metaData[key]
-        
+
+    # ------------------------------- Method -------------------------------- #
     def __setitem__(self, key, val):
         """
         Method for setting meta information
@@ -248,6 +270,13 @@ class AdamModule(object):
         self.metaData[key] = val
         return None
 
+    # ------------------------------- Method -------------------------------- #
+    def get_in(self):
+        """
+        TODO: write a general getter/setter method for the modules!
+        """
+        pass
+    
 # ================================= Class =================================== #
 class AnalogIn(AdamModule):
     """
@@ -262,7 +291,7 @@ class AnalogIn(AdamModule):
     # ------------------------------- Method -------------------------------- #
     def get_analog_in(self, channel=-1):
         """
-            Getter method
+        Getter method
         """
         if channel == -1:
             # TODO for some reason analog_in_start_channel is a tuple... why!?
@@ -274,7 +303,7 @@ class AnalogIn(AdamModule):
     # ------------------------------- Method -------------------------------- #
     def set_type_analog_in(self, channel, value):
         """
-            Setter method
+        Setter method
         """
         return self.write_register(self.type_analog_in_start_channel - 1 + channel, value)
     # ------------------------------- Method -------------------------------- #
@@ -442,6 +471,7 @@ class Adam4024(AnalogOut, DigitalIn):
     # 50: 4~20 mA
         kwargs['module'] = self
         super(Adam4024, self).__init__(self, *args, **kwargs)
+
 # ================================= Class =================================== #
 class Adam4055(DigitalIn, DigitalOut):
     """

@@ -28,52 +28,37 @@ __email__   = "<firstname><dot><lastname><at>ntnu<dot>no"
 __license__ = "GPL.v3"
 __date__      = "$Date: 2015-06-23 (Tue, 23 Jun 2015) $"
 
-
 import wx
-#
+from wx.lib.pubsub import pub # pub.sendMessage('identifier', arg=var) pub.subscribe(method, 'identifier')
 from time import sleep, time
-#
 from FellesLab.Utils.SupportClasses import ExtendedRef, GuiUpdater
 
-
-# ............................... Function .................................. #
-def sensorTypes():
-    """
-    Temperature: list( <weakref at ; to obj.instances>] )
-    Volume: list( <weakref at ; to obj.instances> )
-    """
-
-    types = {}
-    for s in Sensor.___refs___:
-        if not types.has_key(s().__class__.__name__):
-            types[s().__class__.__name__] = [s]
-        else:
-            types[s().__class__.__name__].append(s)
-    return types
-
-
 # =============================== Class ====================================== #
-class Frame(wx.Frame):
+class MainFrame(wx.Frame):
     """
     
     """
     # ------------------------------- Method --------------------------------- #
-    def __init__(self, parent, id, title, pos, size, style):
+    def __init__(self, parent, id, title, pos, size, style, MasterClass, App):
         wx.Frame.__init__(self, parent, id, title, pos, size, style)
 
-        self.InitUI()
+        self.App = App
+        self.MasterClass = MasterClass
 
-        self.Bind(wx.EVT_CLOSE, self.onClose)
+        self.InitUI()
+        self.Bind(wx.EVT_CLOSE, self.OnClose)
 
     # ------------------------------- Method --------------------------------- #
     def InitUI(self):
+
         # adding panel for cross-platform appearance 
         self.panel = wx.Panel(self, wx.ID_ANY)
         self.obj = {}
+
         # adding sizers
         top_sizer       = wx.BoxSizer(wx.VERTICAL)
         title_sizer     = wx.BoxSizer(wx.HORIZONTAL)
-        grid_sizer      = wx.GridSizer(rows=1, cols=1)#, hgap=5, vgap=5)
+        grid_sizer      = wx.GridSizer(rows=1, cols=1) #, hgap=5, vgap=5)
         input_sizer     = wx.BoxSizer(wx.HORIZONTAL)
         button_sizer    = wx.BoxSizer(wx.HORIZONTAL)
 
@@ -109,6 +94,7 @@ Yb,          ,dP 888     888    .o 888  888 888    .oo.  )88b  888    od8(  888 
         # Buttons
         self.start  = FellesButton(self.panel, source=self, target=self.Start , label='Start Sampling')
         self.stop = FellesButton(self.panel, source=self, target=self.Stop, label='Stop Sampling')
+        self.stop.Disable()
 
         # arranging and sizing the widgets 
         grid_sizer.Add(self.obj['logo'], 0, wx.ALL, 5)
@@ -128,30 +114,57 @@ Yb,          ,dP 888     888    .o 888  888 888    .oo.  )88b  888    od8(  888 
         self.panel.SetSizer(top_sizer)
 
         # fit the sizer to the panel
-        self.Stop(None,None)
+        #self.Stop(None, None)
         top_sizer.Fit(self)
 
     # ------------------------------- Method --------------------------------- #
-    def Start(self, a, b):
-        self.panel.SetBackgroundColour('White')
+    def Start(self, event):
+        """
+        GetEventObject 
+        GetName 'button'
+        """
+
+        self.MasterClass.StartSampling()        
+        event.GetEventObject().Disable()
+        pub.sendMessage('DisableSampleRateChange')
+        self.stop.Enable()
+
         print "Start"
 
     # ------------------------------- Method --------------------------------- #
-    def Stop(self, a, b):
-        self.panel.SetBackgroundColour('Gray')
-        print "Stop"
+    def Pause(self, event):
+        """
+        
+        """
+        self.MasterClass.StopSampling()
+        event.GetEventObject().Disable()
+        pub.sendMessage('DisableSampleRateChange')
+        self.OnClose(self)
 
     # ------------------------------- Method --------------------------------- #
-    def onClose(self, event):
+    def Stop(self, event):
+        """
+        
+        """
+        self.MasterClass.StopSampling()
+        event.GetEventObject().Disable()
+        pub.sendMessage('DisableSampleRateChange')
+        self.OnClose(self)
+
+    # ------------------------------- Method --------------------------------- #
+    def OnClose(self, event):
         """
         1. StopSampling
         2. close...
         """
+        try:
+            pub.sendMessage('close.all', event=self)
+        except:
+            pass
 
-        for cls in FellesFrame.__subclasses__():
-            print cls
-
+        print "Window: '%s', closed by event: '%s'" %( self.GetLabel(), event.__class__.__name__ )
         self.Destroy()
+        self.App.ExitMainLoop()
 
 # =============================== Class ====================================== #
 class FellesApp(wx.App):
@@ -159,32 +172,35 @@ class FellesApp(wx.App):
     
     """
     # ------------------------------- Method --------------------------------- #
-    def __init__(self):
-        super(FellesApp, self).__init__()
+    def __init__(self, MasterClass):
+        super(FellesApp, self).__init__(False)
+
+        self.MasterClass = MasterClass
 
         self.InitUI()
 
     # ------------------------------- Method --------------------------------- #
     def InitUI(self):
         wx.App.__init__(self)
-        frame = Frame(None, -1, "Main Frame", (-1,-1), (300,400),\
-        wx.DEFAULT_FRAME_STYLE ^ (wx.RESIZE_BORDER | wx.MAXIMIZE_BOX))
+        frame = MainFrame(None, -1, "Main Frame", (-1,-1), (300,400),\
+        wx.DEFAULT_FRAME_STYLE ^ (wx.RESIZE_BORDER | wx.MAXIMIZE_BOX), self.MasterClass, self)
 
         frame.Show()
         self.SetTopWindow(frame)
+
     # ------------------------------- Method --------------------------------- #
-    def Start(self):
-        self.MainLoop(self)
+#    def Start(self):
+#        self.MainLoop()
 
 # =============================== Class ====================================== #
 class FellesFrame(wx.Frame):
     """
         Frame Class
     """
-    sample_rate = 1.2 # Default sampling rate
+    sample_rate = 0.7 # Default sampling rate
     timer = GuiUpdater
     SAMPLING = True
-
+    
     # ------------------------------- Method --------------------------------- #
     def __init__(self, parent=None, *args, **kwargs):
 
@@ -210,15 +226,19 @@ class FellesFrame(wx.Frame):
 
         super(FellesFrame, self).__init__(parent, *args, **kwargs)
 
+
         self.timer = GuiUpdater(group=None, target=self.UpdateFrame, source=self)
-        # self.Bind(wx.EVT_CLOSE, self.OnClose)
+
+        # Strategies to close the window
+        pub.subscribe(self.OnClose, 'close.all')
+        self.Bind(wx.EVT_CLOSE, self.OnClose)
 
     # ------------------------------- Method --------------------------------- #
     def InitUI(self):
         NotImplementedError("User interface is not implemented")
 
     # ------------------------------- Method --------------------------------- #
-    def onClose(self, event):
+    def OnClose(self, event):
         pass
 
     # ------------------------------- Method --------------------------------- #
@@ -229,14 +249,14 @@ class FellesFrame(wx.Frame):
 # =============================== Class ====================================== #
 class FellesButton(wx.Button):
     """
-        Button Class
+    Button Class
 
-        FellesButton(panel, source, target , label )
-        args:
-          panel (obj) : instance of 'wx.Panel'
-          source (obj): obj. instance (e.g. 'self')
-          target (obj): callable (method OR function)
-          label (str) : label of the button
+    FellesButton(panel, source, target , label )
+    args:
+      panel (obj) : instance of 'wx.Panel'
+      source (obj): obj. instance (e.g. 'self')
+      target (obj): callable (method OR function)
+      label (str) : label of the button
     """
     # ------------------------------- Method --------------------------------- #
     def __init__(self, *args, **kwargs):
@@ -267,16 +287,18 @@ class FellesButton(wx.Button):
         super(FellesButton, self).__init__(*args, **kwargs)
         # Bind button to an event executed on click
         self.Bind(wx.EVT_BUTTON, self.OnButtonClicked)
+
     # ------------------------------- Method --------------------------------- #
     def OnButtonClicked(self, event):
         """
-            Method executed on click
+        Method executed on click
         """
-        self.target(self, self.source)
+        self.target(event)
+
     # ------------------------------- Method --------------------------------- #
     def __call__(self):
         """
-            Method for calling button programatically, i.e. button()
+        Method for calling button programatically, i.e. button()
         """
         self.target(self, self.source)
 
@@ -284,14 +306,14 @@ class FellesButton(wx.Button):
 # =============================== Class ====================================== #
 class FellesTextInput(wx.SpinCtrlDouble): #(wx.SpinCtrl):
     """
-        Class
+    Class
         
     args:
-      target  
-      source 
-      min
-      max
-      initial
+        target  
+        source 
+        min
+        max
+        initial
     """
     # ------------------------------- Method --------------------------------- #
     def __init__(self, parent = None, *args, **kwargs):
@@ -331,7 +353,7 @@ class FellesTextInput(wx.SpinCtrlDouble): #(wx.SpinCtrl):
 # =============================== Class ====================================== #
 class FellesLabel(wx.StaticText):
     """
-        Sugar class
+    Sugar class, should be expanded to make it easier to change font
     """
     # ------------------------------- Method --------------------------------- #
     def __init__(self, *args, **kwargs):

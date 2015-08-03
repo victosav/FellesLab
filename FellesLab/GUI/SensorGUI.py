@@ -24,40 +24,16 @@ o888o     `Y8bod8P'o888oo888o`Y8bod8P'8""888P'  o888ooooood8`Y888""8o `Y8bod8P'
 """
 
 import wx
-#
-from GUI import FellesFrame, FellesButton, FellesTextInput, FellesLabel
-#
-from FellesLab.Equipment import Sensor#, sensorTypes
-from PlotGUI import FellesPlot
-#
-#from FellesLab.Utils.SupportFunctions import sensorTypes
-from FellesLab.Utils.DataStorage import *
-from FellesLab.Utils.SupportClasses import *
+from wx.lib.pubsub import pub
 
+from GUI import FellesFrame, FellesButton, FellesTextInput, FellesLabel
+from PlotGUI import FellesPlot
+
+from FellesLab.Equipment import Sensor
+from FellesLab.Utils import sensorTypes, DataStorage
+from FellesLab.Equipment import Sensor 
 from random import random
 
-
-# ............................... Function .................................. #
-def sensorTypes():
-    """
-    Temperature: list( <weakref at ; to obj.instances>] )
-    Volume: list( <weakref at ; to obj.instances> )
-    """
-
-    types = {}
-    for s in Sensor.___refs___:
-        if not types.has_key(s().__class__.__name__):
-            types[s().__class__.__name__] = [s]
-        else:
-            types[s().__class__.__name__].append(s)
-    return types
-
-# =============================== Class ====================================== #
-def findSensors(ID):
-    """
-    ID list. sensor.ID
-    """
-    return [s for s in Sensor.___refs___ if s().ID in ID]
 
 # =============================== Class ====================================== #
 class SensorFrame(FellesFrame):
@@ -91,16 +67,10 @@ class SensorFrame(FellesFrame):
         """
         super(SensorFrame, self).__init__( *args, **kwargs)
 
-        self.Bind(wx.EVT_CLOSE, self.onClose)
-
-        self.sensors = sensorTypes()[self.GetLabel()]
+        self.sensors = sensorTypes(Sensor)[self.GetLabel()]
 
         # Dictionary keeping track of which sensors to plot
         self.plot_config = { s().ID : s().plot_config for s in self.sensors}
-
-
-        self.gLabel = dict() # Labels, i.e. Sensor 1, 2, ...
-        self.gValue = dict() # Values, i.e. measurements ...
 
         self.InitUI() # Create frame
         self.Show()   # Show frame
@@ -124,7 +94,6 @@ class SensorFrame(FellesFrame):
         #
         #  This means that s().meta['label'] is simply a way of looking up the
         #  'label' key of a Sensor.
-
         self.gLabel = {\
                       s().meta['label']:FellesLabel( self, wx.ID_ANY,\
                                                      label=s().meta['label'],\
@@ -150,8 +119,8 @@ class SensorFrame(FellesFrame):
                       }
 
         # arranging and sizing the widgets
-        grid_sizer.Add( FellesLabel( self, wx.ID_ANY, label='Label', style=wx.ALIGN_CENTER ), 0, wx.ALL, 5 )
-        grid_sizer.Add( FellesLabel( self, wx.ID_ANY, label='Unit', style=wx.ALIGN_CENTER ), 0, wx.ALL, 5 )
+        grid_sizer.Add( FellesLabel( self, wx.ID_ANY, label='Label' , style=wx.ALIGN_CENTER ), 0, wx.ALL, 5 )
+        grid_sizer.Add( FellesLabel( self, wx.ID_ANY, label='Unit'  , style=wx.ALIGN_CENTER ), 0, wx.ALL, 5 )
         grid_sizer.Add( FellesLabel( self, wx.ID_ANY, label='Sample', style=wx.ALIGN_CENTER ), 0, wx.ALL, 5 )
         for s in self.sensors:
             grid_sizer.Add( self.gLabel[ s().meta['label'] ] , 0, wx.ALL, 5 )
@@ -169,6 +138,17 @@ class SensorFrame(FellesFrame):
         self.panel.SetSizerAndFit(top_sizer)
         top_sizer.Fit(self)
         self.top_sizer = top_sizer
+        pub.subscribe(self.ToggleOff, 'DisableSampleRateChange')
+
+    # ------------------------------- Method --------------------------------- #
+    def ToggleOff(self):
+        """
+        """
+        for s in self.sensors:
+            self.gSetpt[s().meta['label']].Disable()
+
+        self.top_sizer.Layout()
+        print "Toggle off"
 
     # ------------------------------- Method --------------------------------- #
     def UpdateFrame(self, sender=None, args=None):
@@ -178,27 +158,29 @@ class SensorFrame(FellesFrame):
         # Update label for sensor: s().meta['label']
         # with the most recent measurement: s().data.history['data'][-1]
         for s in self.sensors:
-            self.gValue[s().meta['label']].SetLabel( '%.2f %s'%(s().data.history['data'][-1], str(s().meta['unit'])) )
+            self.gValue[s().meta['label']].SetLabel( '%.2f %s' %( s().data.history['data'][-1], str(s().meta['unit'])) )
 
+        pub.sendMessage( 'Plot.%s' %self.GetLabel() )
         self.top_sizer.Layout()
-        self.plot.UpdatePlot()
 
     # ------------------------------- Method --------------------------------- #
-    def onClose(self, event):
+    def OnClose(self, event):
         """
         Method stopping the sampling threads for **all** sensors in the Window
-        before closing the plot and text panel. 
-        
+        before closing the plot and text panel.
+
         args:
           event : instance, call the method using: <OBJ>.onClose(self)
-        
-        """
 
-        print "Window: %s, closed by 'event: %s" %(self.GetName(),event.__class__.__name__)
-        self.SAMPLING = False
+        """
+        self.timer.sample = False
+        while self.timer.isAlive():
+            pass
 
         for s in self.sensors:
-            s().SAMPLING = False
+            s().StopSampling()
 
-        self.plot.onClose(self)
+        pub.sendMessage( 'Close.%s' %self.GetLabel(), event=self )
+
+        print "Window: '%s', closed by event: '%s'" %( self.GetLabel(), event.__class__.__name__ )
         self.Destroy()

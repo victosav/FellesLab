@@ -23,6 +23,6 @@ o888o     `Y8bod8P'o888oo888o`Y8bod8P'8""888P'  o888ooooood8`Y888""8o `Y8bod8P'
 @note:
 
 """
-from SupportClasses import ExtendedRef
-from SupportFunctions import timeStamp
+from SupportClasses import ExtendedRef, GuiUpdater, FellesSampler
+from SupportFunctions import timeStamp, findSensor, sensorTypes, dayStamp
 from DataStorage import DataStorage

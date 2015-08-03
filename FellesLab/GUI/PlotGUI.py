@@ -30,21 +30,12 @@ __date__      = "$Date: 2015-06-23 (Tue, 23 Jun 2015) $"
 
 import wx
 import wxmplot
+from wx.lib.pubsub import pub # pub.sendMessage('identifier', arg=var) pub.subscribe(method, 'identifier')
 import numpy as np
 from math import floor, ceil
 
 from FellesLab.Equipment import Sensor #, sensorTypes
-
-# ............................... Function .................................. #
-def findSensor(id):
-    """
-    Find a sensor based on "id"
-
-    TODO: implement
-    """
-    for s in Sensor.___refs___:
-        if s().ID == id:
-            return s
+from FellesLab.Utils import findSensor
 
 # =============================== Class ====================================== #
 class FellesPlot(wx.Frame):
@@ -69,10 +60,9 @@ class FellesPlot(wx.Frame):
         Constructor
         """
         super(FellesPlot, self).__init__(parent)
-
+        
         self.candidates = kwargs['sensors'] # List of all sensors
         self.parentFrame = parent # Parent SensorFrame (from SensorGUI.py)
-        wx.EVT_CLOSE(self, self.onClose)
 
         # setting up plot
         self.plot_panel = wxmplot.PlotPanel(parent=self, size=(500, 350), dpi=100)
@@ -93,6 +83,10 @@ class FellesPlot(wx.Frame):
         # fit the sizer to the panel
         self.Fit()
 
+        wx.EVT_CLOSE(self, self.OnClose)
+        pub.subscribe(self.OnClose, 'Close.%s' %self.parentFrame.GetLabel() )
+        pub.subscribe(self.UpdatePlot, 'Plot.%s' %self.parentFrame.GetLabel() )
+
     # ------------------------------- Method -------------------------------- #
     def UpdatePlot(self):
         """
@@ -104,11 +98,11 @@ class FellesPlot(wx.Frame):
         for id, plt in self.plotIDs.iteritems():
             if plt:
                 self.plot_panel.oplot(
-                                findSensor(id)().data.history['time'],
-                                findSensor(id)().data.history['data'],
+                                findSensor(Sensor,id)().data.history['time'],
+                                findSensor(Sensor,id)().data.history['data'],
                                 side ='left',
-                                label = findSensor(id)().meta['label'],
-                                color = findSensor(id)().plot_config['color'],
+                                label = findSensor(Sensor,id)().meta['label'],
+                                color = findSensor(Sensor,id)().plot_config['color'],
 #                               show_legend=True,
                                 marker = 'None',
                                 drawstyle='line',
@@ -118,13 +112,13 @@ class FellesPlot(wx.Frame):
 
         self.plot_panel.set_xylims(\
           [\
-           floor( min( [ min( findSensor(id)().data.history['time'] )\
+           floor( min( [ min( findSensor(Sensor,id)().data.history['time'] )\
                          for id,plt in self.plotIDs.iteritems() if plt ] ) ),\
-           ceil( max( [ max( findSensor(id)().data.history['time'] )\
+           ceil( max( [ max( findSensor(Sensor,id)().data.history['time'] )\
                          for id,plt in self.plotIDs.iteritems() if plt ] ) ),\
-           floor( min( [ min( findSensor(id)().data.history['data'] )\
+           floor( min( [ min( findSensor(Sensor,id)().data.history['data'] )\
                          for id,plt in self.plotIDs.iteritems() if plt ] ) ),\
-           ceil( max( [ max( findSensor(id)().data.history['data'] )\
+           ceil( max( [ max( findSensor(Sensor,id)().data.history['data'] )\
                           for id,plt in self.plotIDs.iteritems() if plt ] ) )\
           ]\
         )
@@ -132,11 +126,11 @@ class FellesPlot(wx.Frame):
         self.panel_sizer.Fit(self)
 
     # ------------------------------- Method --------------------------------- #
-    def onClose(self, event):
+    def OnClose(self, event):
         """
         
         """
 
-        print "Plot %s closed by event: '%s'" %( self.parentFrame.GetName() ,\
-                                                 event.__class__.__name__)
+        print "Plot '%s' closed by event: '%s'" %( self.parentFrame.GetLabel() ,\
+                                                   event.__class__.__name__)
         self.Destroy()

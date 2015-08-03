@@ -32,6 +32,20 @@ from time import localtime
 from calendar import weekday
 
 # ............................... Function .................................. #
+def dayStamp():
+    """
+    Function returning a timestamp (string) in the format:
+                        Wed_Jun_17_hourminsec_year
+    """
+    LT = localtime() # Timestamp information for filename
+    Day = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    Mon = ['Jan','Feb','Mar','Apr','May','Jun',\
+           'Jul','Aug','Sep','Oct','Nov','Dec']
+    return '{D}_{Num}_{M}_{Y}'.format(\
+               D= Day[weekday(LT[0],LT[1],LT[2])], M= Mon[LT[1]-1], Num= LT[2],\
+               Y= LT[0] )
+
+# ............................... Function .................................. #
 def timeStamp():
     """
     Function returning a timestamp (string) in the format:
@@ -46,13 +60,13 @@ def timeStamp():
                h= LT[3], m= LT[4], s= LT[5], Y= LT[0] )
 
 # ............................... Function .................................. #
-def findSensor(id):
+def findSensor(Sensor, id):
     """
     Find a sensor based on "id", the id is an address in memory for the sensor
     object.
     """
     for sensor in Sensor.___refs___:
-        if sensor()['id'] == id:
+        if sensor().ID == id:
             return sensor
 
 # ............................... Function .................................. #
@@ -69,3 +83,12 @@ def sensorTypes(cls):
         else:
             types[s().__class__.__name__].append(s)
     return types
+
+
+
+
+
+
+
+
+

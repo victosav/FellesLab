@@ -31,34 +31,6 @@ from calendar import weekday
 from time import sleep, time, localtime
 from threading import Thread
 
-
-FILE_PATH = '%s/Desktop/'%(os.path.expanduser("~"))
-#ORCHESTRATOR = MasterClass()
-
-# ================================ Class ==================================== #
-class MasterClass(object):
-    """
-    This class is intended to keep track over objects 
-    """
-    sensors = []
-    equipment = []
-
-    # ------------------------------- Method -------------------------------- #
-    def InitSampling(self):
-        """
-        
-        """
-        pass
-
-    # ------------------------------- Method -------------------------------- #
-    def StopSampling(self):
-        """
-        
-        * Gather ALL DataStorage objects and save the results in a file
-        
-        """
-        pass
-
 # ================================ Class ==================================== #
 class FellesSampler(Thread):
     """
@@ -80,7 +52,8 @@ class FellesSampler(Thread):
         # Create a vector holding historical data for the purpose of plotting.
         # The length may vary because the sampling speed of the units are 
         # different. Moreover
-        history_length = int(round(self.source.plot_config['time_span']/self.source.meta['sample_speed']))
+        history_length = int( round(self.source.plot_config['time_span']/ \
+                                    self.source.meta['sample_speed']) )
         self.history = {'time': collections.deque( [], history_length ),\
                         'data': collections.deque( [], history_length )
                         }
@@ -101,7 +74,7 @@ class FellesSampler(Thread):
 
         The thread will call "source.target()" at a rate determined by "sample
         rate" in the caller.
-        
+
         "source.target" is the method that reads a sample 
         from the device
         """
@@ -117,7 +90,11 @@ class FellesSampler(Thread):
         """
         
         """
-        print 'Stopping sensor %s' %self.source.meta['label']
+        print "Stopping Thread: '%s' in instance: '%s', base class: '%s'" %( 
+                                                    self.source.meta['label'],
+                                               self.source.__class__.__name__,
+                                  self.source.__class__.__bases__[0].__name__,
+                                  )
 
 
 # ================================ Class ==================================== #
@@ -129,7 +106,7 @@ class GuiUpdater(Thread):
     def __init__(self, source, target, *args, **kwargs):
         self.target = target
         self.source = source
-
+        self.sample = self.source.SAMPLING
         super(GuiUpdater, self).__init__(None)
 
     # ------------------------------- Method -------------------------------- #
@@ -143,11 +120,25 @@ class GuiUpdater(Thread):
         NOTE: It is necesary to call target trough wx.CallAfter on Linux.
          "wx.CallAfter(self.target, self)" is a synonym for "self.taget(self)"
         """
-        while self.source.SAMPLING:
+
+        while self.sample:
             wx.CallAfter(self.target, self)
             sleep(1)
 
-        self.source.onClose()
+        self.Terminate()
+
+    # ------------------------------- Method -------------------------------- #
+    def Terminate(self):
+        """
+        
+        """
+        print "Stopping GUI thread: '%s', instance: '%s', base class: '%s'" %( 
+                                                       self.source.GetLabel(), 
+                                               self.source.__class__.__name__, 
+                                  self.source.__class__.__bases__[0].__name__,
+                                  )
+
+        print "Stopping GUI thread: '%s'" %self.source.GetLabel()
 
 # ================================ Class ==================================== #
 class ExtendedRef(weakref.ref):

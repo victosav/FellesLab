@@ -20,7 +20,11 @@ o888o     `Y8bod8P'o888oo888o`Y8bod8P'8""888P'  o888ooooood8`Y888""8o `Y8bod8P'
 @todo 1.0:
 @change:
 @note:
-
+ term = Terminal()
+     |          with term.location(2, 5):
+     |              print 'Hello, world!'
+     |              for x in xrange(10):
+     |                  print 'I can do it %i times!' % x
 """
 
 __author__  = "Sigve Karolius"
@@ -39,8 +43,7 @@ from tempfile import TemporaryFile, mkdtemp
 # =============================== Class ===================================== #
 class DataStorage(object):
     """
-    This should have been be a clever data storage container. 
-    
+    This should have been be a clever data storage container.     
     """
 
     # List of object instances
@@ -54,18 +57,50 @@ class DataStorage(object):
         """
         self.___refs___.append(ExtendedRef(self)) # Add instance to references
 
-        self.owner = owner # Object whose data will be saved
-        self.File = TemporaryFile('w', -1)
+        self.owner = owner # Object whose data will be saved 
+
+        #WriteOutData.FILES[owner.meta['label']] = TemporaryFile()
+        self.File = TemporaryFile()#WriteOutData.FILES[owner.meta['label']]
+
         self.File.write('time, %s\n' %self.owner.meta['label'] )
+
+        self.Resize()
+
+    # ------------------------------- Method -------------------------------- #
+    def Resize(self):
+        """
+        Resize the array needed to store
+        """
+        if ('time_span') not in self.owner.plot_config:
+            self.owner.plot_config['time_span'] = 5 # seconds
+
+        self.history_length = int( round( self.owner.plot_config['time_span']/self.owner.meta['sample_speed'] ) )
+        self.Init()
+
+    # ------------------------------- Method -------------------------------- #
+    def Init(self):
+        """
+        """
         # Create a vector holding historical data for the purpose of plotting.
         # The length may vary because the sampling speed of different are 
         # sensors may vary.
-        history_length = int( round( owner.plot_config['time_span']/ \
-                                     owner.meta['sample_speed'] ) )
-        self.history = {'time': collections.deque( [], history_length ),\
-                        'data': collections.deque( [], history_length )
+
+        self.history = {'time': collections.deque( [], self.history_length ),\
+                        'data': collections.deque( [], self.history_length )
                        }
-        del history_length
+
+    # ------------------------------- Method -------------------------------- #
+    def Restart(self, time, val):
+        """
+        """
+        # Create a vector holding historical data for the purpose of plotting.
+        # The length may vary because the sampling speed of different are 
+        # sensors may vary.
+
+        self.history = {'time': collections.deque( [], self.history_length ),\
+                        'data': collections.deque( [], self.history_length )
+                       }
+        self.Update(time, val)
 
     # ------------------------------- Method -------------------------------- #
     def Update(self, time, val):
@@ -74,28 +109,13 @@ class DataStorage(object):
         """
         self.history['data'].append(val)
         self.history['time'].append(time)
-        self.File.write('%f , %f\n' %(time, val))
+
+        if self.owner.SAVE:
+            self.File.write('%f , %f\n' %(time, val))
 
     # ------------------------------- Method -------------------------------- #
     def __call__(self):
+        """
+        
+        """
         return self
-
-# =============================== Class ===================================== #
-class WriteOutData:
-    """
-    
-    """
-    SAVE_PATH = '%s/Desktop/'%(os.path.expanduser("~"))
-    SAVE_NAME = timeStamp()
-    # ------------------------------- Method -------------------------------- #
-    def __init__(self, parent, save_path=None, save_name=None):
-        ''' Create a save object '''
-
-
-#        with open(self.savePath + self.saveName, 'a') as self.f:
-#            self.f.write( 'time' + ',' + self.parent.__class__.__name__)
-
-    # ------------------------------- Method -------------------------------- #
-    def asdf(self, a, b):
-        with open('output.csv', 'w') as f:
-           csv.writer(f).writerows(it.izip_longest(a, b))
