@@ -27,7 +27,8 @@ __license__ = "GPL.v3"
 __date__      = "$Date: 2015-06-23 (Tue, 23 Jun 2015) $"
 
 from time import time
-from FellesLab.Utils import DataStorage, FellesSampler, ExtendedRef, sensorTypes
+from SupportClasses import FellesSampler, ExtendedRef, DataStorage
+from SupportFunctions import sensorTypes
 
 # ================================ Class ==================================== #
 class FellesBaseClass(object):
@@ -157,6 +158,10 @@ class FellesBaseClass(object):
         print "Instance '%s' terminated by event: '%s'" %(self.meta['label'], event)
 
     # ------------------------------- Method -------------------------------- #
+    def InitGUI(self):
+        pass
+
+    # ------------------------------- Method -------------------------------- #
     def UpdateSampleSpeed(self, event, caller):
         """
         Method updating the sample_speed
@@ -167,6 +172,7 @@ class FellesBaseClass(object):
                 event.GetValue() )
 
         self.meta['sample_speed'] = event.GetValue()
+        
 
     # ------------------------------- Method -------------------------------- #
     def __repr__(self):

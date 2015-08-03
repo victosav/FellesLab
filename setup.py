@@ -35,8 +35,9 @@ setup(
     packages=['FellesLab','adam_modules','mac_motor_module', 'alicat_devices'],
     install_requires=["pyserial","minimalmodbus"],
     package_dir={ 'FellesLab':'FellesLab', 'adam_modules':'adam_modules', 'mac_motor_module':'mac_motor_module', 'alicat_devices':'alicat_devices'},
-    package_data={'FellesLab': ['Equipment/*.py','GUI/*.py','Utils/*.py'] , 'adam_modules':['utils/*.py']},
-      long_description="""\
+    #package_data={'FellesLab': ['Equipment/*.py','GUI/*.py','Utils/*.py'] , 'adam_modules':['utils/*.py']},
+    package_data={'FellesLab': [] , 'adam_modules':['utils/*.py']},
+    long_description="""\
       FellesLab is a framework for reading information between lab units...
       """,
       classifiers=[

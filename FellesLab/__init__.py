@@ -22,12 +22,16 @@ o888o     `Y8bod8P'o888oo888o`Y8bod8P'8""888P'  o888ooooood8`Y888""8o `Y8bod8P'
 @note:
 
 """
-
 import os
 
-from Equipment import Sensor, Voltage, Temperature
-from GUI import FellesApp, FellesButton, FellesFrame, FellesLabel, FellesTextInput, GUI, PlotGUI, SensorFrame, SensorGUI
-from Utils import DataStorage, ExtendedRef, GuiUpdater, FellesSampler, timeStamp, findSensor, sensorTypes, dayStamp
+from Equipment import Equipment, Pump
+from Sensors import Sensor, Temperature, Voltage, SensorFrame
+from Controllers import Controller
+from FellesBase import FellesBaseClass
+from GUI import FellesApp, FellesButton, FellesFrame, FellesLabel, FellesTextInput
+from SupportClasses import ExtendedRef, GuiUpdater, FellesSampler, DataStorage
+from SupportFunctions import timeStamp, findSensor, sensorTypes, dayStamp
+
 from subprocess import call
 import csv
 import itertools as it
@@ -117,9 +121,6 @@ class MasterClass(object):
     """
     This class is intended to keep track over objects 
     """
-    sensors = [] # All sensors
-    equipment = [] # All equipment
-    events = [] # All events
 
     # ------------------------------- Method -------------------------------- #
     def __init__(self):
@@ -151,15 +152,14 @@ class MasterClass(object):
               positions as well...
         """
         self.app = FellesApp(self)
-        self.GUI = {}
-
-        s = {}
-        for sensor in self.sensors:
-            if not s.has_key(sensor.__class__.__bases__[0].__name__):
-                s[sensor.__class__.__bases__[0].__name__] = 0
-                for k,v in sensorTypes(sensor.__class__.__bases__[0]).iteritems():
-                    self.GUI[k] = SensorFrame(title=k)
-
+        self.gui = {}
+        for cls in FellesBaseClass.___refs___:
+            if not self.gui.has_key( cls().__class__.__base__.__name__ ):
+                print "Creating GUI frame for '%s'" %cls().__class__.__base__.__name__
+                self.gui[cls().__class__.__base__.__name__] = cls().InitGUI()
+        
+        print "The following GUIs have been created: %s" %self.gui
+        self.app.MainLoop()
 
     # ------------------------------- Method -------------------------------- #
     def StartSampling(self):
@@ -167,8 +167,8 @@ class MasterClass(object):
         TODO: Can this be more clever?
         """
         self.T = time() # Reference time, is used in SaveData
-        for sensor in self.sensors:
-            sensor.StartSampling(self)
+        for cls in FellesBaseClass.___refs___:
+            cls().StartSampling(self)
         print "Start Sampling"
 
     # ------------------------------- Method -------------------------------- #
@@ -183,12 +183,10 @@ class MasterClass(object):
         * Gather ALL DataStorage objects and save the results in a file
         """
         Sensor.SAVE = False
-        if not sensor:
-            for sensor in self.sensors:
-                sensor.SAMPLING = False
+        Equipment.SAVE = False
 
-        else:
-            Sensor.SAMPLING = False
+        for cls in FellesBaseClass.___refs___:
+            cls().StopSampling(self)
 
         self.SaveData()
         print "Stop Sampling"
@@ -215,12 +213,12 @@ class MasterClass(object):
         # TODO: Rewrite, difficult to follow...
         DATA = [ ] # This will become a list of lists, e.g.  
                    # [ [time, ...], [Temp1, ...], [time, ...], [Temp2, ...] ]
-        for sensor in self.sensors:
-            dt = self.T - sensor.t0 # Ensure that the time stamps are adjusted to the same reference.
+        for cls in FellesBaseClass.___refs___:
+            dt = self.T - cls().t0 # Ensure that the time stamps are adjusted to the same reference.
 
-            sensor.data.File.seek(0) # Rewind file pointer
+            cls().data.File.seek(0) # Rewind file pointer
 
-            F = csv.reader(sensor.data.File, delimiter=',', quotechar='|')
+            F = csv.reader(cls().data.File, delimiter=',', quotechar='|')
             r = [[],[]]
             for row in F:
                 for i,num in enumerate(row):
@@ -230,7 +228,7 @@ class MasterClass(object):
             
             for j in r:
                 DATA.append(j)
-            sensor.data.File.close()
+            cls().data.File.close()
         
         # Finally, write data file.
         with open( day + "/" + timeStamp() + '.csv', 'w') as f:

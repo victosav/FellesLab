@@ -30,6 +30,9 @@ import wx
 from calendar import weekday
 from time import sleep, time, localtime
 from threading import Thread
+from SupportFunctions import timeStamp
+from tempfile import TemporaryFile, mkdtemp
+
 
 # ================================ Class ==================================== #
 class FellesSampler(Thread):
@@ -197,3 +200,89 @@ class ExtendedRef(weakref.ref):
 
         """
         return self.referee()
+
+# =============================== Class ===================================== #
+class DataStorage(object):
+    """
+    This should have been be a clever data storage container.     
+    """
+
+    # List of object instances
+    ___refs___ = []
+
+    # ------------------------------- Method -------------------------------- #
+    def __init__(self, owner):
+        """
+        args:
+          owner (instance): Parent object to which the DataStorage instance belongs
+        """
+        self.___refs___.append(ExtendedRef(self)) # Add instance to references
+
+        self.owner = owner # Object whose data will be saved 
+
+        self.File = TemporaryFile()
+        self.File.write('time, %s %s\n' %(self.owner.meta['label'],self.owner.meta['unit']) )
+
+        self.Resize()
+
+    # ------------------------------- Method -------------------------------- #
+    def Scale(self, val):
+        return self.owner.data_config['calibrationCurve'](val)
+
+    # ------------------------------- Method -------------------------------- #
+    def Resize(self):
+        """
+        Resize the array needed to store
+        
+        Use this method if the sample rate is changed.
+        """
+        if ('time_span') not in self.owner.plot_config:
+            self.owner.plot_config['time_span'] = 5 # seconds
+
+        self.history_length = int( round( self.owner.plot_config['time_span']/self.owner.meta['sample_speed']))
+        self.FreshStart()
+
+    # ------------------------------- Method -------------------------------- #
+    def FreshStart(self):
+        """
+        Use this method if you just need a fresh start
+        """
+        # Create a vector holding historical data for the purpose of plotting.
+        # The length may vary because the sampling speed of different are 
+        # sensors may vary.
+
+        self.history = {'time': collections.deque( [], self.history_length ),\
+                        'data': collections.deque( [], self.history_length )
+                       }
+
+    # ------------------------------- Method -------------------------------- #
+    def Restart(self, time, val):
+        """
+        """
+        # Create a vector holding historical data for the purpose of plotting.
+        # The length may vary because the sampling speed of different are 
+        # sensors may vary.
+
+        self.history = {'time': collections.deque( [], self.history_length ),\
+                        'data': collections.deque( [], self.history_length )
+                       }
+        self.Update(time, val)
+
+    # ------------------------------- Method -------------------------------- #
+    def Update(self, time, val):
+        """
+        Method updating the history
+        """
+        self.history['data'].append(self.Scale(val))
+        self.history['time'].append(time)
+
+        if self.owner.SAVE:
+            self.File.write('%f , %f\n' %(time, self.history['data'][-1] ))
+
+    # ------------------------------- Method -------------------------------- #
+    def __call__(self):
+        """
+        
+        """
+        return self
+

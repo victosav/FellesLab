@@ -9,7 +9,7 @@ oooooooooooo       oooo oooo                    ooooo                 .o8
 o888o     `Y8bod8P'o888oo888o`Y8bod8P'8""888P'  o888ooooood8`Y888""8o `Y8bod8P'
 
 
-@summary:      Felles lab GUI graphics parent classes
+@summary:      Felles lab parent classes
 @author:       Sigve Karolius
 @organization: Department of Chemical Engineering, NTNU, Norway
 @contact:      sigveka@ntnu.no
@@ -20,19 +20,84 @@ o888o     `Y8bod8P'o888oo888o`Y8bod8P'8""888P'  o888ooooood8`Y888""8o `Y8bod8P'
 @todo 1.0:
 @change:
 @note:
-
 """
+__author__  = "Sigve Karolius"
+__email__   = "<firstname>ka<at>ntnu<dot>no"
+__license__ = "GPL.v3"
+__date__      = "$Date: 2015-06-23 (Tue, 23 Jun 2015) $"
+
+# from FellesBase import FellesBaseClass
+# from FellesLab.Utils import sensorTypes, FellesSampler, ExtendedRef
+# from FellesLab.GUI import SensorFrame
+    
+from SupportClasses import FellesSampler, ExtendedRef, DataStorage
+from FellesBase import FellesBaseClass
+from SupportFunctions import sensorTypes, findSensor
+
+import numpy as np
+from math import floor, ceil
 
 import wx
 from wx.lib.pubsub import pub
+import wxmplot
 
 from GUI import FellesFrame, FellesButton, FellesTextInput, FellesLabel
-from PlotGUI import FellesPlot
 
-from FellesLab.Equipment import Sensor
-from FellesLab.Utils import sensorTypes, DataStorage
-from FellesLab.Equipment import Sensor 
-from random import random
+
+# ================================ Class ==================================== #
+class Sensor(FellesBaseClass):
+    """
+    Syntactic sugar... 
+    """
+    ___sensors___ = []
+    # ------------------------------- Method -------------------------------- #
+    def __init__(self, *args, **kwargs):
+        super(Sensor, self).__init__(*args, **kwargs)
+        self.___sensors___.append(ExtendedRef(self))
+
+    # ------------------------------- Method -------------------------------- #
+    def InitGUI(self):
+        """
+        Method creating sensor frames for the sensors
+        """
+        SensorGUI = {}
+        for s in self.___sensors___:
+            if not SensorGUI.has_key(s().__class__.__name__):
+                print "Creating GUI for Sensor: '%s'" %s().__class__.__name__
+                SensorGUI[s().__class__.__name__] = SensorFrame(title=s().__class__.__name__)
+
+        return SensorGUI
+
+
+    # ------------------------------- Method -------------------------------- #
+    def __repr__(self):
+        return '<%s.%s sensor at %s>' % (
+            self.__class__.__module__,
+            self.__class__.__name__,
+            self.ID
+        )
+
+# ================================ Class ==================================== #
+class Temperature(Sensor):
+    """
+    Syntactic sugar... 
+    """
+
+    # ------------------------------- Method -------------------------------- #
+    def __init__(self, *args, **kwargs):
+        super(Temperature, self).__init__(*args, **kwargs)
+
+#        super(Temperature, self).InitGUI()
+
+# ================================ Class ==================================== #
+class Voltage(Sensor):
+    """
+        Syntactic sugar... 
+    """
+    # ------------------------------- Method -------------------------------- #
+    def __init__(self, *args, **kwargs):
+        super(Voltage, self).__init__(*args, **kwargs)
+
 
 
 # =============================== Class ====================================== #
@@ -184,3 +249,102 @@ class SensorFrame(FellesFrame):
 
         print "Window: '%s', closed by event: '%s'" %( self.GetLabel(), event.__class__.__name__ )
         self.Destroy()
+    
+# =============================== Class ====================================== #
+class FellesPlot(wx.Frame):
+    """
+    Rudimentary class creating a plot frame that is updated dynamically.
+    The class takes one argument "parent".
+    
+     'Unit' .-------------------.
+            |          ____     |
+            |         /    |    |
+            |        /      \/  |
+            |__/\   /           |
+            |    \_/            |
+            |                   |
+            .-------------------.
+                    Time
+    
+    """
+    # ------------------------------- Method --------------------------------- #
+    def __init__(self, parent=None, *args, **kwargs):
+        """
+        Constructor
+        """
+        super(FellesPlot, self).__init__(parent)
+        
+        self.candidates = kwargs['sensors'] # List of all sensors
+        self.parentFrame = parent # Parent SensorFrame (from SensorGUI.py)
+
+        # setting up plot
+        self.plot_panel = wxmplot.PlotPanel(parent=self, size=(500, 350), dpi=100)
+
+        # adding sizer
+        self.panel_sizer = wx.BoxSizer()
+        self.panel_sizer.Add(self.plot_panel)
+
+        # assigning the sizer to the panel
+        self.SetSizer(self.panel_sizer)
+
+        # plotIDs keeps track over which sensor to plot.
+        #      ID            bool  ,       ID          bool
+        # {'0x7f921e6977a0': False , '0x7f921e696530': True }
+        # (The ID is the address in memory of the sensor object)
+        self.plotIDs = { c().ID : c().plot_config['plot'] for c in self.candidates }
+
+        # fit the sizer to the panel
+        self.Fit()
+
+        wx.EVT_CLOSE(self, self.OnClose)
+        pub.subscribe(self.OnClose, 'Close.%s' %self.parentFrame.GetLabel() )
+        pub.subscribe(self.UpdatePlot, 'Plot.%s' %self.parentFrame.GetLabel() )
+
+    # ------------------------------- Method -------------------------------- #
+    def UpdatePlot(self):
+        """
+        Method for updating the plot frame.
+        
+        The sensors in "self.plotIDs" that are not "True" will not be plotted.
+        """
+
+        for id, plt in self.plotIDs.iteritems():
+            if plt:
+                self.plot_panel.oplot(
+                                findSensor(Sensor,id)().data.history['time'],
+                                findSensor(Sensor,id)().data.history['data'],
+                                side ='left',
+                                label = findSensor(Sensor,id)().meta['label'],
+                                color = findSensor(Sensor,id)().plot_config['color'],
+#                               show_legend=True,
+                                marker = 'None',
+                                drawstyle='line',
+                                style = 'solid',
+                                grid=True,
+                                )
+
+        self.plot_panel.set_xylims(\
+          [\
+           floor( min( [ min( findSensor(Sensor,id)().data.history['time'] )\
+                         for id,plt in self.plotIDs.iteritems() if plt ] ) ),\
+           ceil( max( [ max( findSensor(Sensor,id)().data.history['time'] )\
+                         for id,plt in self.plotIDs.iteritems() if plt ] ) ),\
+           floor( min( [ min( findSensor(Sensor,id)().data.history['data'] )\
+                         for id,plt in self.plotIDs.iteritems() if plt ] ) ),\
+           ceil( max( [ max( findSensor(Sensor,id)().data.history['data'] )\
+                          for id,plt in self.plotIDs.iteritems() if plt ] ) )\
+          ]\
+        )
+
+        self.panel_sizer.Fit(self)
+
+    # ------------------------------- Method --------------------------------- #
+    def OnClose(self, event):
+        """
+        
+        """
+
+        print "Plot '%s' closed by event: '%s'" %( self.parentFrame.GetLabel() ,\
+                                                   event.__class__.__name__)
+        self.Destroy()
+

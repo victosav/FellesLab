@@ -31,7 +31,9 @@ __date__      = "$Date: 2015-06-23 (Tue, 23 Jun 2015) $"
 import wx
 from wx.lib.pubsub import pub # pub.sendMessage('identifier', arg=var) pub.subscribe(method, 'identifier')
 from time import sleep, time
-from FellesLab.Utils.SupportClasses import ExtendedRef, GuiUpdater
+
+# from FellesLab.Utils.SupportClasses import ExtendedRef, GuiUpdater
+from SupportClasses import ExtendedRef, GuiUpdater
 
 # =============================== Class ====================================== #
 class MainFrame(wx.Frame):
@@ -169,7 +171,7 @@ Yb,          ,dP 888     888    .o 888  888 888    .oo.  )88b  888    od8(  888 
 # =============================== Class ====================================== #
 class FellesApp(wx.App):
     """
-    
+    App class
     """
     # ------------------------------- Method --------------------------------- #
     def __init__(self, MasterClass):
@@ -300,7 +302,7 @@ class FellesButton(wx.Button):
         """
         Method for calling button programatically, i.e. button()
         """
-        self.target(self, self.source)
+        self.OnButtonClicked(self)
 
 
 # =============================== Class ====================================== #
