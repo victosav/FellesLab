@@ -41,10 +41,9 @@ class MainFrame(wx.Frame):
     
     """
     # ------------------------------- Method --------------------------------- #
-    def __init__(self, parent, id, title, pos, size, style, MasterClass, App):
+    def __init__(self, parent, id, title, pos, size, style, MasterClass):
         wx.Frame.__init__(self, parent, id, title, pos, size, style)
 
-        self.App = App
         self.MasterClass = MasterClass
 
         self.InitUI()
@@ -131,8 +130,6 @@ Yb,          ,dP 888     888    .o 888  888 888    .oo.  )88b  888    od8(  888 
         pub.sendMessage('DisableSampleRateChange')
         self.stop.Enable()
 
-        print "Start"
-
     # ------------------------------- Method --------------------------------- #
     def Pause(self, event):
         """
@@ -164,9 +161,9 @@ Yb,          ,dP 888     888    .o 888  888 888    .oo.  )88b  888    od8(  888 
         except:
             pass
 
-        print "Window: '%s', closed by event: '%s'" %( self.GetLabel(), event.__class__.__name__ )
+        print "Window: '%s', closed by event: '%s'" %(self.GetLabel(), event.__class__.__name__)
         self.Destroy()
-        self.App.ExitMainLoop()
+        self.MasterClass.app.ExitMainLoop()
 
 # =============================== Class ====================================== #
 class FellesApp(wx.App):
@@ -185,14 +182,11 @@ class FellesApp(wx.App):
     def InitUI(self):
         wx.App.__init__(self)
         frame = MainFrame(None, -1, "Main Frame", (-1,-1), (300,400),\
-        wx.DEFAULT_FRAME_STYLE ^ (wx.RESIZE_BORDER | wx.MAXIMIZE_BOX), self.MasterClass, self)
+        wx.DEFAULT_FRAME_STYLE ^ (wx.RESIZE_BORDER | wx.MAXIMIZE_BOX), self.MasterClass)
 
         frame.Show()
         self.SetTopWindow(frame)
 
-    # ------------------------------- Method --------------------------------- #
-#    def Start(self):
-#        self.MainLoop()
 
 # =============================== Class ====================================== #
 class FellesFrame(wx.Frame):

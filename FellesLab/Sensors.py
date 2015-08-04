@@ -225,7 +225,11 @@ class SensorFrame(FellesFrame):
         for s in self.sensors:
             self.gValue[s().meta['label']].SetLabel( '%.2f %s' %( s().data.history['data'][-1], str(s().meta['unit'])) )
 
-        pub.sendMessage( 'Plot.%s' %self.GetLabel() )
+        try:
+            pub.sendMessage( 'Plot.%s' %self.GetLabel() )
+        except:
+            self.plot_deleted = True
+            
         self.top_sizer.Layout()
 
     # ------------------------------- Method --------------------------------- #
@@ -244,8 +248,10 @@ class SensorFrame(FellesFrame):
 
         for s in self.sensors:
             s().StopSampling()
+        
 
-        pub.sendMessage( 'Close.%s' %self.GetLabel(), event=self )
+        if not self.plot_deleted:
+            pub.sendMessage( 'Close.%s' %self.GetLabel(), event=self )
 
         print "Window: '%s', closed by event: '%s'" %( self.GetLabel(), event.__class__.__name__ )
         self.Destroy()
@@ -276,10 +282,22 @@ class FellesPlot(wx.Frame):
         
         self.candidates = kwargs['sensors'] # List of all sensors
         self.parentFrame = parent # Parent SensorFrame (from SensorGUI.py)
-
+        self.first_time = True
+        
         # setting up plot
-        self.plot_panel = wxmplot.PlotPanel(parent=self, size=(500, 350), dpi=100)
+        self.plot_panel = wxmplot.PlotPanel(parent=self, size=(500, 500), dpi=100)
 
+        self.plot_panel.set_xlabel('x')
+        self.plot_panel.set_ylabel('y')
+#        self.plot_panel.set_y2label(label)
+        self.plot_panel.set_title(self.parentFrame.GetLabel())
+
+#         plotpanel.unzoom()
+#         plotpanel.unzoom_all()
+#         plotpanel.set_title(title)
+#         plotpanel.set_bgcol(color)
+#         plotpanel.write_message(message)
+        
         # adding sizer
         self.panel_sizer = wx.BoxSizer()
         self.panel_sizer.Add(self.plot_panel)
@@ -308,20 +326,50 @@ class FellesPlot(wx.Frame):
         The sensors in "self.plotIDs" that are not "True" will not be plotted.
         """
 
-        for id, plt in self.plotIDs.iteritems():
-            if plt:
-                self.plot_panel.oplot(
-                                findSensor(Sensor,id)().data.history['time'],
-                                findSensor(Sensor,id)().data.history['data'],
-                                side ='left',
-                                label = findSensor(Sensor,id)().meta['label'],
-                                color = findSensor(Sensor,id)().plot_config['color'],
-#                               show_legend=True,
-                                marker = 'None',
-                                drawstyle='line',
-                                style = 'solid',
-                                grid=True,
-                                )
+        if self.first_time:
+            for id, plt in self.plotIDs.iteritems():
+                if plt:
+                    self.plot_panel.oplot(
+                           np.array(findSensor(Sensor,id)().data.history['time']),
+                           np.array(findSensor(Sensor,id)().data.history['data']),
+                           draw=False,
+                           side ='left',
+                           label = findSensor(Sensor,id)().meta['label'],
+                           color = findSensor(Sensor,id)().plot_config['color'],
+                           xlabel = None, ylabel = None, y2label = None,
+                           title = None,
+                           dy = None, 
+                           ylog_scale = False,
+                           xmin = None, xmax = None, ymin = None, ymax = None,
+                           refresh = True, 
+                           show_legend= True, legend_loc='ur', legend_on= True, 
+                           delay_draw = False,
+                           marker = 'None', markersize = None, 
+                           autoscale=True,
+                           linewidth = 3, # default 2
+                           drawstyle = 'line', style = 'solid',
+                           grid = True,
+                           bgcolor= None, framecolor= None, gridcolor= None, 
+                           labelfontsize= 10, # default 9 
+                           legendfontsize= 12, # default 7 
+                           fullbox=None, # 'box', 'open', 'bottom'
+                           axes_style=None, 
+                           zorder=None,
+                        )
+
+            self.first_time = False
+
+        else:
+            i = 0
+            for id,plt in self.plotIDs.iteritems():
+                if plt:
+                    self.plot_panel.update_line(
+                                i,
+                               np.array(findSensor(Sensor,id)().data.history['time']),
+                               np.array(findSensor(Sensor,id)().data.history['data']),
+                               draw=plt,
+                               )
+                i += 1
 
         self.plot_panel.set_xylims(\
           [\
@@ -344,7 +392,6 @@ class FellesPlot(wx.Frame):
         
         """
 
-        print "Plot '%s' closed by event: '%s'" %( self.parentFrame.GetLabel() ,\
-                                                   event.__class__.__name__)
+        print "Plot '%s' closed by event: '%s'" %(self.parentFrame.GetLabel(),\
+                                                  event.__class__.__name__)
         self.Destroy()
-

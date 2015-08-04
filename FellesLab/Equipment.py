@@ -335,3 +335,101 @@ class PumpFrame(FellesFrame):
 
         print "Window: '%s', closed by event: '%s'" %( self.GetLabel(), event.__class__.__name__ )
         self.Destroy()
+
+# =============================== Class ====================================== #
+class FellesPlot(wx.Frame):
+    """
+    Rudimentary class creating a plot frame that is updated dynamically.
+    The class takes one argument "parent".
+    
+     'Unit' .-------------------.
+            |          ____     |
+            |         /    |    |
+            |        /      \/  |
+            |__/\   /           |
+            |    \_/            |
+            |                   |
+            .-------------------.
+                    Time
+    
+    """
+    # ------------------------------- Method --------------------------------- #
+    def __init__(self, parent=None, *args, **kwargs):
+        """
+        Constructor
+        """
+        super(FellesPlot, self).__init__(parent)
+        
+        self.candidates = kwargs['sensors'] # List of all sensors
+        self.parentFrame = parent # Parent SensorFrame (from SensorGUI.py)
+
+        # plotIDs keeps track over which sensor to plot.
+        #      ID            bool  ,       ID          bool
+        # {'0x7f921e6977a0': False , '0x7f921e696530': True }
+        # (The ID is the address in memory of the sensor object)
+        self.plotIDs = { c().ID : c().plot_config['plot'] for c in self.candidates }
+        
+        # setting up plot
+        # self.plot_panel = wxmplot.PlotPanel(parent=self, size=(500, 500), dpi=100)
+        self.plotPanels = { c().ID : wxmplot.PlotPanel(parent=self, size=(500, 500), dpi=100) for c in self.candidates }
+
+        self.plotpanel.set_title(title)
+#        self.plot_panel.set_xlabel('x')
+#        self.plot_panel.set_ylabel('y')
+
+        # adding sizer
+        self.panel_sizer = wx.BoxSizer()
+        for id, panel in self.plotPanels.iteritems():
+            self.panel_sizer.Add(panel)
+
+        # assigning the sizer to the panel
+        self.SetSizer(self.panel_sizer)
+
+        # fit the sizer to the panel
+        self.Fit()
+
+        wx.EVT_CLOSE(self, self.OnClose)
+        pub.subscribe(self.OnClose, 'Close.%s' %self.parentFrame.GetLabel() )
+        pub.subscribe(self.UpdatePlot, 'Plot.%s' %self.parentFrame.GetLabel() )
+
+    # ------------------------------- Method -------------------------------- #
+    def UpdatePlot(self):
+        """
+        Method for updating the plot frame.
+        
+        The sensors in "self.plotIDs" that are not "True" will not be plotted.
+        """
+
+        for id, plt in self.plotIDs.iteritems():
+            if plt:
+                self.plotPanels[id].update_line(0,
+                                 findSensor(Sensor,id)().data.history['time'],
+                                 findSensor(Sensor,id)().data.history['data'], 
+                                )
+
+        self.plot_panel.set_xylims(\
+          [\
+           floor( min( [ min( findSensor(Sensor,id)().data.history['time'] )\
+                         for id,plt in self.plotIDs.iteritems() if plt ] ) ),\
+           ceil( max( [ max( findSensor(Sensor,id)().data.history['time'] )\
+                         for id,plt in self.plotIDs.iteritems() if plt ] ) ),\
+           floor( min( [ min( findSensor(Sensor,id)().data.history['data'] )\
+                         for id,plt in self.plotIDs.iteritems() if plt ] ) ),\
+           ceil( max( [ max( findSensor(Sensor,id)().data.history['data'] )\
+                          for id,plt in self.plotIDs.iteritems() if plt ] ) )\
+          ]\
+        )
+
+        self.panel_sizer.Fit(self)
+
+    # ------------------------------- Method --------------------------------- #
+    def OnClose(self, event):
+        """
+        
+        """
+
+        print "Plot '%s' closed by event: '%s'" %(self.parentFrame.GetLabel(),\
+                                                  event.__class__.__name__)
+
+        self.Destroy()
+
