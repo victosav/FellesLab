@@ -27,16 +27,46 @@ __license__ = "GPL.v3"
 __date__      = "$Date: 2015-06-23 (Tue, 23 Jun 2015) $"
 
 from FellesBase import FellesBaseClass
+from collections import defaultdict
 
 # ================================ Class ==================================== #
 class Controller(FellesBaseClass):
     """
-    Syntactic sugar... 
+    Syntactic sugar...
     """
-
+    __controllers__ = defaultdict(list)
     # ------------------------------- Method -------------------------------- #
     def __init__(self, *args, **kwargs):
-        super(Controller, self).__init__(*args, **kwargs)
+        super(Sensor, self).__init__(*args, **kwargs)
+        self.__controllers__[self.__class__].append(ExtendedRef(self)) # Add instance to references
+
+    # ------------------------------- Method -------------------------------- #
+    @classmethod
+    def InitGUI(cls):
+        """
+        Method creating sensor frames for the sensors
+        """
+        GUI = {}
+        for ControllerType,Instances in cls.Instances():
+            print "Creating GUI for Sensor: '%s'" %ControllerType.__class__.__name__
+            SensorGUI[ControllerType.__class__.__name__] = SensorFrame(
+                                         sensors = Instances ,
+                                         title = ControllerType.__class__.__name__ ,
+                                         )
+
+        return GUI
+
+    # ------------------------------- Method -------------------------------- #
+    @classmethod
+    def Instances(cls):
+        for ref in cls.__controllers__[cls]:
+            inst = ref()
+            if inst is not None:
+                yield inst
+
+    # ------------------------------- Method -------------------------------- #
+    def GetMeassurements(self):
+        return self.module.get_analog_in()
 
     # ------------------------------- Method -------------------------------- #
     def __repr__(self):

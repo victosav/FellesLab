@@ -34,25 +34,25 @@ from mac_motor_module import Mac050
 
 from FellesLab import MasterClass, Temperature, Pump
 
-# :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: #
 
-if __name__ == "__main__":
+
+def main(GUI=False):
 
     module1 = Adam4019(base='Dummy')
     module2 = Adam4019(base='Dummy')
     module3 = Mac050(module1, 1)
 
     Framework = MasterClass()
-    
+
     a = Pump(
          module = module2,
-         module_configuration = {
+         module_metadata = {
             'blabla' : None, # Configure module, set channel etc...
          },
          meta_data = {
             'label' : 'Pump',
             'unit' : '[rpm]',
-            'sample_speed' : 0.2,
+            'sample_speed' : 0.5,
          },
          data_processing = {
              'signalFiltering' : None, # Noise filter
@@ -62,22 +62,19 @@ if __name__ == "__main__":
          gui_configuration = {
             'plot' : False,
             'time_span' : 20, # seconds
-            'update_rate' : 1.14, # seconds
-            'min' : 0, # 
-            'max' : 5, #
             'color': 'red',
          },
     )
 
     a = Temperature(
          module = module1,
-         module_configuration = {
+         module_metadata = {
             'blabla' : None, # Configure module, set channel etc...
          },
          meta_data = {
             'label' : 'Temp',
-            'unit' : '[ ]',
-            'sample_speed' : 0.1,
+            'unit' : '[K]',
+            'sample_speed' : 0.5,
          },
          data_processing = {
              'signalFiltering' : None, # Noise filter
@@ -93,11 +90,12 @@ if __name__ == "__main__":
 
     b = Temperature(
          module = module2,
-         module_configuration = {
+         module_metadata = {
             'blabla' : None, # Configure module, set channel etc...
          },
          meta_data = {
-            'unit' : '[rpm]',
+            'unit' : '[K]',
+            'sample_speed' : 0.5,
          },
          data_processing = {
              'signalFiltering' : None, # Noise filter
@@ -111,4 +109,10 @@ if __name__ == "__main__":
          },
     )
 
-    Framework.InitGUI()
+    if GUI:
+        Framework.InitGUI()
+
+# :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: #
+if __name__ == "__main__":
+    main(True)
+

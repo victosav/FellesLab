@@ -65,7 +65,7 @@ def findSensor(Sensor, id):
     Find a sensor based on "id", the id is an address in memory for the sensor
     object.
     """
-    for sensor in Sensor.___refs___:
+    for sensor in Sensor.__refs__:
         if sensor().ID == id:
             return sensor
 
@@ -77,7 +77,7 @@ def sensorTypes(cls):
     """
 
     types = {}
-    for s in cls.___refs___:
+    for s in cls.__refs__:
         if not types.has_key(s().__class__.__name__):
             types[s().__class__.__name__] = [s]
         else:

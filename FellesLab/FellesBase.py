@@ -29,7 +29,7 @@ __date__      = "$Date: 2015-06-23 (Tue, 23 Jun 2015) $"
 from time import time
 from SupportClasses import FellesSampler, ExtendedRef, DataStorage
 from SupportFunctions import sensorTypes
-
+from collections import defaultdict
 # ================================ Class ==================================== #
 class FellesBaseClass(object):
     """
@@ -41,60 +41,54 @@ class FellesBaseClass(object):
     SAVE = False
     # Create, Objects
     Sampler = FellesSampler # thread used to perform sampling
-    Meta = dict # Dictionary containing meta data
+    FellesMetaData = {
+        'idlig' : True, # The gui is updated, but data is not necessarily stored
+        'sampling' : False, # The sampling of data should not start imediately
+        'label' : None, # Some unique string
+        'sample_speed' : 0.5, # Default sampling rate
+        'unit' : '[]', # Unit of the sampled data
+    } # Dictionary containing default meta data
+    GuiMetaData = {
+        'plot' : False, # To plot or not to plot...
+        'time_span' : 20, # default plot range in seconds
+        'color': 'red', # Plot line color
+        'pos' : None, # Position of frame
+        'size' : None, # Size of frame
+        'style' : None, # frame style
+    }
+    DataProcessing = {
+        'signalFiltering' : None, # Noise filter
+        'signalProcessing' : None, # filter sensor output, Fourrier(?), Laplace(?)
+        'calibrationCurve' : None, # Calibration curve
+    }
     Data = DataStorage # Dictionary containing sampling data
 
     # List of object instances
-    ___refs___ = []
+    __refs__ = defaultdict(list)
 
     # ------------------------------- Method -------------------------------- #
-    def __init__(self, module, module_configuration = {}, meta_data={}, gui_configuration={}, data_processing={}):
+    def __init__(self, module, module_metadata = {}, meta_data={}, gui_configuration={}, data_processing={}):
         """
         constructor
-        args:
-            module : instance 
-            module_configuration
-            meta_data
-            GUI_configuration
-            data_processing
-        
-        class variables:
-        
-        instance variables:
-          self.module (instance)
-          self.Data (instance)
-          self.Meta (instance)
-          self.Sampler (instance)
-          self.thread (instance)
         """
-        self.___refs___.append(ExtendedRef(self)) # Add instance to references
+        self.__refs__[self.__class__].append(ExtendedRef(self)) # Add instance to references
 
         self.ID = hex(id(self)) # ID used to look up objects (Will change for each run!)
-
         self.module = module # This is the reference to the Adam module
+
         meta_data.update(self.module.metaData) # Add module metadata to kwargs
 
-        # Check for label, why?
-        # Specific label for a sensor, e.g. 'Inlet Temperature', can be given
-        # in the 'meta_data' argument as follows:
-        #       meta_data = { ... , ... , 'label' : 'Inlet Temperature , ... }
-        # Otherwise an automatically generated label:
-        #       '<Sensor Type> <INT>'
-        # e.g. 'Temperature 3', will be created.
-        if not meta_data.has_key('label'):
-            meta_data['label'] = '%s %d' %(self.__class__.__name__, len(sensorTypes(self)[self.__class__.__name__]))
+        self.MetaData = self.FellesMetaData
 
-        # Check for unit
-        if not meta_data.has_key('unit'):
-            meta_data['unit'] = ' '
+        for (key, val) in module_metadata.iteritems():
+            pass
 
-        # Setting sampling speed (four cases are possible):
-        if not meta_data.has_key('sample_speed'):
-            meta_data['sample_speed'] = self.sample_rate
+        for (key,val) in meta_data.iteritems():
+            self.SetMetaData(key,val)
 
         self.plot_config = gui_configuration
         self.data_config = data_processing
-        self.meta = self.Meta(**meta_data) # Dict object with **static** metadata
+
         self.data = self.Data(self) # Dict object reading and writing data, capable of reporting to onClose
 
         self.t0 = time()
@@ -102,11 +96,28 @@ class FellesBaseClass(object):
         self.thread.start()
 
     # ------------------------------- Method -------------------------------- #
+    @classmethod
+    def GetAllInstances(cls):
+        for ref in cls.__refs__[cls]:
+            inst = ref()
+            if inst is not None:
+                yield inst
+
+    # ------------------------------- Method -------------------------------- #
+    @staticmethod
+    def EmptyIterator(iterable):
+        try:
+            first = next(iterable)
+        except StopIteration:
+            return None
+        return True
+
+    # ------------------------------- Method -------------------------------- #
     def __call__(self):
         """
         Magic method, executed when the object is called.
-        
-        return: 
+
+        return:
             object instance
         """
         return self
@@ -115,18 +126,23 @@ class FellesBaseClass(object):
     def Timer(self):
         """
         Timer method, keeping track of the time since the sampling started
-        
+
         return:
             Elapsed time
         """
         return time() - self.t0
 
     # ------------------------------- Method -------------------------------- #
+    def GetMeassurements(self, event=None):
+        pass
+
+
+    # ------------------------------- Method -------------------------------- #
     def Sample(self, event=None):
         """
         TODO
         """
-        self.data.Update( self.Timer(), self.module.get_analog_in() )
+        self.data.Update( self.Timer(), self.GetMeassurements() )
 
     # ------------------------------- Method -------------------------------- #
     def StartSampling(self, event=None):
@@ -137,7 +153,7 @@ class FellesBaseClass(object):
         self.SAVE = True
         self.data.Restart(self.Timer(), self.module.get_analog_in())
         print "Sensor '%s' started at time: '%s' by event: '%s'" %(
-                                       self.meta['label'], self.Timer(), event)
+                                       self.GetMetaData('label'), self.Timer(), event)
 
     # ------------------------------- Method -------------------------------- #
     def PauseSampling(self, event=None):
@@ -155,11 +171,65 @@ class FellesBaseClass(object):
         """
         self.SAMPLING = False
 
-        print "Instance '%s' terminated by event: '%s'" %(self.meta['label'], event)
+        print "Instance '%s' terminated by event: '%s'" %(self.GetMetaData('label'), event)
 
     # ------------------------------- Method -------------------------------- #
-    def InitGUI(self):
+    def UpdateData(self):
+        """
+        """
         pass
+
+    # ------------------------------- Method -------------------------------- #
+    def GetID(self):
+        """
+        """
+        return hex(id(self))
+
+    # ------------------------------- Method -------------------------------- #
+    def HasID(self, ID):
+        """
+        """
+        return 1 if self.GetID() == ID else 0
+
+    # ------------------------------- Method -------------------------------- #
+    @classmethod
+    def Find(cls, ID):
+        """
+        """
+        for cls,lst in cls.__refs__.iteritems():
+            for inst in lst:
+                if inst().HasID(ID):
+                    return inst()
+
+    # ------------------------------- Method -------------------------------- #
+    def FindAll(self):
+        """
+        """
+        pass
+
+    # ------------------------------- Method -------------------------------- #
+    def UpdatePlotConfig(self, key, val):
+        """
+        """
+        self.plot_config[key] = val
+
+    # ------------------------------- Method -------------------------------- #
+    def UpdateDataProcessing(self, key, fnc):
+        """
+        """
+        self.data_config[key] = fnc
+
+    # ------------------------------- Method -------------------------------- #
+    def GetMetaData(self, key=None):
+        """
+        """
+        return self.MetaData if not key else self.MetaData[key]
+
+    # ------------------------------- Method -------------------------------- #
+    def SetMetaData(self, key, val):
+        """
+        """
+        self.MetaData[key] = val
 
     # ------------------------------- Method -------------------------------- #
     def UpdateSampleSpeed(self, event, caller):
@@ -167,12 +237,11 @@ class FellesBaseClass(object):
         Method updating the sample_speed
         """
         print "Updating '%s' sampling speed from '%s to '%s'"\
-             %( self.meta['label'],\
-                self.meta['sample_speed'],\
+             %( self.GetMetaData('label'),\
+                self.GetMetaData('sample_speed'),\
                 event.GetValue() )
 
-        self.meta['sample_speed'] = event.GetValue()
-        
+        self.SetMetaData('sample_speed', event.GetValue())
 
     # ------------------------------- Method -------------------------------- #
     def __repr__(self):

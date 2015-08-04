@@ -87,39 +87,39 @@ Let us say that together, "If I do not push the Stop Sampling button I will not 
 
 * **File format:** The data is saved in a tabular [CSV](https://en.wikipedia.org/wiki/Comma-separated_values) format.
 
-* **Data storage format:**  The following example shows how two sensors _Rnd_ and _Rand 2_ both have a _time_ column associated with them. Please note (and appreciate) that even though every sensor has a individual time column, the reference time is identical.  
+* **Data storage format:**  The following example shows how two sensors _Rnd_ and _Rand 2_ both have a _time_ column associated with them. Please note (and appreciate) that even though every sensor has a individual time column, the reference time is identical.
 ```FILE.csv
-    time, Rnd, time, Rand 2  
-    0.000006 , 0.631032, 0.000002 , 0.124725  
-    0.001157 , 0.992647, 0.328444 , 0.293643  
-    0.104696 , 0.711614, 0.830970 , 0.643257  
-    0.207081 , 0.108123, 1.334370 , 0.354398  
-    0.309923 , 0.518604, NA , NA  
-    0.411372 , 0.809855, NA , NA  
-    0.512407 , 0.558416, NA , NA  
-    0.613994 , 0.660687, NA , NA  
+    time, Rnd, time, Rand 2
+    0.000006 , 0.631032, 0.000002 , 0.124725
+    0.001157 , 0.992647, 0.328444 , 0.293643
+    0.104696 , 0.711614, 0.830970 , 0.643257
+    0.207081 , 0.108123, 1.334370 , 0.354398
+    0.309923 , 0.518604, NA , NA
+    0.411372 , 0.809855, NA , NA
+    0.512407 , 0.558416, NA , NA
+    0.613994 , 0.660687, NA , NA
 ```
 * **Data _Not Available_:** When data is *not available* the string **NA** is used. This is the convention for to denote missing data in the **R** programming language. Consequently, this makes importing/plotting data remarkably simple.
 
-* **Data processing example in R:** The file above can be plotted (and saved as a png) using **R** using very few lines:  
+* **Data processing example in R:** The file above can be plotted (and saved as a png) using **R** using very few lines:
 
-```R  
+```R
     csvFile = read.csv('path/to/FILE.csv', header=True) # Read file
-    
+
     png(filename='path/to/FILE.png', width = 480, height = 480) # Save as png
-    
+
     plot(csvFile$time, csvFile$Rnd, col="magenta", xlab="time", ylab="Random number", frame=FALSE, pch=1) # Create plot canvas
     points(csvFile$Time.1, csvFile$Rand.2, col="cyan", pch=19) # Add second plot to canvas
     legend("topleft", c("Rnd","Random"), pch=c(1,19), lty=c(NA,NA), col=c("magenta", "cyan"), bty="n") # Legend
     dev.off() # Produce plot output
-    
+
     summary(csvFile) # Take a look at a statistical summary
-```  
+```
 '''
 # ================================ Class ==================================== #
 class MasterClass(object):
     """
-    This class is intended to keep track over objects 
+    This class is intended to keep track over objects
     """
 
     # ------------------------------- Method -------------------------------- #
@@ -147,17 +147,15 @@ class MasterClass(object):
         """
         TODO: Write a "window configuration file" such that the windows can be
               opened in the position they where closed before.
-              
+
               This means that "FellesApp" needs a method for saving the window
               positions as well...
         """
         self.app = FellesApp(self)
         self.gui = {}
-        for cls in FellesBaseClass.___refs___:
-            if not self.gui.has_key( cls().__class__.__base__.__name__ ):
-                print "Creating GUI frame for '%s'" %cls().__class__.__base__.__name__
-                self.gui[cls().__class__.__base__.__name__] = cls().InitGUI()
-        
+        for cls in [Sensor, Equipment]:
+            self.gui[cls] = cls.InitGUI()
+
         print "The following GUIs have been created: %s" %self.gui
         self.app.MainLoop()
 
@@ -167,8 +165,9 @@ class MasterClass(object):
         TODO: Can this be more clever?
         """
         self.T = time() # Reference time, is used in SaveData
-        for cls in FellesBaseClass.___refs___:
-            cls().StartSampling(self)
+        for cls, lst in FellesBaseClass.__refs__.iteritems():
+            for item in lst:
+                item().StartSampling(self)
         print "Start Sampling"
 
     # ------------------------------- Method -------------------------------- #
@@ -177,16 +176,18 @@ class MasterClass(object):
         TODO: Write
         """
         pass
+
     # ------------------------------- Method -------------------------------- #
     def StopSampling(self, sensor=None):
-        """        
+        """
         * Gather ALL DataStorage objects and save the results in a file
         """
         Sensor.SAVE = False
         Equipment.SAVE = False
 
-        for cls in FellesBaseClass.___refs___:
-            cls().StopSampling(self)
+        for cls, lst in FellesBaseClass.__refs__.iteritems():
+            for item in lst:
+                item().StopSampling(self)
 
         self.SaveData()
         print "Stop Sampling"
@@ -201,7 +202,7 @@ class MasterClass(object):
             os.mkdir(backup_dir)
             with open( backup_dir + "/README", 'w') as f:
                 f.write(BACKUP_README)
-            
+
             #cmd = "python -m markdown {dir}/README > {dir}/README.html".format(dir=backup_dir)
             #call([cmd])
         # Check if the Backup directory has a directory for "today"
@@ -211,25 +212,26 @@ class MasterClass(object):
 
         # Save data for all the sensors
         # TODO: Rewrite, difficult to follow...
-        DATA = [ ] # This will become a list of lists, e.g.  
+        DATA = [ ] # This will become a list of lists, e.g.
                    # [ [time, ...], [Temp1, ...], [time, ...], [Temp2, ...] ]
-        for cls in FellesBaseClass.___refs___:
-            dt = self.T - cls().t0 # Ensure that the time stamps are adjusted to the same reference.
+        for cls,lst in FellesBaseClass.__refs__.iteritems():
+            for inst in lst:
+                dt = self.T - inst().t0 # Ensure that the time stamps are adjusted to the same reference.
 
-            cls().data.File.seek(0) # Rewind file pointer
+                inst().data.File.seek(0) # Rewind file pointer
 
-            F = csv.reader(cls().data.File, delimiter=',', quotechar='|')
-            r = [[],[]]
-            for row in F:
-                for i,num in enumerate(row):
-                    r[i].append(num)
-                    if i > 1:
-                        r[i].append(float(num) - dt )
-            
-            for j in r:
-                DATA.append(j)
-            cls().data.File.close()
-        
+                F = csv.reader(inst().data.File, delimiter=',', quotechar='|')
+                r = [[],[]]
+                for row in F:
+                    for i,num in enumerate(row):
+                        r[i].append(num)
+                        if i > 1:
+                            r[i].append(float(num) - dt )
+
+                for j in r:
+                    DATA.append(j)
+                inst().data.File.close()
+
         # Finally, write data file.
         with open( day + "/" + timeStamp() + '.csv', 'w') as f:
             csv.writer(f).writerows( it.izip_longest(*DATA, fillvalue='NA') )

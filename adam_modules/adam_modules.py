@@ -9,7 +9,7 @@ oooooooooooo       oooo oooo                    ooooo                 .o8
 o888o     `Y8bod8P'o888oo888o`Y8bod8P'8""888P'  o888ooooood8`Y888""8o `Y8bod8P'
 
 
-@summary:      Module for setting up a Modbus communication with minimalmodbus 
+@summary:      Module for setting up a Modbus communication with minimalmodbus
                to Adam-4000 and Adam-4100 modules
 @author:       Sigve Karolius
 @organization: Department of Chemical Engineering, NTNU, Norway
@@ -113,15 +113,28 @@ class DummyModbus(object):
     # ------------------------------- Method -------------------------------- #
     def write_bit(self, channel, value):
         pass
+    # ------------------------------- Method -------------------------------- #
+    def flushOutput(self):
+        pass
+    # ------------------------------- Method -------------------------------- #
+    def flushInput(self):
+        pass
+    # ------------------------------- Method -------------------------------- #
+    def write(self, msg):
+        pass
+    # ------------------------------- Method -------------------------------- #
+    def read(self):
+        pass
+
 
 # ================================= Class =================================== #
 class Instrument(minimalmodbus.Instrument, object):
     """
-    Sugar class. 
-    
+    Sugar class.
+
     The reason it is used is the following:
-        minimalmodbus.Instrument is an old-style class, does not work with 
-        __new__ or super(). However, by inheriting "object" (new-style) it can 
+        minimalmodbus.Instrument is an old-style class, does not work with
+        __new__ or super(). However, by inheriting "object" (new-style) it can
         be "tricked" into thinking it is a new-style class...
     """
     # ------------------------------- Method -------------------------------- #
@@ -132,9 +145,9 @@ class Instrument(minimalmodbus.Instrument, object):
 class AdamModule(object):
     """
     Parent class for ADAM modules
-    
+
     Args:
-         * portname (string, e.g. '/dev/ttyUSB1'): port name 
+         * portname (string, e.g. '/dev/ttyUSB1'): port name
          * slaveaddress (integer): slave address in the range 1 to 247
     """
     def __new__(cls, base='Instrument', *args, **kwargs):
@@ -184,13 +197,13 @@ class AdamModule(object):
         self.metaData = {
             'port' : 'asdf',#self.serial.port,
             'baudrate' : 'asdf',#self.serial.baudrate,
-            'bytesize' : 'asdf',#self.serial.bytesize, 
+            'bytesize' : 'asdf',#self.serial.bytesize,
             'parity' : 'asdf',#self.serial.parity,
             'timeout' : 'asdf',#self.serial.timeout,
         }
 
     # ------------------------------- Method -------------------------------- #
-    def Configure(self, **config):
+    def SetMetaData(self, **config):
         """
         Configuration method for changing the following parameters:
           port = str       # serial port name
@@ -198,17 +211,26 @@ class AdamModule(object):
           bytesize = int   # 8 (default) or 16
           parity   = str   # serial.PARITY_NONE (default)
           stopbits = int   # 1 (default)
-          timeout  = float # 0.05 (default) 
+          timeout  = float # 0.05 (default)
           address          # this is the slave address number
           mode = str       # minimalmodbus.MODE_RTU,   'rtu' (default) or
                              minimalmodbus.MODE_ASCII, 'ascii' mode
-        
+
         The method is inked by __init__ when called as:
             xxxModule(portname, slaveaddress, config={ key:val} )
         using the keys listed above.
         """
         for k,v in config.iteritems():
             self.serial.k = v
+
+    # ------------------------------- Method -------------------------------- #
+    def GetMetaData(self, key=None):
+        """
+        """
+        if not key:
+            return self.metaData
+
+        return self.metaData[key]
 
     # ------------------------------- Method -------------------------------- #
     def module_name(self):
@@ -228,10 +250,10 @@ class AdamModule(object):
     def is_correct_module(self):
         """
         Check if the module class is correct
-        
+
         TODO: This is a bad check, consider simply removing it...
         """
-        if self.name == self.module_name(): # 
+        if self.name == self.module_name(): #
             return True
         else:
             return False
@@ -276,17 +298,17 @@ class AdamModule(object):
         TODO: write a general getter/setter method for the modules!
         """
         pass
-    
+
 # ================================= Class =================================== #
 class AnalogIn(AdamModule):
     """
         Class for analog input ADAM modules
     """
     # ------------------------------- Method -------------------------------- #
-    def __init__(self, *args, **kwargs):   
+    def __init__(self, *args, **kwargs):
         """
             Constructor
-        """ 
+        """
         AdamModule.__init__(self, *args, **kwargs)
     # ------------------------------- Method -------------------------------- #
     def get_analog_in(self, channel=-1):

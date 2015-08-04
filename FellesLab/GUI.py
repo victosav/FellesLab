@@ -38,7 +38,7 @@ from SupportClasses import ExtendedRef, GuiUpdater
 # =============================== Class ====================================== #
 class MainFrame(wx.Frame):
     """
-    
+
     """
     # ------------------------------- Method --------------------------------- #
     def __init__(self, parent, id, title, pos, size, style, MasterClass):
@@ -52,7 +52,7 @@ class MainFrame(wx.Frame):
     # ------------------------------- Method --------------------------------- #
     def InitUI(self):
 
-        # adding panel for cross-platform appearance 
+        # adding panel for cross-platform appearance
         self.panel = wx.Panel(self, wx.ID_ANY)
         self.obj = {}
 
@@ -81,7 +81,9 @@ Yb,          ,dP 888     888    .o 888  888 888    .oo.  )88b  888    od8(  888 
    `""""""""'
 '''\
 )
-        self.obj['logo'].SetFont(wx.Font(pointSize=14, family=wx.MODERN, style=wx.NORMAL, weight=wx.BOLD, underline=False, faceName=u'Consolas', encoding=wx.FONTENCODING_DEFAULT))
+        self.obj['logo'].SetFont(wx.Font(pointSize=1, family=wx.MODERN,
+             style=wx.NORMAL, weight=wx.BOLD, underline=False,
+             faceName=u'Courier', encoding=wx.FONTENCODING_DEFAULT))
 
         # wx.Font has the following signature:
         # wx.Font(pointSize, family, style, weight, underline=False, faceName="", encoding=wx.FONTENCODING_DEFAULT)
@@ -93,11 +95,13 @@ Yb,          ,dP 888     888    .o 888  888 888    .oo.  )88b  888    od8(  888 
         # wx.NORMAL, wx.LIGHT, or wx.BOLD
 
         # Buttons
-        self.start  = FellesButton(self.panel, source=self, target=self.Start , label='Start Sampling')
-        self.stop = FellesButton(self.panel, source=self, target=self.Stop, label='Stop Sampling')
+        self.start  = FellesButton(self.panel, source=self, target=self.Start,
+                                                         label='Start Sampling')
+        self.stop = FellesButton(self.panel, source=self, target=self.Stop,
+                                                          label='Stop Sampling')
         self.stop.Disable()
 
-        # arranging and sizing the widgets 
+        # arranging and sizing the widgets
         grid_sizer.Add(self.obj['logo'], 0, wx.ALL, 5)
 
         # arrangement of the on/off buttons
@@ -115,17 +119,17 @@ Yb,          ,dP 888     888    .o 888  888 888    .oo.  )88b  888    od8(  888 
         self.panel.SetSizer(top_sizer)
 
         # fit the sizer to the panel
-        #self.Stop(None, None)
+        # self.Stop(None, None)
         top_sizer.Fit(self)
 
     # ------------------------------- Method --------------------------------- #
     def Start(self, event):
         """
-        GetEventObject 
+        GetEventObject
         GetName 'button'
         """
 
-        self.MasterClass.StartSampling()        
+        self.MasterClass.StartSampling()
         event.GetEventObject().Disable()
         pub.sendMessage('DisableSampleRateChange')
         self.stop.Enable()
@@ -133,7 +137,7 @@ Yb,          ,dP 888     888    .o 888  888 888    .oo.  )88b  888    od8(  888 
     # ------------------------------- Method --------------------------------- #
     def Pause(self, event):
         """
-        
+
         """
         self.MasterClass.StopSampling()
         event.GetEventObject().Disable()
@@ -143,7 +147,7 @@ Yb,          ,dP 888     888    .o 888  888 888    .oo.  )88b  888    od8(  888 
     # ------------------------------- Method --------------------------------- #
     def Stop(self, event):
         """
-        
+
         """
         self.MasterClass.StopSampling()
         event.GetEventObject().Disable()
@@ -175,7 +179,6 @@ class FellesApp(wx.App):
         super(FellesApp, self).__init__(False)
 
         self.MasterClass = MasterClass
-
         self.InitUI()
 
     # ------------------------------- Method --------------------------------- #
@@ -196,7 +199,7 @@ class FellesFrame(wx.Frame):
     sample_rate = 0.7 # Default sampling rate
     timer = GuiUpdater
     SAMPLING = True
-    
+
     # ------------------------------- Method --------------------------------- #
     def __init__(self, parent=None, *args, **kwargs):
 
@@ -303,10 +306,10 @@ class FellesButton(wx.Button):
 class FellesTextInput(wx.SpinCtrlDouble): #(wx.SpinCtrl):
     """
     Class
-        
+
     args:
-        target  
-        source 
+        target
+        source
         min
         max
         initial

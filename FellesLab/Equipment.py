@@ -28,6 +28,7 @@ __date__      = "$Date: 2015-06-23 (Tue, 23 Jun 2015) $"
 
 import wx
 from wx.lib.pubsub import pub
+from collections import defaultdict
 
 from GUI import FellesFrame, FellesButton, FellesTextInput, FellesLabel
 from FellesBase import FellesBaseClass
@@ -36,20 +37,34 @@ from SupportClasses import ExtendedRef
 # ================================ Class ==================================== #
 class Equipment(FellesBaseClass):
     """
-    Syntactic sugar... 
+    Syntactic sugar...
     """
-
+    __equipment__ = defaultdict(list)
     # ------------------------------- Method -------------------------------- #
     def __init__(self, *args, **kwargs):
         super(Equipment, self).__init__(*args, **kwargs)
-        
+        self.__equipment__[self.__class__].append(ExtendedRef(self)) # Add instance to references
 
     # ------------------------------- Method -------------------------------- #
-    def InitGUI(self):
+    @classmethod
+    def InitGUI(cls):
         """
         Method creating GUI
         """
-        pass 
+        eGUI = {}
+        for ref, instnts in cls.Instances():
+            for inst in instnts:
+                eGUI[inst().GetMetaData('label')] = inst().CreateGUI()
+
+            print "Creating GUI for Equipment: '%s'" %ref.__name__
+
+        return eGUI
+
+   # ------------------------------- Method -------------------------------- #
+    @classmethod
+    def Instances(cls):
+        for ref,inst in cls.__equipment__.iteritems():
+            yield ref, inst
 
     # ------------------------------- Method -------------------------------- #
     def __repr__(self):
@@ -62,31 +77,52 @@ class Equipment(FellesBaseClass):
 # ================================ Class ==================================== #
 class Pump(Equipment):
     """
-    
+
     """
-    ___pumps___ = []
+
     # ------------------------------- Method -------------------------------- #
     def __init__(self, *args, **kwargs):
         super(Pump, self).__init__(*args, **kwargs)
-        self.___pumps___.append(ExtendedRef(self))
+
+        defaultData = {
+        'min_velocity' : 0, # rpm
+        'max_velocity' : 4000, # rpm
+        'min_speed' : 0, # mL/min
+        'max_speed' : 400, # mL/min
+        'min_acceleration' : 0, # %
+        'max_acceleration' : 100, # %
+        }
+        for key,val in defaultData.iteritems():
+            self.SetMetaData(key, val)
+
+        for key,val in self.module.GetMetaData().iteritems():
+            self.SetMetaData(key, val)
 
         self.Initialise()
 
     # ------------------------------- Method -------------------------------- #
+    def CreateGUI(self):
+        return PumpFrame(self)
+
+    # ------------------------------- Method -------------------------------- #
+    def GetMeassurements(self):
+        return self.GetSpeed()
+
+    # ------------------------------- Method -------------------------------- #
     def TurnOn(self, caller=None, event=None):
         pass
-        # self.module.set_motormode(1)
+        #self.module.set_motormode(1)
 
     # ------------------------------- Method -------------------------------- #
     def TurnOff(self, caller=None, event=None):
         pass
-        # self.module.set_motormode(0)
+        #self.module.set_motormode(0)
 
     # ------------------------------- Method -------------------------------- #
     def Initialise(self, event=None, caller=None):
         """
         Procedure for initialising the pump.
-        
+
         * Start
         * Set velocity to zero
         """
@@ -96,13 +132,13 @@ class Pump(Equipment):
         if self.GetSetpoint():
             self.SetSetpoint(0)
 
-        self.meta['initial'] = 0
+        self.SetMetaData('initial', 0)
 
     # ------------------------------- Method -------------------------------- #
     def ShutDown(self, event=None, caller=None):
         """
         Procedure to shut down the pump
-        
+
         * Set velocity to zero
         * Wait...
         * Stop
@@ -110,14 +146,14 @@ class Pump(Equipment):
         # If setpoint velocity is not zero, set it to zero
         if self.GetSetpoint():
             self.SetSetpoint(0)
-        
+
         print "waiting for pump velocity to decreace before shutting down..."
         while self.GetSpeed():
             pass
-        
+
         # Turn off pump
         self.TurnOff()
-        
+
     # ------------------------------- Method -------------------------------- #
     def GetSetpoint(self):
         """
@@ -148,7 +184,7 @@ class Pump(Equipment):
         Read pump temperature
         """
         pass
-    
+
     # ------------------------------- Method -------------------------------- #
     def GetAcceleration(self):
         """
@@ -156,26 +192,10 @@ class Pump(Equipment):
         """
         pass
 
-    # ------------------------------- Method -------------------------------- #
-    def InitGUI(self):
-        """
-        Method creating GUI
-        """
-        pass 
-        PumpGUI = {}
-        for s in self.___pumps___:
-            if not PumpGUI.has_key(s().__class__.__name__):
-                print "Creating GUI for Equipment: '%s'" %s().__class__.__name__
-                PumpGUI[s().__class__.__name__] = [PumpFrame( pump = s() )]
-            else:
-                PumpGUI[s().__class__.__name__].append(PumpFrame(pump = s() ))
-
-        return PumpGUI
-
 # =============================== Class ====================================== #
 class PumpFrame(FellesFrame):
     """
-    @summary: Parent class frame for a pump. 
+    @summary: Parent class frame for a pump.
 
                             +-------------------------+
                             |          Pump           |
@@ -197,22 +217,17 @@ class PumpFrame(FellesFrame):
             title (str): REQUIRED
         """
         self.Pump = pump
-        
-        super(PumpFrame, self).__init__( title=pump.meta['label'])
-        # Dictionary keeping track of which sensors to plot
-#        self.plot_config = { s().ID : s().plot_config for s in self.sensors}
+
+        super(PumpFrame, self).__init__( title=pump.GetMetaData('label'))
 
         self.InitUI() # Create frame
         self.Show()   # Show frame
-
-#        self.plot = FellesPlot(parent=self, sensors = self.sensors) # Initiate Plot
-#        self.plot.Show() # Show frame
 
         self.timer.start()
 
     def InitUI(self):
 
-        # adding panel for cross-platform appearance 
+        # adding panel for cross-platform appearance
         self.panel = wx.Panel(self, wx.ID_ANY)
         self.obj = {}
         # adding sizers
@@ -226,15 +241,28 @@ class PumpFrame(FellesFrame):
 
         # adding GUI widgets
         self.label_name = wx.StaticText(self.panel, label=self.GetName())
-        self.lables['label_setpoint'] = FellesLabel(self.panel, label='Speed setpoint [rpm]')
-        self.lables['spin_setpoint'] = FellesTextInput(self.panel, source= self, target=self.SetSetpoint)
+        self.lables['label_setpoint'] = FellesLabel(self.panel,
+                                                   label='Speed setpoint [rpm]')
+        self.lables['spin_setpoint'] = FellesTextInput(self.panel,
+                                                     source = self,
+                                                     value ='%.2f'%self.GetSetpoint(),
+                                                     initial=self.GetSetpoint(),
+                                                     min = self.Pump.GetMetaData('min_velocity'),
+                                                     max = self.Pump.GetMetaData('max_velocity'),
+                                                     name = 'Pump Setpoint',
+                                                     target=self.SetSetpoint)
 
-        self.lables['label_description_speed'] = FellesLabel(self.panel, label='Speed [{unit}]'.format(unit=self.Pump.meta['label']))
-        self.lables['label_speed'] = FellesLabel(self.panel, label='{val} {unit}'.format(val=self.Pump.meta['initial'], unit=self.Pump.meta['unit']))
-        
+        self.lables['label_description_speed'] = FellesLabel(self.panel,
+                    label='Speed [{unit}]'.format(unit=self.Pump.GetMetaData('label')))
+        self.lables['label_speed'] = FellesLabel(self.panel,
+                      label='{val} {unit}'.format(val=self.Pump.GetMetaData('initial'),
+                      unit=self.Pump.GetMetaData('unit')))
+
         # Buttons
-        self.On  = FellesButton(self.panel, source=self, target=self.TurnOn, label='On' )
-        self.Off = FellesButton(self.panel, source=self, target=self.TurnOff, label='Off')
+        self.On  = FellesButton(self.panel, source=self, target=self.TurnOn,
+                                                                    label='On' )
+        self.Off = FellesButton(self.panel, source=self, target=self.TurnOff,
+                                                                    label='Off')
 
         # arranging and sizing the widgets
         # alignment of title
@@ -273,7 +301,7 @@ class PumpFrame(FellesFrame):
         Convenience methods; acts as a buffer receiving button calls and
         sending the result to the Pump class instead of directly coupling the
         button to the Equipment.
-        
+
         This is an advantage because it allows for separation between GUI and
         the underlying framework.
         """
@@ -300,18 +328,22 @@ class PumpFrame(FellesFrame):
     # ------------------------------- Method --------------------------------- #
     def GetSpeed(self):
         return self.Pump.GetSpeed()
- 
+
     # ------------------------------- Method --------------------------------- #
     def UpdateFrame(self, sender=None, args=None):
         """
         Method for updating GUI
         """
-        # Update label for sensor: s().meta['label']
+        # Update label for sensor: s().GetMetaData('label')
         # with the most recent measurement: s().data.history['data'][-1]
-#        self.lables['label_setpoint']
-        self.lables['spin_setpoint'].SetLabel( '%.2f %s' %(self.GetSetpoint(), str(self.Pump.meta['unit'])) )
-#        self.lables['label_description_speed']
-        self.lables['label_speed'].SetLabel( '%.2f %s' %( self.Pump.data.history['data'][-1], str(self.Pump.meta['unit'])) )
+        self.lables['spin_setpoint'].SetLabel( '%.2f %s' %(
+                                                             self.GetSetpoint(),
+                                            str(self.Pump.GetMetaData('unit'))),
+                                             )
+        self.lables['label_speed'].SetLabel( '%.2f %s' %(
+                                             self.Pump.data.history['data'][-1],
+                                            str(self.Pump.GetMetaData('unit'))),
+                                           )
 
 #        pub.sendMessage( 'Plot.%s' %self.GetLabel() )
         self.top_sizer.Layout()
@@ -341,7 +373,7 @@ class FellesPlot(wx.Frame):
     """
     Rudimentary class creating a plot frame that is updated dynamically.
     The class takes one argument "parent".
-    
+
      'Unit' .-------------------.
             |          ____     |
             |         /    |    |
@@ -351,7 +383,7 @@ class FellesPlot(wx.Frame):
             |                   |
             .-------------------.
                     Time
-    
+
     """
     # ------------------------------- Method --------------------------------- #
     def __init__(self, parent=None, *args, **kwargs):
@@ -359,7 +391,7 @@ class FellesPlot(wx.Frame):
         Constructor
         """
         super(FellesPlot, self).__init__(parent)
-        
+
         self.candidates = kwargs['sensors'] # List of all sensors
         self.parentFrame = parent # Parent SensorFrame (from SensorGUI.py)
 
@@ -368,7 +400,7 @@ class FellesPlot(wx.Frame):
         # {'0x7f921e6977a0': False , '0x7f921e696530': True }
         # (The ID is the address in memory of the sensor object)
         self.plotIDs = { c().ID : c().plot_config['plot'] for c in self.candidates }
-        
+
         # setting up plot
         # self.plot_panel = wxmplot.PlotPanel(parent=self, size=(500, 500), dpi=100)
         self.plotPanels = { c().ID : wxmplot.PlotPanel(parent=self, size=(500, 500), dpi=100) for c in self.candidates }
@@ -396,7 +428,7 @@ class FellesPlot(wx.Frame):
     def UpdatePlot(self):
         """
         Method for updating the plot frame.
-        
+
         The sensors in "self.plotIDs" that are not "True" will not be plotted.
         """
 
@@ -404,7 +436,7 @@ class FellesPlot(wx.Frame):
             if plt:
                 self.plotPanels[id].update_line(0,
                                  findSensor(Sensor,id)().data.history['time'],
-                                 findSensor(Sensor,id)().data.history['data'], 
+                                 findSensor(Sensor,id)().data.history['data'],
                                 )
 
         self.plot_panel.set_xylims(\
@@ -425,7 +457,7 @@ class FellesPlot(wx.Frame):
     # ------------------------------- Method --------------------------------- #
     def OnClose(self, event):
         """
-        
+
         """
 
         print "Plot '%s' closed by event: '%s'" %(self.parentFrame.GetLabel(),\

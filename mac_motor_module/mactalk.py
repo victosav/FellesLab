@@ -1,9 +1,9 @@
 # -*- coding: ascii -*-
 """
 
-oooooooooooo       oooo oooo                    ooooo                 .o8      
-`888'     `8       `888 `888                    `888'                "888      
- 888       .ooooo.  888  888  .ooooo.  .oooo.o   888         .oooo.   888oooo. 
+oooooooooooo       oooo oooo                    ooooo                 .o8
+`888'     `8       `888 `888                    `888'                "888
+ 888       .ooooo.  888  888  .ooooo.  .oooo.o   888         .oooo.   888oooo.
  888oooo8 d88' `88b 888  888 d88' `88bd88(  "8   888        `P  )88b  d88' `88b
  888    " 888ooo888 888  888 888ooo888`"Y88b.    888         .oP"888  888   888
  888      888    .o 888  888 888    .oo.  )88b   888       od8(  888  888   888
@@ -14,80 +14,80 @@ o888o     `Y8bod8P'o888oo888o`Y8bod8P'8""888P'  o888ooooood8`Y888""8o `Y8bod8P'
 @author:       TODO
 @organization: Department of Chemical Engineering, NTNU, Norway
 @contact:      TODO
-@license:      Free (GPL.v3), although credit is appreciated  
+@license:      Free (GPL.v3), although credit is appreciated
 @requires:     Python 2.7.x or higher
 @since:        18.06.2015
 @version:      2.7
-@todo 1.0:     
-@change:       
-@note:         
+@todo 1.0:
+@change:
+@note:
 
 """
 
 '''
-This module is mainly an interface to send commands to drive the motor. 
+This module is mainly an interface to send commands to drive the motor.
 It contains the communications definition as well as the individual definitions to operate on different parameters of the motor such as:
 mode, velocity, acceleration, address, temperature, errorbits.
 Mode, velocity and acceleration can be changed.
 Velocity, acceleration, address, temperature and errorbits can be read.
-There is also a special function which saves the final settings into the motor memory, so that even if you unplug it, it will still have those settings. This is dangerous though and should be used with care. 
+There is also a special function which saves the final settings into the motor memory, so that even if you unplug it, it will still have those settings. This is dangerous though and should be used with care.
 '''
 import translations
 import constants
 from parameters import PARAMETERS
 
 
-class Communications():
-    
+class Communications(object):
+
     def __init__(self, port, address, verbose=False):
-        
+
         self.port = port
         self.address = address
         self.PARAMETER = PARAMETERS
         self.verbose = verbose
-        
+
     def sendmessage(self, hexa, length, read):
         '''
-        This definition is used in order to write to and read from the port that is opened 
-        in this module. 
-        
-        This definition makes use of specific encoded messages that are made to work on JVL motors. 
-        Any other use that is effective is sheer coincidence. 
-        
+        This definition is used in order to write to and read from the port that is opened
+        in this module.
+
+        This definition makes use of specific encoded messages that are made to work on JVL motors.
+        Any other use that is effective is sheer coincidence.
+
         :param hexa: The complete hexadecimal value that should be written to the motor.
         :param length: The length of the bytes that is to be read.
-        :param read: This is a boolean that separates the writing to and reading from messages. If True, it will read a registry and return the read value, 
+        :param read: This is a boolean that separates the writing to and reading from messages. If True, it will read a registry and return the read value,
                      if False it will return <11><11><11> if the message was received by the motor else will return <><><>.
         '''
-        
+
         #Connect to the port, must be made as INITIAL
         # if self.port.isOpen()==False:
         #     self.port.open()
-            
+
         self.port.flushOutput()
-        self.port.flushInput()      
+        self.port.flushInput()
         if self.verbose: print 'send message', hexa
         message = hexa.decode('hex')
         self.port.write(message)
         data = []
-        
+
         #Read the data byte per byte and save it in a dict.
         for i in range(length):
-            byte = self.port.read()     
+            byte = self.port.read()
             data.append(i)
-            data[i] = byte.encode('hex') 
+            data[i] = byte.encode('hex')
         #This loop checks if you are reading or writing
-        #and acts accordingly  
+        #and acts accordingly
         #self.port.close()
         if read:
-            return [data[9],data[11]]       
-    
-    def write(self, value, address, parameter): 
+            return [data[9],data[11]]
+
+    def write(self, value, address, parameter):
         '''
-        Generally, this command generates a HEX message which is then converted to ASCII and send over the 
+        Generally, this command generates a HEX message which is then converted to ASCII and send over the
         port line in order to communicate with the motor. The motor will then answer with <11><11><11> if it has
-        received an acceptable value. 
-        
+        received an acceptable value.
+
         :param value: The value you want to write to the parameter of the motor on address.
         :param address: The address of the motor, defined in __init__.
         :param parameter: The parameter you are trying to change of the motor.
@@ -96,14 +96,14 @@ class Communications():
         '''
 
         BYTESIZE = 3
-        message = translations.createcommand_write(value, address, parameter)            
+        message = translations.createcommand_write(value, address, parameter)
         self.sendmessage(message, BYTESIZE, False)
-        
+
     def read(self, address, parameter):
         '''
-        Asks the motor to give information concerning a parameter, 
+        Asks the motor to give information concerning a parameter,
         if there is a response, the value will be printed otherwise an error will be raised.
-        
+
         :param address: The address of the motor, defined in __init__.
         :param parameter: The parameter which is being read.
         :raises: Raises if the motor doesn't respond, check the message sent or the connection with the motor.
@@ -112,42 +112,82 @@ class Communications():
         message = translations.createcommand_read(address, parameter)
         values = self.sendmessage(message, BYTESIZE, True)
         if values == None:
-            raise ValueError('Values is empty, check connection with motor') 
+            raise ValueError('Values is empty, check connection with motor')
         return values
-    
-    
+
+
 class Mac050(Communications):
     '''
     This class contains all the definitions that can be summoned in order to change the parameters of a motor.
     It is initialized with the same parameters as for the Communications: Address and port.
-    
+
     In order to change a different parameter on the motor a new definition needs to be created.
     This should refer to the appropriate parameter and should limit the allowed values.
     '''
+    defaultData = {
+        'min_velocity' : 0, # rpm
+        'max_velocity' : 4000, # rpm
+        'min_speed' : 0, # mL/min
+        'max_speed' : 400, # mL/min
+        'min_acceleration' : 0, # %
+        'max_acceleration' : 100, # %
+    }
+    def __init__(self, *args, **kwargs):
+        super(Mac050, self).__init__(*args, **kwargs)
+
+        self.metaData = {
+                      'min_velocity' : self.defaultData['min_velocity'],
+                      'max_velocity' : self.defaultData['max_velocity'],
+                      'min_speed': self.defaultData['min_speed'],
+                      'max_speed': self.defaultData['max_speed'],
+                      'min_acceleration' : self.defaultData['min_acceleration'],
+                      'max_acceleration' : self.defaultData['min_acceleration'],
+                      }
+
+    def GetMetaData(self, key=None):
+        """
+        """
+        if not key:
+            return self.metaData
+
+        return self.metaData[key]
+
+    def UpdateMetaData(self, key, val):
+        """
+        Method making it possible to update the meta data used to set limits of
+        spedd, acceleration etc.
+
+        :param key: string, one of the eays in the 'metaData' vaiable.
+        :param val: float, value to set the key.
+        """
+        if val > self.defaultData[key] or val < self.defaultData[key]:
+            raise ValueError("Key: '%s' can't be updated to: '%.2f',\n The limit is: '%.2f'" %(key,val,self.defaultData[key]))
+
+        self.metaData[key] = val
 
     def set_motormode(self, mode, parameter = 'motormode'):
         '''
         :param mode: This value can be 0 or 1; 0 = passive mode, 1 = velocity mode
         '''
         if mode not in (0,1):
-            raise ValueError('mode must be 0 or 1')  
-        else:            
+            raise ValueError('mode must be 0 or 1')
+        else:
             self.write(mode, self.address, self.PARAMETER[parameter])
-                    
-    def set_velocity(self, rpm, parameter = 'velocity'):  
+
+    def set_velocity(self, rpm, parameter = 'velocity'):
         '''
         :param rpm: rpm set between 0 and 4000
-        
+
         This sets the velocity the motor should be running on if it is on.
-        
+
         '''
         pulses = constants.SPPS/constants.RPM*rpm
-        if rpm > 4000 or rpm < 0:
+        if rpm > self.metaData['max_velocity'] or rpm < self.metaData['min_velocity']:
             raise  ValueError('rpm must be between 0 and 4000')
         else:
             self.write(pulses, self.address, self.PARAMETER[parameter])
             print 'set velocity'
-    
+
     def set_pumpspeed(self, pumpspeed, parameter = 'velocity'):
         '''
         This sets the speed of a pump in ml/mins.
@@ -155,71 +195,71 @@ class Mac050(Communications):
         '''
         rpm = constants.RPMMAX/constants.PUMPMAX*pumpspeed
         pulses = constants.SPPS/constants.RPM*rpm
-        if pumpspeed <= 400 and pumpspeed >= 0:
+        if pumpspeed <= self.metaData['max_speed'] and pumpspeed >= self.metaData['min_speed']:
             self.write(pulses, self.address, self.PARAMETER[parameter])
-        else: 
+        else:
             raise  ValueError('The speed of the pump must be between 0 and 400ml/mins')
-            
+
     def set_acceleration(self, perc, parameter = 'acceleration'):
         '''
         :param perc: Sets acceleration in %, the actual rpm/s goes from 0 to 397364
         '''
 
         acc = constants.SET_ACC/constants.PERC*perc
-        pulses = constants.PPSS/constants.ACCEL*acc     
-        if perc > 100 or perc < 0:
+        pulses = constants.PPSS/constants.ACCEL*acc
+        if perc > self.metaData['max_acceleration'] or perc < self.metaData['min_acceleration']:
             raise ValueError('acceleration is in %, value must be between 0 and 100')
             return 0
         else:
             self.write(pulses, self.address, self.PARAMETER[parameter])
-            
-    def get_setvelocity(self, parameter = 'velocity'):  
+
+    def get_setvelocity(self, parameter = 'velocity'):
         '''
         reads the velocity that is currently set and returns it in rpm
         '''
         values = self.read(self.address, self.PARAMETER[parameter])
-        
+
         pulses = translations.hextodec(values)
         rpm = constants.READ_SRPM/constants.RSPPS*pulses
         rpm = translations.rounding(rpm)
         if self.verbose: print 'The velocity is set at ' + str(rpm) + ' rpm'
 
         return rpm
-        
-    def get_actualvelocity(self, parameter = 'actualvelocity'): 
+
+    def get_actualvelocity(self, parameter = 'actualvelocity'):
         '''
         reads the actual velocity that the motor is running and returns it in rpm, will return 0 if mode is set to 0
         '''
-        print "asdf"        
+        print "asdf"
         values = self.read(self.address, self.PARAMETER[parameter])
-        print values        
+        print values
         pulses = translations.hextodec(values)
         print "asdf"
         rpm = constants.READ_ARPM/constants.RAPPS*pulses
         print "asdf"
         rpm = translations.rounding(rpm)
-        if self.verbose: 
+        if self.verbose:
             if rpm == 0:
                 print 'The motor is running at ' + str(rpm) + ' rpm, make sure the motor is on'
             else:
                 print 'The motor is running at ' + str(rpm) + ' rpm'
-    
+
         return rpm
 
-    def get_acceleration(self, parameter = 'acceleration'):  
+    def get_acceleration(self, parameter = 'acceleration'):
         '''
         Reads acceleration and returns the value in rpm/s
         '''
         values = self.read(self.address, self.PARAMETER[parameter])
-        
+
         pulses = translations.hextodec(values)
-        acc = constants.READ_ACC/constants.READ_PPSS*pulses 
+        acc = constants.READ_ACC/constants.READ_PPSS*pulses
         acc = translations.rounding(acc)
         if self.verbose: print 'The acceleration is set at ' + str(acc) + ' rpm/s'
-        
+
         return acc
-        
-    def get_address(self, parameter = 'address'):  
+
+    def get_address(self, parameter = 'address'):
         '''
         Reads the address of the motor and returns it
         '''
@@ -229,12 +269,12 @@ class Mac050(Communications):
 
         return address
 
-        
-    def get_temperature(self, parameter = 'temperature'): 
+
+    def get_temperature(self, parameter = 'temperature'):
         '''
         Reads the temperature in degrees Celcius and returns it, will give 0 if mode is set to 0
         '''
-        values = self.read(self.address, self.PARAMETER[parameter])        
+        values = self.read(self.address, self.PARAMETER[parameter])
         temp = translations.hextodec(values)
         if self.verbose:
             if temp == 0:
@@ -242,48 +282,48 @@ class Mac050(Communications):
             else:
                 print 'The Temperature of the motor is ' + str(temp) +' degrees Celcius'
         return temp
-            
+
     def get_errorstatus(self, parameter = 'errorstatus'):
         '''
         Returns bits which express what the status of the motor is.
         If this returns a non-zero value, you may not be able to change any motor settings depending on the error.
         Depending on the value returned, this may be state of the motor:
-        
+
         :param Bit0: Overload
         :param Bit1: Follow Error
         :param Bit2: Function Error
         :param Bit3: Regenerative overload
         :param Bit4: In position
         :param Bit5: Accelerating
-        :param Bit6: Decelerating 
+        :param Bit6: Decelerating
         :param Bit7: Position limits error
         :param Bit11: Motor current too high
         :param Bit12: Supply undervoltage
         :param Bit16: SII Read error
-        
+
         The mode must be set to 1 before reading any errorbits, otherwise returns 0.
-        
+
         More details on the errordict is given in the 'Translations' module in the 'Library' section at the 'checkforerrors' definition.
         '''
-        errordict = {'Bit 0' : 2**0,      
-                     'Bit 1' : 2**1,     
-                     'Bit 2' : 2**2,      
-                     'Bit 3' : 2**3,      
-                     'Bit 4' : 2**4,      
-                     'Bit 5' : 2**5,      
-                     'Bit 6' : 2**6,      
-                     'Bit 7' : 2**7,      
+        errordict = {'Bit 0' : 2**0,
+                     'Bit 1' : 2**1,
+                     'Bit 2' : 2**2,
+                     'Bit 3' : 2**3,
+                     'Bit 4' : 2**4,
+                     'Bit 5' : 2**5,
+                     'Bit 6' : 2**6,
+                     'Bit 7' : 2**7,
                      'Bit 8' : 2**8,
                      'Bit 9' : 2**9,
                      'Bit 10' : 2**10,
-                     'Bit 11' : 2**11,     
+                     'Bit 11' : 2**11,
                      'Bit 12' : 2**12,
                      'Bit 13' : 2**13,
                      'Bit 14' : 2**14,
-                     'Bit 15' : 2**15,    
-                     'Bit 16' : 2**16,     
+                     'Bit 15' : 2**15,
+                     'Bit 16' : 2**16,
                      }
-        BITS = 16     
+        BITS = 16
         hexa = self.read(self.address, self.PARAMETER[parameter])
         error = translations.hextodec(hexa)
 
@@ -293,10 +333,10 @@ class Mac050(Communications):
         else:
             if self.verbose: print 'If the mode is set to 1, there is an error in Bit 0'
 
-    def save_and_reset(self, value, parameter = 'command'): 
+    def save_and_reset(self, value, parameter = 'command'):
         '''
         Saves current settings in the motor memory, use this only if you know what you are doing.
-        After first message is sent, it returns <11><11><11> 
+        After first message is sent, it returns <11><11><11>
         After second message is sent, it returns <><><>
         This means save and reset has worked.
         '''
@@ -317,25 +357,25 @@ class Mac050(Communications):
                     print 'I did not understand'
         else:
             raise ValueError('You are using the command parameter in the wrong way, please make sure you know what you are trying to do.')
-        
-                    
+
+
     def get_info(self, address, register):
-        
+
         command = '50'*3 + format(address,'02X') + format(address^255,'02X') + format(register,'02X') + format(register^255,'02X') + 'AA'*2
         if self.verbose: print 'command ',command
 
         message = command.decode('hex')
 #         print 'return', self.sendmessage(message, 3, True)
         self.port.write(message)
-        
+
         self.unpackRequestedResponse()
-        
+
     def unpackRequestedResponse(self):
-        
+
         message = []
         for i in range(30):
             byte = self.port.read()
-            _a1 = byte.encode('hex') 
+            _a1 = byte.encode('hex')
             print 'read byte:' ,_a1
             if _a1 == '52':
                 byte = self.port.read()
@@ -348,10 +388,10 @@ class Mac050(Communications):
                     if _a2 == '52':
                         print 'third start byte:' ,_b
                         break
-                
+
         for i in range(30):
             byte = self.port.read()
-            _b = byte.encode('hex') 
+            _b = byte.encode('hex')
             if _b == 'aa':
                 print ' first end byte: ',_b
                 byte = self.port.read()
@@ -362,10 +402,10 @@ class Mac050(Communications):
             else:
                 print 'message byte:' ,_b
                 message.append(_b)
-                        
-        
+
+
         print 'get_info', message
-        
+
         # bytes 0,1 are always 00 ff (manual 5.11)
         # bytes 2,3 is the address of the register
         _address = int(str(message[2]),16)

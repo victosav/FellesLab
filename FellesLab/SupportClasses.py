@@ -53,10 +53,10 @@ class FellesSampler(Thread):
         super(FellesSampler, self).__init__()
 
         # Create a vector holding historical data for the purpose of plotting.
-        # The length may vary because the sampling speed of the units are 
+        # The length may vary because the sampling speed of the units are
         # different. Moreover
         history_length = int( round(self.source.plot_config['time_span']/ \
-                                    self.source.meta['sample_speed']) )
+                                    self.source.GetMetaData('sample_speed')) )
         self.history = {'time': collections.deque( [], history_length ),\
                         'data': collections.deque( [], history_length )
                         }
@@ -78,23 +78,23 @@ class FellesSampler(Thread):
         The thread will call "source.target()" at a rate determined by "sample
         rate" in the caller.
 
-        "source.target" is the method that reads a sample 
+        "source.target" is the method that reads a sample
         from the device
         """
 
         while self.source.SAMPLING:
             self.target()
-            sleep(self.source.meta['sample_speed'])
+            sleep(self.source.GetMetaData('sample_speed'))
 
         self.Terminate()
 
     # ------------------------------- Method -------------------------------- #
     def Terminate(self):
         """
-        
+
         """
-        print "Stopping Thread: '%s' in instance: '%s', base class: '%s'" %( 
-                                                    self.source.meta['label'],
+        print "Stopping Thread: '%s' in instance: '%s', base class: '%s'" %(
+                                               self.source.GetMetaData('label'),
                                                self.source.__class__.__name__,
                                   self.source.__class__.__bases__[0].__name__,
                                   )
@@ -133,11 +133,11 @@ class GuiUpdater(Thread):
     # ------------------------------- Method -------------------------------- #
     def Terminate(self):
         """
-        
+
         """
-        print "Stopping GUI thread: '%s', instance: '%s', base class: '%s'" %( 
-                                                       self.source.GetLabel(), 
-                                               self.source.__class__.__name__, 
+        print "Stopping GUI thread: '%s', instance: '%s', base class: '%s'" %(
+                                                       self.source.GetLabel(),
+                                               self.source.__class__.__name__,
                                   self.source.__class__.__bases__[0].__name__,
                                   )
 
@@ -148,7 +148,7 @@ class ExtendedRef(weakref.ref):
     """
     Weakreference class, creates an alias to "referee".
 
-    This is an important class, the example in the __call__ method shows how 
+    This is an important class, the example in the __call__ method shows how
     to use it.
     """
 
@@ -161,11 +161,11 @@ class ExtendedRef(weakref.ref):
     def __call__(self):
         """
         Magic method.
-        
-        Returns the object that the class referes to. The practical 
+
+        Returns the object that the class referes to. The practical
         implication is that it becomes possible to access the objects methods
         and variables through the reference class.
-        
+
         Understand how to use this class through the following example:
 
         example.py
@@ -204,7 +204,7 @@ class ExtendedRef(weakref.ref):
 # =============================== Class ===================================== #
 class DataStorage(object):
     """
-    This should have been be a clever data storage container.     
+    This should have been be a clever data storage container.
     """
 
     # List of object instances
@@ -218,10 +218,10 @@ class DataStorage(object):
         """
         self.___refs___.append(ExtendedRef(self)) # Add instance to references
 
-        self.owner = owner # Object whose data will be saved 
+        self.owner = owner # Object whose data will be saved
 
         self.File = TemporaryFile()
-        self.File.write('time, %s %s\n' %(self.owner.meta['label'],self.owner.meta['unit']) )
+        self.File.write('time, %s %s\n' %(self.owner.GetMetaData('label'),self.owner.GetMetaData('unit')) )
 
         self.Resize()
 
@@ -233,13 +233,13 @@ class DataStorage(object):
     def Resize(self):
         """
         Resize the array needed to store
-        
+
         Use this method if the sample rate is changed.
         """
         if ('time_span') not in self.owner.plot_config:
             self.owner.plot_config['time_span'] = 5 # seconds
 
-        self.history_length = int( round( self.owner.plot_config['time_span']/self.owner.meta['sample_speed']))
+        self.history_length = int( round( self.owner.plot_config['time_span']/self.owner.GetMetaData('sample_speed')))
         self.FreshStart()
 
     # ------------------------------- Method -------------------------------- #
@@ -248,7 +248,7 @@ class DataStorage(object):
         Use this method if you just need a fresh start
         """
         # Create a vector holding historical data for the purpose of plotting.
-        # The length may vary because the sampling speed of different are 
+        # The length may vary because the sampling speed of different are
         # sensors may vary.
 
         self.history = {'time': collections.deque( [], self.history_length ),\
@@ -260,7 +260,7 @@ class DataStorage(object):
         """
         """
         # Create a vector holding historical data for the purpose of plotting.
-        # The length may vary because the sampling speed of different are 
+        # The length may vary because the sampling speed of different are
         # sensors may vary.
 
         self.history = {'time': collections.deque( [], self.history_length ),\
@@ -282,7 +282,7 @@ class DataStorage(object):
     # ------------------------------- Method -------------------------------- #
     def __call__(self):
         """
-        
+
         """
         return self
 
