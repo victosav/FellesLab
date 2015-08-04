@@ -156,7 +156,6 @@ class MasterClass(object):
         for cls in [Sensor, Equipment]:
             self.gui[cls] = cls.InitGUI()
 
-        print "The following GUIs have been created: %s" %self.gui
         self.app.MainLoop()
 
     # ------------------------------- Method -------------------------------- #

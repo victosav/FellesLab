@@ -148,7 +148,7 @@ class SensorFrame(FellesFrame):
 
         self.plot = FellesPlot(parent=self) # Initiate Plot
         self.plot.Show() # Show frame
-
+        self.plot_deleted = False
         self.timer.start()
     # ------------------------------- Method --------------------------------- #
     def InitUI(self):
@@ -340,7 +340,7 @@ class FellesPlot(wx.Frame):
         if self.first_time:
             for ID, plt in self.plotIDs.iteritems():
                 if plt:
-                    self.tmp = FellesBaseClass.FindID(ID)
+                    self.tmp = FellesBaseClass.Find(ID)
                     self.plot_panel.oplot(
                            np.array(self.tmp.data.history['time']),
                            np.array(self.tmp.data.history['data']),
@@ -368,8 +368,7 @@ class FellesPlot(wx.Frame):
                            axes_style=None,
                            zorder=None,
                         )
-
-#            self.first_time = False
+            self.first_time = False
 
         else:
             i = 0
