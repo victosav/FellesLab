@@ -81,8 +81,9 @@ class Pump(Equipment):
     """
 
     # ------------------------------- Method -------------------------------- #
-    def __init__(self, *args, **kwargs):
-        super(Pump, self).__init__(*args, **kwargs)
+    def __init__(self, module, *args, **kwargs):
+
+        self.module = module
 
         defaultData = {
         'min_velocity' : 0, # rpm
@@ -92,13 +93,17 @@ class Pump(Equipment):
         'min_acceleration' : 0, # %
         'max_acceleration' : 100, # %
         }
-        for key,val in defaultData.iteritems():
-            self.SetMetaData(key, val)
+#        for key,val in defaultData.iteritems():
+#            self.SetMetaData(key, val)
 
-        for key,val in self.module.GetMetaData().iteritems():
-            self.SetMetaData(key, val)
+#        for key,val in self.module.GetMetaData().iteritems():
+#            self.SetMetaData(key, val) 
+# ['PARAMETER', '__doc__', '__init__', '__module__', 'address', 'get_acceleration', 'get_actualvelocity', 'get_address', 'get_errorstatus', 'get_info', 'get_setvelocity', 'get_temperature', 'port', 'read', 'save_and_reset', 'sendmessage', 'set_acceleration', 'set_motormode', 'set_pumpspeed', 'set_velocity', 'unpackRequestedResponse', 'verbose', 'write']
+
 
         self.Initialise()
+        self.ShutDown()
+        super(Pump, self).__init__(*args, **kwargs)
 
     # ------------------------------- Method -------------------------------- #
     def CreateGUI(self):
@@ -109,17 +114,15 @@ class Pump(Equipment):
         return self.GetSpeed()
 
     # ------------------------------- Method -------------------------------- #
-    def TurnOn(self, caller=None, event=None):
-        pass
-        #self.module.set_motormode(1)
+    def TurnOn(self):
+        self.module.set_motormode(1)
 
     # ------------------------------- Method -------------------------------- #
-    def TurnOff(self, caller=None, event=None):
-        pass
-        #self.module.set_motormode(0)
+    def TurnOff(self):
+        self.module.set_motormode(0)
 
     # ------------------------------- Method -------------------------------- #
-    def Initialise(self, event=None, caller=None):
+    def Initialise(self):
         """
         Procedure for initialising the pump.
 
@@ -129,13 +132,13 @@ class Pump(Equipment):
         self.TurnOn()
 
         # If setpoint velocity is not zero, set it to zero
-        if self.GetSetpoint():
-            self.SetSetpoint(0)
+#        if self.GetSetpoint():
+#            self.SetSetpoint(0)
 
-        self.SetMetaData('initial', 0)
+#        self.SetMetaData('initial', 0)
 
     # ------------------------------- Method -------------------------------- #
-    def ShutDown(self, event=None, caller=None):
+    def ShutDown(self):
         """
         Procedure to shut down the pump
 
@@ -144,12 +147,12 @@ class Pump(Equipment):
         * Stop
         """
         # If setpoint velocity is not zero, set it to zero
-        if self.GetSetpoint():
-            self.SetSetpoint(0)
+#        if self.GetSetpoint() > 0:
+#            self.SetSetpoint(0)
 
         print "waiting for pump velocity to decreace before shutting down..."
-        while self.GetSpeed():
-            pass
+#        while self.GetSpeed() :
+#            pass
 
         # Turn off pump
         self.TurnOff()
@@ -159,15 +162,14 @@ class Pump(Equipment):
         """
         Read pump setpoint
         """
-        return 0
-        #return self.module.get_setvelocity()
+        return self.module.get_setvelocity()
 
     # ------------------------------- Method -------------------------------- #
     def SetSetpoint(self, speed_rpm):
         """
         Set new pump setpoint
         """
-        #self.module.set_velocity(speed_rpm)
+        self.module.set_velocity(speed_rpm)
         print "Pump speed setpoint changed to %.2f" %speed_rpm
 
     # ------------------------------- Method -------------------------------- #
@@ -175,8 +177,7 @@ class Pump(Equipment):
         """
         Read the actual pump speed
         """
-        return 0
-        #self.module.get_actualvelocity()
+        self.module.get_actualvelocity()
 
     # ------------------------------- Method -------------------------------- #
     def GetTemperature(self):

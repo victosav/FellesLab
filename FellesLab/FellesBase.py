@@ -59,7 +59,7 @@ class FellesBaseClass(object):
     DataProcessing = {
         'signalFiltering' : None, # Noise filter
         'signalProcessing' : None, # filter sensor output, Fourrier(?), Laplace(?)
-        'calibrationCurve' : None, # Calibration curve
+        'calibrationCurve' : lambda x: x, # Calibration curve
     }
     Data = DataStorage # Dictionary containing sampling data
 
@@ -67,16 +67,15 @@ class FellesBaseClass(object):
     __refs__ = defaultdict(list)
 
     # ------------------------------- Method -------------------------------- #
-    def __init__(self, module, module_metadata = {}, meta_data={}, gui_configuration={}, data_processing={}):
+    def __init__(self, module_metadata = {}, meta_data={}, gui_configuration={}, data_processing={}):
         """
         constructor
         """
         self.__refs__[self.__class__].append(ExtendedRef(self)) # Add instance to references
 
         self.ID = hex(id(self)) # ID used to look up objects (Will change for each run!)
-        self.module = module # This is the reference to the Adam module
-        self.module.SetMetaData(**module_metadata)
 
+        self.module.SetMetaData(**module_metadata)
         meta_data.update(self.module.GetMetaData()) # Add module metadata to kwargs
 
         self.MetaData = self.FellesMetaData
@@ -85,8 +84,9 @@ class FellesBaseClass(object):
         for (key,val) in meta_data.iteritems():
             self.SetMetaData(key,val)
 
+
         self.plot_config = gui_configuration
-        self.data_config = data_processing
+        self.data_config = self.DataProcessing
 
         self.data = self.Data(self) # Dict object reading and writing data, capable of reporting to onClose
 

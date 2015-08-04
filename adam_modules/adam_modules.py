@@ -200,7 +200,8 @@ class AdamModule(object):
             'bytesize' : 'asdf',#self.serial.bytesize,
             'parity' : 'asdf',#self.serial.parity,
             'timeout' : 'asdf',#self.serial.timeout,
-            'data_registers': None,
+            'channels': None,
+            'decimals' : 0,
         }
 
     # ------------------------------- Method -------------------------------- #
@@ -320,7 +321,7 @@ class AnalogIn(AdamModule):
             # TODO for some reason analog_in_start_channel is a tuple... why!?
             return self.read_registers(self.analog_in_start_channel[0] - 1, self.analog_in_number_of_channels)
         elif self.is_valid_channel(channel, self.analog_in_number_of_channels):
-            return self.read_register(self.analog_in_start_channel - 1 + channel)
+            return self.read_register(self.analog_in_start_channel[0] - 1 + channel, self.GetMetaData('decimals'))
         else:
             print('Channel out of range')
     # ------------------------------- Method -------------------------------- #

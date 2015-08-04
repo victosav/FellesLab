@@ -124,6 +124,7 @@ class Mac050(Communications):
     In order to change a different parameter on the motor a new definition needs to be created.
     This should refer to the appropriate parameter and should limit the allowed values.
     '''
+
     defaultData = {
         'min_velocity' : 0, # rpm
         'max_velocity' : 4000, # rpm
@@ -132,7 +133,10 @@ class Mac050(Communications):
         'min_acceleration' : 0, # %
         'max_acceleration' : 100, # %
     }
+
+
     def __init__(self, *args, **kwargs):
+        print "asdf"
         super(Mac050, self).__init__(*args, **kwargs)
 
         self.metaData = {
@@ -152,7 +156,7 @@ class Mac050(Communications):
 
         return self.metaData[key]
 
-    def UpdateMetaData(self, key, val):
+    def SetMetaData(self, key, val):
         """
         Method making it possible to update the meta data used to set limits of
         spedd, acceleration etc.

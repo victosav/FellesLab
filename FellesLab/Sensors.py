@@ -38,7 +38,7 @@ from SupportClasses import FellesSampler, ExtendedRef, DataStorage
 from FellesBase import FellesBaseClass
 from SupportFunctions import sensorTypes, findSensor
 from GUI import FellesFrame, FellesButton, FellesTextInput, FellesLabel
-
+from random import random
 # ================================ Class ==================================== #
 class Sensor(FellesBaseClass):
     """
@@ -46,9 +46,12 @@ class Sensor(FellesBaseClass):
     """
     __sensors__ = defaultdict(list)
     # ------------------------------- Method -------------------------------- #
-    def __init__(self, *args, **kwargs):
-        super(Sensor, self).__init__(*args, **kwargs)
+    def __init__(self,module, *args, **kwargs):
+        
+        self.module = module # This is the reference to the Adam module
         self.__sensors__[self.__class__].append(ExtendedRef(self)) # Add instance to references
+
+        super(Sensor, self).__init__(*args, **kwargs)
 
     # ------------------------------- Method -------------------------------- #
     @classmethod
@@ -75,7 +78,7 @@ class Sensor(FellesBaseClass):
 
     # ------------------------------- Method -------------------------------- #
     def GetMeassurements(self):
-        return self.module.get_analog_in(self.module.GetMetaData['data_registers'])
+        return self.module.get_analog_in(self.module.GetMetaData('channel'))
 
     # ------------------------------- Method -------------------------------- #
     def __repr__(self):
@@ -165,19 +168,27 @@ class SensorFrame(FellesFrame):
         #
         #  This means that s().GetMetaData('label') is simply a way of looking up the
         #  'label' key of a Sensor.
+        for s in iter(self.sensors):
+            try:
+                iii = s().data.history['data'][-1]
+                jjj = s().data.history['time'][-1]
+            except:
+                s().data.history['data'].append(random())
+                s().data.history['time'].append(random())
+
         self.gLabel = {\
                       s().GetID():FellesLabel(
                                                self.panel, wx.ID_ANY,\
                                                 label=s().GetMetaData('label'),\
                                                         style=wx.ALIGN_CENTER )\
-                                                          for s in self.sensors\
+                                                          for s in iter(self.sensors)\
                       }
         self.gValue = {\
                       s().GetID():FellesLabel(
                                       self.panel, wx.ID_ANY,\
                                        label=str(s().data.history['data'][-1]),\
                                                         style=wx.ALIGN_CENTER )\
-                                                          for s in self.sensors\
+                                                          for s in iter(self.sensors)\
                       }
         self.gSetpt = {\
                       s().GetID():FellesTextInput(
@@ -188,7 +199,7 @@ class SensorFrame(FellesFrame):
                                     max=10,
                                     name='asdf',
                                     target=s().UpdateSampleSpeed,
-                                    source=self )   for s in self.sensors\
+                                    source=self )   for s in iter(self.sensors)\
                       }
 
         # arranging and sizing the widgets
