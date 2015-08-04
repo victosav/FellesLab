@@ -75,13 +75,12 @@ class FellesBaseClass(object):
 
         self.ID = hex(id(self)) # ID used to look up objects (Will change for each run!)
         self.module = module # This is the reference to the Adam module
+        self.module.SetMetaData(**module_metadata)
 
         meta_data.update(self.module.GetMetaData()) # Add module metadata to kwargs
 
         self.MetaData = self.FellesMetaData
 
-        for (key, val) in module_metadata.iteritems():
-            pass
 
         for (key,val) in meta_data.iteritems():
             self.SetMetaData(key,val)

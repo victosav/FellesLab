@@ -44,32 +44,32 @@ def main(GUI=False):
 
     Framework = MasterClass()
 
-    a = Pump(
-         module = module2,
-         module_metadata = {
-            'blabla' : None, # Configure module, set channel etc...
-         },
-         meta_data = {
-            'label' : 'Pump',
-            'unit' : '[rpm]',
-            'sample_speed' : 0.5,
-         },
-         data_processing = {
-             'signalFiltering' : None, # Noise filter
-             'signalProcessing' : None, # filter sensor output, Fourrier(?), Laplace(?)
-             'calibrationCurve' : lambda (x): x, # Calibration curve
-         },
-         gui_configuration = {
-            'plot' : False,
-            'time_span' : 20, # seconds
-            'color': 'red',
-         },
-    )
+#     a = Pump(
+#          module = module2,
+#          module_metadata = {
+#             'blabla' : None, # Configure module, set channel etc...
+#          },
+#          meta_data = {
+#             'label' : 'Pump',
+#             'unit' : '[rpm]',
+#             'sample_speed' : 0.5,
+#          },
+#          data_processing = {
+#              'signalFiltering' : None, # Noise filter
+#              'signalProcessing' : None, # filter sensor output, Fourrier(?), Laplace(?)
+#              'calibrationCurve' : lambda (x): x, # Calibration curve
+#          },
+#          gui_configuration = {
+#             'plot' : False,
+#             'time_span' : 20, # seconds
+#             'color': 'red',
+#          },
+#     )
 
     a = Temperature(
          module = module1,
          module_metadata = {
-            'blabla' : None, # Configure module, set channel etc...
+            'data_registers' : 3, # Configure module, set channel etc...
          },
          meta_data = {
             'label' : 'Temp',
@@ -91,7 +91,7 @@ def main(GUI=False):
     b = Temperature(
          module = module2,
          module_metadata = {
-            'blabla' : None, # Configure module, set channel etc...
+            'data_registers' : 3, # Configure module, set channel etc...
          },
          meta_data = {
             'unit' : '[K]',

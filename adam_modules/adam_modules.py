@@ -200,6 +200,7 @@ class AdamModule(object):
             'bytesize' : 'asdf',#self.serial.bytesize,
             'parity' : 'asdf',#self.serial.parity,
             'timeout' : 'asdf',#self.serial.timeout,
+            'data_registers': None,
         }
 
     # ------------------------------- Method -------------------------------- #
@@ -221,7 +222,7 @@ class AdamModule(object):
         using the keys listed above.
         """
         for k,v in config.iteritems():
-            self.serial.k = v
+            self.metaData[k] = v
 
     # ------------------------------- Method -------------------------------- #
     def GetMetaData(self, key=None):

@@ -75,7 +75,7 @@ class Sensor(FellesBaseClass):
 
     # ------------------------------- Method -------------------------------- #
     def GetMeassurements(self):
-        return self.module.get_analog_in()
+        return self.module.get_analog_in(self.module.GetMetaData['data_registers'])
 
     # ------------------------------- Method -------------------------------- #
     def __repr__(self):
