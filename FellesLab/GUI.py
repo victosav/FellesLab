@@ -81,7 +81,7 @@ Yb,          ,dP 888     888    .o 888  888 888    .oo.  )88b  888    od8(  888 
    `""""""""'
 '''\
 )
-        self.obj['logo'].SetFont(wx.Font(pointSize=1, family=wx.MODERN,
+        self.obj['logo'].SetFont(wx.Font(pointSize=7, family=wx.MODERN,
              style=wx.NORMAL, weight=wx.BOLD, underline=False,
              faceName=u'Courier', encoding=wx.FONTENCODING_DEFAULT))
 
@@ -160,10 +160,8 @@ Yb,          ,dP 888     888    .o 888  888 888    .oo.  )88b  888    od8(  888 
         1. StopSampling
         2. close...
         """
-        try:
-            pub.sendMessage('close.all', event=self)
-        except:
-            pass
+
+        FellesFrame.OnClose(self)
 
         print "Window: '%s', closed by event: '%s'" %(self.GetLabel(), event.__class__.__name__)
         self.Destroy()
@@ -174,6 +172,7 @@ class FellesApp(wx.App):
     """
     App class
     """
+
     # ------------------------------- Method --------------------------------- #
     def __init__(self, MasterClass):
         super(FellesApp, self).__init__(False)
@@ -200,8 +199,11 @@ class FellesFrame(wx.Frame):
     timer = GuiUpdater
     SAMPLING = True
 
+    __refs__ = []
+
     # ------------------------------- Method --------------------------------- #
     def __init__(self, parent=None, *args, **kwargs):
+        self.__refs__.append(ExtendedRef(self)) # Add instance to references
 
         # Check for title
         if not kwargs.has_key('title'):
@@ -229,16 +231,26 @@ class FellesFrame(wx.Frame):
         self.timer = GuiUpdater(group=None, target=self.UpdateFrame, source=self)
 
         # Strategies to close the window
-        pub.subscribe(self.OnClose, 'close.all')
+#        pub.subscribe(self.OnClose, 'close.all')
         self.Bind(wx.EVT_CLOSE, self.OnClose)
+
+    # ------------------------------- Method --------------------------------- #
+    @classmethod
+    def OnClose(cls, event):
+        for inst in cls.__refs__:
+            inst().OnClose(cls)
+
+    # ------------------------------- Method --------------------------------- #
+    def __call__(self):
+        return self
 
     # ------------------------------- Method --------------------------------- #
     def InitUI(self):
         NotImplementedError("User interface is not implemented")
 
-    # ------------------------------- Method --------------------------------- #
-    def OnClose(self, event):
-        pass
+#    # ------------------------------- Method --------------------------------- #
+#    def OnClose(self, event):
+#        pass
 
     # ------------------------------- Method --------------------------------- #
     def UpdateFrame(self):

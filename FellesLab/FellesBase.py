@@ -153,7 +153,8 @@ class FellesBaseClass(object):
         self.SAVE = True
         self.data.Restart(self.Timer(), self.module.get_analog_in())
         print "Sensor '%s' started at time: '%s' by event: '%s'" %(
-                                       self.GetMetaData('label'), self.Timer(), event)
+                                       self.GetMetaData('label'), self.Timer(),
+                                                       event.__class__.__name__)
 
     # ------------------------------- Method -------------------------------- #
     def PauseSampling(self, event=None):
@@ -171,7 +172,7 @@ class FellesBaseClass(object):
         """
         self.SAMPLING = False
 
-        print "Instance '%s' terminated by event: '%s'" %(self.GetMetaData('label'), event)
+        print "Instance '%s' terminated by event: '%s'" %(self.GetMetaData('label'), event.__class__.__name__)
 
     # ------------------------------- Method -------------------------------- #
     def UpdateData(self):
@@ -196,9 +197,10 @@ class FellesBaseClass(object):
     def Find(cls, ID):
         """
         """
+
         for cls,lst in cls.__refs__.iteritems():
             for inst in lst:
-                if inst().HasID(ID):
+                if inst().GetID() == ID:
                     return inst()
 
     # ------------------------------- Method -------------------------------- #
