@@ -77,9 +77,9 @@ class FellesBaseClass(object):
 
         self.MetaData = self.FellesMetaData
 
-        if len(module_metadata) > 0:
-            for k,v in module_metadata.iteritems():
-                self.module.SetMetaData(k, v)
+#        if len(module_metadata) > 0:
+#            for k,v in module_metadata.iteritems():
+#                self.module.SetMetaData(k, v)
         
 
         self.MetaData.update(self.module.GetMetaData()) # Add module metadata to kwargs
