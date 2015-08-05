@@ -32,9 +32,9 @@ setup(
     description='Laboratory Framework',
     author='Sigve Karolius',
     url='https//sigveka.github.io/FellesLab',
-    packages=['FellesLab','adam_modules','mac_motor_module', 'alicat_devices'],
+    packages=['FellesLab','adam_modules','mac_motor', 'alicat_devices'],
     install_requires=["pyserial","minimalmodbus"],
-    package_dir={ 'FellesLab':'FellesLab', 'adam_modules':'adam_modules', 'mac_motor_module':'mac_motor_module', 'alicat_devices':'alicat_devices'},
+    package_dir={ 'FellesLab':'FellesLab', 'adam_modules':'adam_modules', 'mac_motor':'mac_motor', 'alicat_devices':'alicat_devices'},
     #package_data={'FellesLab': ['Equipment/*.py','GUI/*.py','Utils/*.py'] , 'adam_modules':['utils/*.py']},
     package_data={'FellesLab': [] , 'adam_modules':['utils/*.py']},
     long_description="""\

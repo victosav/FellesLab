@@ -205,7 +205,7 @@ class AdamModule(object):
         }
 
     # ------------------------------- Method -------------------------------- #
-    def SetMetaData(self, **config):
+    def SetMetaData(self, key, val):
         """
         Configuration method for changing the following parameters:
           port = str       # serial port name
@@ -222,8 +222,7 @@ class AdamModule(object):
             xxxModule(portname, slaveaddress, config={ key:val} )
         using the keys listed above.
         """
-        for k,v in config.iteritems():
-            self.metaData[k] = v
+        self.metaData[key] = val
 
     # ------------------------------- Method -------------------------------- #
     def GetMetaData(self, key=None):

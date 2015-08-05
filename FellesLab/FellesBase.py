@@ -75,15 +75,17 @@ class FellesBaseClass(object):
 
         self.ID = hex(id(self)) # ID used to look up objects (Will change for each run!)
 
-        self.module.SetMetaData(**module_metadata)
-        meta_data.update(self.module.GetMetaData()) # Add module metadata to kwargs
-
         self.MetaData = self.FellesMetaData
 
+        if len(module_metadata) > 0:
+            for k,v in module_metadata.iteritems():
+                self.module.SetMetaData(k, v)
+        
+
+        self.MetaData.update(self.module.GetMetaData()) # Add module metadata to kwargs
 
         for (key,val) in meta_data.iteritems():
             self.SetMetaData(key,val)
-
 
         self.plot_config = gui_configuration
         self.data_config = self.DataProcessing
@@ -150,7 +152,7 @@ class FellesBaseClass(object):
         """
         self.t0 = time()
         self.SAVE = True
-        self.data.Restart(self.Timer(), self.module.get_analog_in())
+        self.data.Restart(self.Timer(), self.GetMeassurements())
         print "Sensor '%s' started at time: '%s' by event: '%s'" %(
                                        self.GetMetaData('label'), self.Timer(),
                                                        event.__class__.__name__)
