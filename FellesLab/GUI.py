@@ -40,10 +40,11 @@ class MainFrame(wx.Frame):
     """
 
     """
+    __frames__ = []
     # ------------------------------- Method --------------------------------- #
     def __init__(self, parent, id, title, pos, size, style, MasterClass):
         wx.Frame.__init__(self, parent, id, title, pos, size, style)
-
+        self.__frames__.append(ExtendedRef(self))
         self.MasterClass = MasterClass
 
         self.InitUI()
@@ -135,6 +136,10 @@ Yb,          ,dP 888     888    .o 888  888 888    .oo.  )88b  888    od8(  888 
         self.stop.Enable()
 
     # ------------------------------- Method --------------------------------- #
+    def __call__(self):
+        return self
+
+    # ------------------------------- Method --------------------------------- #
     def Pause(self, event):
         """
 
@@ -155,17 +160,19 @@ Yb,          ,dP 888     888    .o 888  888 888    .oo.  )88b  888    od8(  888 
         self.OnClose(self)
 
     # ------------------------------- Method --------------------------------- #
-    def OnClose(self, event):
+    @classmethod
+    def OnClose(cls, event):
         """
         1. StopSampling
         2. close...
         """
 
-        FellesFrame.OnClose(self)
+        FellesFrame.OnClose(event)
 
-        print "Window: '%s', closed by event: '%s'" %(self.GetLabel(), event.__class__.__name__)
-        self.Destroy()
-        self.MasterClass.app.ExitMainLoop()
+        print "Window: '%s', closed by event: '%s'" %(cls.__name__, event.__class__.__name__)
+        for frame in cls.__frames__:
+            frame().Destroy()
+            frame().MasterClass.app.ExitMainLoop()
 
 # =============================== Class ====================================== #
 class FellesApp(wx.App):
@@ -232,7 +239,12 @@ class FellesFrame(wx.Frame):
 
         # Strategies to close the window
 #        pub.subscribe(self.OnClose, 'close.all')
-        self.Bind(wx.EVT_CLOSE, self.OnClose)
+        self.Bind(wx.EVT_CLOSE, self.CloseMainFrame)
+
+    # ------------------------------- Method --------------------------------- #
+    @classmethod
+    def CloseMainFrame(cls, event):
+        MainFrame.OnClose(event)
 
     # ------------------------------- Method --------------------------------- #
     @classmethod

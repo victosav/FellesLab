@@ -22,6 +22,15 @@ o888o     `Y8bod8P'o888oo888o`Y8bod8P'8""888P'  o888ooooood8`Y888""8o `Y8bod8P'
 @change:
 @note:
 
+Colors:
+b: blue
+g: green
+r: red
+c: cyan
+m: magenta
+y: yellow
+k: black
+w: white
 """
 
 __author__  = "Sigve Karolius"
@@ -32,7 +41,7 @@ __date__    = "$Date: 2015-06-23 (Tue, 23 Jun 2015) $"
 from adam_modules import Adam4019
 from mac_motor_module import Mac050
 
-from FellesLab import MasterClass, Temperature, Pump
+from FellesLab import MasterClass, Temperature, Voltage, Pump
 
 
 
@@ -64,6 +73,52 @@ def main(GUI=False):
 #            },
 #     )
 
+    v1 = Voltage(
+         module = module1,
+         module_metadata = {
+            'channel' : 3, # Configure module, set channel etc...
+            'decimals' : 3,
+         },
+         meta_data = {
+            'label' : 'Temperature 1',
+            'unit' : '[K]',
+            'sample_speed' : 0.5,
+         },
+         data_processing = {
+             'signalFiltering' : None, # Noise filter
+             'signalProcessing' : None, # filter sensor output, Fourrier(?), Laplace(?)
+             'calibrationCurve' : lambda (x): x, # Calibration curve
+         },
+         gui_configuration = {
+            'plot' : True,
+            'time_span' : 20, # seconds
+            'color': 'cyan',
+         },
+    )
+
+    v2 = Voltage(
+         module = module2,
+         module_metadata = {
+            'channel' : 3, # Configure module, set channel etc...
+            'decimals' : 2,
+         },
+         meta_data = {
+            'label' : 'Temperature 1',
+            'unit' : '[K]',
+            'sample_speed' : 0.5,
+         },
+         data_processing = {
+             'signalFiltering' : None, # Noise filter
+             'signalProcessing' : None, # filter sensor output, Fourrier(?), Laplace(?)
+             'calibrationCurve' : lambda (x): x**2, # Calibration curve
+         },
+         gui_configuration = {
+            'plot' : True,
+            'time_span' : 20, # seconds
+            'color': 'magenta',
+         },
+    )
+
     t1 = Temperature(
          module = module1,
          module_metadata = {
@@ -83,7 +138,7 @@ def main(GUI=False):
          gui_configuration = {
             'plot' : True,
             'time_span' : 20, # seconds
-            'color': 'red',
+            'color': 'green',
          },
     )
 
