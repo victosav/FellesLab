@@ -67,28 +67,36 @@ class FellesBaseClass(object):
     __refs__ = defaultdict(list)
 
     # ------------------------------- Method -------------------------------- #
-    def __init__(self, module_metadata = {}, meta_data={}, gui_configuration={}, data_processing={}):
+    def __init__(self, module, module_metadata = {}, meta_data={}, gui_configuration={}, data_processing={}):
         """
         constructor
         """
         self.__refs__[self.__class__].append(ExtendedRef(self)) # Add instance to references
 
         self.ID = hex(id(self)) # ID used to look up objects (Will change for each run!)
+        self.module = module # This is the reference to the Adam module
 
-        self.MetaData = self.FellesMetaData
+        self.MetaData = { k : v for k,v in self.FellesMetaData.iteritems()}
+        for k,v in self.FellesMetaData.iteritems():
+            if meta_data.has_key(k):
+                self.MetaData[k] = meta_data[k]
 
-#        if len(module_metadata) > 0:
-#            for k,v in module_metadata.iteritems():
-#                self.module.SetMetaData(k, v)
-        
+        for k,v in self.module.GetMetaData().iteritems():
+            if module_metadata.has_key(k):
+                self.MetaData[k] = module_metadata[k]
+            else:
+                self.MetaData[k] = v
 
-        self.MetaData.update(self.module.GetMetaData()) # Add module metadata to kwargs
+        self.plot_config = {k:v for k,v in self.GuiMetaData.iteritems()}
+        for k,v in self.GuiMetaData.iteritems():
+            if gui_configuration.has_key(k):
+                self.plot_config[k] = gui_configuration[k]
 
-        for (key,val) in meta_data.iteritems():
-            self.SetMetaData(key,val)
+        self.data_config = {k:v for k,v in self.DataProcessing.iteritems()}
+        for k,v in self.GuiMetaData.iteritems():
+            if data_processing.has_key(k):
+                self.plot_config[k] = data_processing[k]
 
-        self.plot_config = gui_configuration
-        self.data_config = self.DataProcessing
 
         self.data = self.Data(self) # Dict object reading and writing data, capable of reporting to onClose
 
@@ -134,11 +142,6 @@ class FellesBaseClass(object):
         return time() - self.t0
 
     # ------------------------------- Method -------------------------------- #
-    def GetMeassurements(self, event=None):
-        pass
-
-
-    # ------------------------------- Method -------------------------------- #
     def Sample(self, event=None):
         """
         TODO
@@ -154,8 +157,9 @@ class FellesBaseClass(object):
         self.SAVE = True
         self.data.Restart(self.Timer(), self.GetMeassurements())
         print "Sensor '%s' started at time: '%s' by event: '%s'" %(
-                                       self.GetMetaData('label'), self.Timer(),
-                                                       event.__class__.__name__)
+                                                      self.GetMetaData('label'),
+                                                      self.Timer(),
+                                                      event.__class__.__name__)
 
     # ------------------------------- Method -------------------------------- #
     def PauseSampling(self, event=None):
@@ -163,8 +167,6 @@ class FellesBaseClass(object):
         TODO: Write
         """
         pass
-        #self.StartSampling()
-        #self.t0 = time()
 
     # ------------------------------- Method -------------------------------- #
     def StopSampling(self, event=None):
@@ -172,7 +174,6 @@ class FellesBaseClass(object):
         TODO
         """
         self.SAMPLING = False
-
         print "Instance '%s' terminated by event: '%s'" %(self.GetMetaData('label'), event.__class__.__name__)
 
     # ------------------------------- Method -------------------------------- #

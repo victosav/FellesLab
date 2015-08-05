@@ -78,8 +78,11 @@ class DummyModbus(object):
         self.portname = 'portname'
         self.serial = DummySerial()
     # ------------------------------- Method -------------------------------- #
-    def read_register(self, channel):
-        return random()
+    def read_register(self, channel, numberOfDecimals):
+        if numberOfDecimals == 0:
+            return random()
+        else:
+            return random() * numberOfDecimals * 10
     # ------------------------------- Method -------------------------------- #
     def read_registers(self, channel, number_of_channels):
         return random()
@@ -200,7 +203,7 @@ class AdamModule(object):
             'bytesize' : 'asdf',#self.serial.bytesize,
             'parity' : 'asdf',#self.serial.parity,
             'timeout' : 'asdf',#self.serial.timeout,
-            'channels': None,
+            'channel': None,
             'decimals' : 0,
         }
 
@@ -228,10 +231,7 @@ class AdamModule(object):
     def GetMetaData(self, key=None):
         """
         """
-        if not key:
-            return self.metaData
-
-        return self.metaData[key]
+        return self.metaData if not key else self.metaData[key]
 
     # ------------------------------- Method -------------------------------- #
     def module_name(self):
@@ -330,14 +330,14 @@ class AnalogIn(AdamModule):
         """
         return self.write_register(self.type_analog_in_start_channel - 1 + channel, value)
     # ------------------------------- Method -------------------------------- #
-    def get_type_analog_in(self, channel=-1):
+    def get_type_analog_in(self, channel=-1, numberOfDecimals = 0):
         """
             Getter method
         """
         if channel == -1:
             return self.read_registers(self.type_analog_in_start_channel - 1, self.analog_in_number_of_channels)
         elif self.is_valid_channel(channel, self.analog_in_number_of_channels):
-            return self.read_register(self.type_analog_in_start_channel - 1 + channel)
+            return self.read_register(self.type_analog_in_start_channel - 1 + channel, numberOfDecimals)
         else:
             print('Channel out of range')
     # ------------------------------- Method -------------------------------- #

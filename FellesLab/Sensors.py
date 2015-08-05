@@ -46,12 +46,9 @@ class Sensor(FellesBaseClass):
     """
     __sensors__ = defaultdict(list)
     # ------------------------------- Method -------------------------------- #
-    def __init__(self,module, *args, **kwargs):
-        
-        self.module = module # This is the reference to the Adam module
-        self.__sensors__[self.__class__].append(ExtendedRef(self)) # Add instance to references
-
+    def __init__(self, *args, **kwargs):
         super(Sensor, self).__init__(*args, **kwargs)
+        self.__sensors__[self.__class__].append(ExtendedRef(self)) # Add instance to references
 
     # ------------------------------- Method -------------------------------- #
     @classmethod
@@ -60,25 +57,18 @@ class Sensor(FellesBaseClass):
         Method creating sensor frames for the sensors
         """
         SensorGUI = {}
-        for ref,instnts in cls.Instances():
-            print "Creating GUI for Sensor: '%s'" %ref.__name__
-            SensorGUI[instnts[0]().__class__.__name__] = SensorFrame(
+        for subCls,instnts in cls.__sensors__.iteritems():
+            print "Creating GUI for Sensor: '%s'" %subCls.__name__
+            SensorGUI[subCls.__name__] = SensorFrame(
                                          sensors = instnts ,
-                                         title = ref.__name__ ,
+                                         title = subCls.__name__ ,
                                          )
         return SensorGUI
 
     # ------------------------------- Method -------------------------------- #
-    @classmethod
-    def Instances(cls):
-        """
-        """
-        for ref,lst in cls.__sensors__.iteritems():
-            yield ref, lst
-
-    # ------------------------------- Method -------------------------------- #
     def GetMeassurements(self):
-        return self.module.get_analog_in(self.module.GetMetaData('channel'))
+        return self.module.get_analog_in(self.GetMetaData('channel'),
+                                         self.GetMetaData('decimals'))
 
     # ------------------------------- Method -------------------------------- #
     def __repr__(self):
@@ -98,7 +88,6 @@ class Temperature(Sensor):
     def __init__(self, *args, **kwargs):
         super(Temperature, self).__init__(*args, **kwargs)
 
-
 # ================================ Class ==================================== #
 class Voltage(Sensor):
     """
@@ -107,8 +96,6 @@ class Voltage(Sensor):
     # ------------------------------- Method -------------------------------- #
     def __init__(self, *args, **kwargs):
         super(Voltage, self).__init__(*args, **kwargs)
-
-
 
 # =============================== Class ====================================== #
 class SensorFrame(FellesFrame):
@@ -181,14 +168,14 @@ class SensorFrame(FellesFrame):
                                                self.panel, wx.ID_ANY,\
                                                 label=s().GetMetaData('label'),\
                                                         style=wx.ALIGN_CENTER )\
-                                                          for s in iter(self.sensors)\
+                                                    for s in iter(self.sensors)\
                       }
         self.gValue = {\
                       s().GetID():FellesLabel(
                                       self.panel, wx.ID_ANY,\
                                        label=str(s().data.history['data'][-1]),\
                                                         style=wx.ALIGN_CENTER )\
-                                                          for s in iter(self.sensors)\
+                                                    for s in iter(self.sensors)\
                       }
         self.gSetpt = {\
                       s().GetID():FellesTextInput(
@@ -245,7 +232,9 @@ class SensorFrame(FellesFrame):
         # Update label for sensor: s().GetMetaData('label')
         # with the most recent measurement: s().data.history['data'][-1]
         for s in self.sensors:
-            self.gValue[s().GetID()].SetLabel( '%.2f %s' %( s().data.history['data'][-1], str(s().GetMetaData('unit'))) )
+            self.gValue[s().GetID()].SetLabel( '%.2f %s' %(
+                                                   s().data.history['data'][-1],
+                                                  str(s().GetMetaData('unit'))))
 
         try:
             pub.sendMessage( 'Plot.%s' %self.GetLabel() )
@@ -309,8 +298,8 @@ class FellesPlot(wx.Frame):
         # setting up plot
         self.plot_panel = wxmplot.PlotPanel(parent=self, size=(500, 500), dpi=100)
 
-        self.plot_panel.set_xlabel('x')
-        self.plot_panel.set_ylabel('y')
+        self.plot_panel.set_xlabel('time')
+        self.plot_panel.set_ylabel(self.parentFrame.GetLabel())
 #        self.plot_panel.set_y2label(label)
         self.plot_panel.set_title(self.parentFrame.GetLabel())
 
@@ -332,7 +321,7 @@ class FellesPlot(wx.Frame):
         # {'0x7f921e6977a0': False , '0x7f921e696530': True }
         # (The ID is the address in memory of the sensor object)
         self.plotIDs = {c().GetID() : c().plot_config['plot'] for c in self.candidates}
-        self.tmp = None
+
         # fit the sizer to the panel
         self.Fit()
 
@@ -351,14 +340,14 @@ class FellesPlot(wx.Frame):
         if self.first_time:
             for ID, plt in self.plotIDs.iteritems():
                 if plt:
-                    self.tmp = FellesBaseClass.Find(ID)
+                    tmp = FellesBaseClass.Find(ID)
                     self.plot_panel.oplot(
-                           np.array(self.tmp.data.history['time']),
-                           np.array(self.tmp.data.history['data']),
-                           draw=False,
+                           np.array(tmp.data.history['time']),
+                           np.array(tmp.data.history['data']),
+                           draw = True,
                            side ='left',
-                           label = self.tmp.GetMetaData('label'),
-                           color = self.tmp.plot_config['color'],
+                           label = tmp.GetMetaData('label'),
+                           color = tmp.plot_config['color'],
                            xlabel = None, ylabel = None, y2label = None,
                            title = None,
                            dy = None,
@@ -385,12 +374,12 @@ class FellesPlot(wx.Frame):
             i = 0
             for ID,plt in self.plotIDs.iteritems():
                 if plt:
-                    self.tmp = FellesBaseClass.Find(ID)
+                    tmp = FellesBaseClass.Find(ID)
                     self.plot_panel.update_line(
                                 i,
-                                np.array(self.tmp.data.history['time']),
-                                np.array(self.tmp.data.history['data']),
-                                draw=plt,
+                                np.array(tmp.data.history['time']),
+                                np.array(tmp.data.history['data']),
+                                draw=True,
                                 )
                 i += 1
 

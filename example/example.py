@@ -40,15 +40,13 @@ def main(GUI=False):
 
     module1 = Adam4019(base='Dummy')
     module2 = Adam4019(base='Dummy')
-    module3 = Mac050(module1, 1)
+#   module3 = Mac050(module1.serial, 1)
+
 
     Framework = MasterClass()
 
-#     a = Pump(
-#          module = module2,
-#          module_metadata = {
-#             'blabla' : None, # Configure module, set channel etc...
-#          },
+#    b = Pump(
+#          module = module3,
 #          meta_data = {
 #             'label' : 'Pump',
 #             'unit' : '[rpm]',
@@ -63,23 +61,24 @@ def main(GUI=False):
 #             'plot' : False,
 #             'time_span' : 20, # seconds
 #             'color': 'red',
-#          },
+#            },
 #     )
 
-    a = Temperature(
+    t1 = Temperature(
          module = module1,
          module_metadata = {
-            'data_registers' : 3, # Configure module, set channel etc...
+            'channel' : 3, # Configure module, set channel etc...
+            'decimals' : 1,
          },
          meta_data = {
-            'label' : 'Temp',
+            'label' : 'Temperature 1',
             'unit' : '[K]',
             'sample_speed' : 0.5,
          },
          data_processing = {
              'signalFiltering' : None, # Noise filter
              'signalProcessing' : None, # filter sensor output, Fourrier(?), Laplace(?)
-             'calibrationCurve' : lambda (x): x*10, # Calibration curve
+             'calibrationCurve' : lambda (x): x, # Calibration curve
          },
          gui_configuration = {
             'plot' : True,
@@ -88,19 +87,21 @@ def main(GUI=False):
          },
     )
 
-    b = Temperature(
+    t2 = Temperature(
          module = module2,
          module_metadata = {
-            'data_registers' : 3, # Configure module, set channel etc...
+            'channel' : 3, # Configure module, set channel etc...
+            'decimals' : 1,
          },
          meta_data = {
+            'label' : 'Temperature 2',
             'unit' : '[K]',
             'sample_speed' : 0.5,
          },
          data_processing = {
              'signalFiltering' : None, # Noise filter
              'signalProcessing' : None, # filter sensor output, Fourrier(?), Laplace(?)
-             'calibrationCurve' : lambda x: x*100, # Calibration curve
+             'calibrationCurve' : lambda x: x, # Calibration curve
          },
          gui_configuration = {
             'plot' : True,

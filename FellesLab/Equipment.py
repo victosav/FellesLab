@@ -53,19 +53,13 @@ class Equipment(FellesBaseClass):
         Method creating GUI
         """
         eGUI = {}
-        for ref, instnts in cls.Instances():
+        for ref, instnts in cls.__equipment__.iteritems():
             for inst in instnts:
                 eGUI[inst().GetMetaData('label')] = inst().CreateGUI()
 
             print "Creating GUI for Equipment: '%s'" %ref.__name__
 
         return eGUI
-
-   # ------------------------------- Method -------------------------------- #
-    @classmethod
-    def Instances(cls):
-        for ref,inst in cls.__equipment__.iteritems():
-            yield ref, inst
 
     # ------------------------------- Method -------------------------------- #
     def __repr__(self):
@@ -98,7 +92,7 @@ class Pump(Equipment):
 #            self.SetMetaData(key, val)
 
 #        for key,val in self.module.GetMetaData().iteritems():
-#            self.SetMetaData(key, val) 
+#            self.SetMetaData(key, val)
 # ['PARAMETER', '__doc__', '__init__', '__module__', 'address', 'get_acceleration', 'get_actualvelocity', 'get_address', 'get_errorstatus', 'get_info', 'get_setvelocity', 'get_temperature', 'port', 'read', 'save_and_reset', 'sendmessage', 'set_acceleration', 'set_motormode', 'set_pumpspeed', 'set_velocity', 'unpackRequestedResponse', 'verbose', 'write']
 
 

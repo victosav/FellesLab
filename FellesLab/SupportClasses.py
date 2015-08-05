@@ -228,7 +228,6 @@ class DataStorage(object):
     # ------------------------------- Method -------------------------------- #
     def Scale(self, val):
         return self.owner.data_config['calibrationCurve'](val)
-
     # ------------------------------- Method -------------------------------- #
     def Resize(self):
         """
