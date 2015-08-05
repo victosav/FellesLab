@@ -229,14 +229,13 @@ class DataStorage(object):
     def Scale(self, val):
         return self.owner.data_config['calibrationCurve'](val)
     # ------------------------------- Method -------------------------------- #
+
     def Resize(self):
         """
         Resize the array needed to store
 
         Use this method if the sample rate is changed.
         """
-        if ('time_span') not in self.owner.plot_config:
-            self.owner.plot_config['time_span'] = 5 # seconds
 
         self.history_length = int( round( self.owner.plot_config['time_span']/self.owner.GetMetaData('sample_speed')))
         self.FreshStart()
@@ -262,9 +261,7 @@ class DataStorage(object):
         # The length may vary because the sampling speed of different are
         # sensors may vary.
 
-        self.history = {'time': collections.deque( [], self.history_length ),\
-                        'data': collections.deque( [], self.history_length )
-                       }
+        self.FreshStart()     
         self.Update(time, val)
 
     # ------------------------------- Method -------------------------------- #

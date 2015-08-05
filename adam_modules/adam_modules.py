@@ -425,6 +425,7 @@ class Adam4117(AnalogIn):
     type_analog_in_start_channel = 201
     burn_out_signal_start_channel = 1
     analog_in_number_of_channels = 8
+    min = 0.01
     # ---------------------------- Method ----------------------------------- #
     def __init__(self, *args, **kwargs):
         """

@@ -76,9 +76,8 @@ class Pump(Equipment):
     """
 
     # ------------------------------- Method -------------------------------- #
-    def __init__(self, module, *args, **kwargs):
-
-        self.module = module
+    def __init__(self, *args, **kwargs):
+        super(Pump, self).__init__(*args, **kwargs)
 
         defaultData = {
         'min_velocity' : 0, # rpm
@@ -98,7 +97,6 @@ class Pump(Equipment):
 
         self.Initialise()
 
-        super(Pump, self).__init__(*args, **kwargs)
 
     # ------------------------------- Method -------------------------------- #
     def CreateGUI(self):
@@ -106,7 +104,8 @@ class Pump(Equipment):
 
     # ------------------------------- Method -------------------------------- #
     def GetMeassurements(self):
-        return self.GetSpeed()
+        a = self.GetSpeed()        
+        return 0.0 if not a else a
 
     # ------------------------------- Method -------------------------------- #
     def TurnOn(self):
@@ -157,7 +156,7 @@ class Pump(Equipment):
         """
         Read pump setpoint
         """
-        return self.module.get_setvelocity()
+        return self.module.get_setvelocity() # float
 
     # ------------------------------- Method -------------------------------- #
     def SetSetpoint(self, speed_rpm):
@@ -246,20 +245,21 @@ class PumpFrame(FellesFrame):
         self.label_name = wx.StaticText(self.panel, label=self.GetName())
         self.lables['label_setpoint'] = FellesLabel(self.panel,
                                                    label='Speed setpoint [rpm]')
+
         self.lables['spin_setpoint'] = FellesTextInput(self.panel,
                                                      source = self,
-                                                     value ='%.2f'%self.GetSetpoint(),
-                                                     initial=self.GetSetpoint(),
+                                                     value ='%s'%self.GetSetpoint(),
+                                                     initial=0,#float(self.GetSetpoint()),
                                                      min = self.Pump.GetMetaData('min_velocity'),
                                                      max = self.Pump.GetMetaData('max_velocity'),
                                                      name = 'Pump Setpoint',
                                                      target=self.SetSetpoint)
 
         self.lables['label_description_speed'] = FellesLabel(self.panel,
-                    label='Speed [{unit}]'.format(unit=self.Pump.GetMetaData('label')))
+                    label='%s Speed %s' %(self.Pump.GetMetaData('label'), self.Pump.GetMetaData('unit')))
         self.lables['label_speed'] = FellesLabel(self.panel,
-                      label='{val} {unit}'.format(val=str(self.Pump.GetSetpoint()),
-                      unit=self.Pump.GetMetaData('unit')))
+                                        label='%s %s' %(self.Pump.GetSetpoint(),
+                                        self.Pump.GetMetaData('unit')))
 
         # Buttons
         self.On  = FellesButton(self.panel, source=self, target=self.TurnOn,
@@ -321,16 +321,16 @@ class PumpFrame(FellesFrame):
         self.Pump.ShutDown()
 
     # ------------------------------- Method --------------------------------- #
-    def SetSetpoint(self, event, caller):
-        self.Pump.SetSetpoint(event.GetValue())
+    def SetSetpoint(self, rpm):
+        self.Pump.SetSetpoint(rpm)
 
     # ------------------------------- Method --------------------------------- #
     def GetSetpoint(self):
-        return float(self.Pump.GetSetpoint())
+        return self.Pump.GetSetpoint() # Output is string!
 
     # ------------------------------- Method --------------------------------- #
     def GetSpeed(self):
-        return self.Pump.GetSpeed()
+        return self.Pump.GetSpeed() # Output is string!
 
     # ------------------------------- Method --------------------------------- #
     def UpdateFrame(self, sender=None, args=None):
@@ -340,13 +340,10 @@ class PumpFrame(FellesFrame):
         # Update label for sensor: s().GetMetaData('label')
         # with the most recent measurement: s().data.history['data'][-1]
 
-        self.lables['spin_setpoint'].SetLabel( '%.2f %s' %(
-                                                             self.GetSetpoint(),
-                                                 self.Pump.GetMetaData('unit')),
-                                             )
+        self.lables['spin_setpoint'].SetLabel( '%s' %(self.GetSetpoint()))
         self.lables['label_speed'].SetLabel( '%.2f %s' %(
                                              self.Pump.data.history['data'][-1],
-                                                 self.Pump.GetMetaData('unit')),
+                                             self.Pump.GetMetaData('unit')),
                                            )
 
 #        pub.sendMessage( 'Plot.%s' %self.GetLabel() )

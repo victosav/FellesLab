@@ -371,7 +371,7 @@ class FellesTextInput(wx.SpinCtrlDouble): #(wx.SpinCtrl):
 
     # ------------------------------- Method --------------------------------- #
     def OnSetpointChange(self, event):
-        self.target(self, self.source)
+        self.target(self.GetEventObject().GetValue())
 
 # =============================== Class ====================================== #
 class FellesLabel(wx.StaticText):
