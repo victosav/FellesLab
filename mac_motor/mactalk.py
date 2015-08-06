@@ -255,7 +255,7 @@ class Mac050(Communications):
         '''
 
         values = self.read(self.address, self.PARAMETER[parameter])
-        print values
+
         pulses = translations.hextodec(values)
         rpm = constants.READ_ARPM/constants.RAPPS*pulses
 

@@ -78,24 +78,8 @@ class Pump(Equipment):
     # ------------------------------- Method -------------------------------- #
     def __init__(self, *args, **kwargs):
         super(Pump, self).__init__(*args, **kwargs)
-
-        defaultData = {
-        'min_velocity' : 0, # rpm
-        'max_velocity' : 4000, # rpm
-        'min_speed' : 0, # mL/min
-        'max_speed' : 400, # mL/min
-        'min_acceleration' : 0, # %
-        'max_acceleration' : 100, # %
-        }
-#        for key,val in defaultData.iteritems():
-#            self.SetMetaData(key, val)
-
-#        for key,val in self.module.GetMetaData().iteritems():
-#            self.SetMetaData(key, val)
-# ['PARAMETER', '__doc__', '__init__', '__module__', 'address', 'get_acceleration', 'get_actualvelocity', 'get_address', 'get_errorstatus', 'get_info', 'get_setvelocity', 'get_temperature', 'port', 'read', 'save_and_reset', 'sendmessage', 'set_acceleration', 'set_motormode', 'set_pumpspeed', 'set_velocity', 'unpackRequestedResponse', 'verbose', 'write']
-
-
-        self.Initialise()
+        self.SetSetpoint(0.0)
+        self.TurnOff()
 
 
     # ------------------------------- Method -------------------------------- #
@@ -104,74 +88,59 @@ class Pump(Equipment):
 
     # ------------------------------- Method -------------------------------- #
     def GetMeassurements(self):
-        a = self.GetSpeed()        
-        return 0.0 if not a else a
+        return 0.0#self.GetSpeed()#module.data.history['data'][-1]
 
     # ------------------------------- Method -------------------------------- #
     def TurnOn(self):
-        self.module.set_motormode(1)
+        """
+        Method turning on pump
+        """
+        while not FellesBaseClass.lock.acquire():
+            pass
+        try:
+            self.module.set_motormode(1)
+        except:
+            self.TurnOn()
+        finally:
+            FellesBaseClass.lock.release()
 
     # ------------------------------- Method -------------------------------- #
     def TurnOff(self):
-        self.module.set_motormode(0)
-
-    # ------------------------------- Method -------------------------------- #
-    def Initialise(self):
         """
-        Procedure for initialising the pump.
-
-        * Start
-        * Set velocity to zero
+        Method turning off pump
         """
-        self.TurnOn()
+        while not FellesBaseClass.lock.acquire():
+            pass
+        try:
+            self.module.set_motormode(0)
+        except:
+            self.TurnOff()
+        finally:
+            FellesBaseClass.lock.release()
 
-        # If setpoint velocity is not zero, set it to zero
-#        if self.GetSetpoint():
-#            self.SetSetpoint(0)
-
-#        self.SetMetaData('initial', 0)
-
-    # ------------------------------- Method -------------------------------- #
-    def ShutDown(self):
-        """
-        Procedure to shut down the pump
-
-        * Set velocity to zero
-        * Wait...
-        * Stop
-        """
-        # If setpoint velocity is not zero, set it to zero
-#        if self.GetSetpoint() > 0:
-#            self.SetSetpoint(0)
-
-        print "waiting for pump velocity to decreace before shutting down..."
-#        while self.GetSpeed() :
-#            pass
-
-        # Turn off pump
-        self.TurnOff()
 
     # ------------------------------- Method -------------------------------- #
     def GetSetpoint(self):
         """
         Read pump setpoint
         """
-        return self.module.get_setvelocity() # float
-
-    # ------------------------------- Method -------------------------------- #
-    def SetSetpoint(self, speed_rpm):
-        """
-        Set new pump setpoint
-        """
-        self.module.set_velocity(speed_rpm)
-        print "Pump speed setpoint changed to %.2f" %speed_rpm
-
+        while not FellesBaseClass.lock.acquire():
+            pass        
+        self.cmd = self.module.get_setvelocity() # float
+        FellesBaseClass.lock.release()
+        return self.cmd
+            
+        
     # ------------------------------- Method -------------------------------- #
     def GetSpeed(self):
         """
         Read the actual pump speed
         """
-        self.module.get_actualvelocity()
+        while not FellesBaseClass.lock.acquire():
+            pass        
+        self.cmd = self.module.get_actualvelocity() 
+        FellesBaseClass.lock.release()
+        return cmd
 
     # ------------------------------- Method -------------------------------- #
     def GetTemperature(self):
@@ -179,13 +148,29 @@ class Pump(Equipment):
         Read pump temperature
         """
         pass
-
+#['PARAMETER', '__doc__', '__init__', '__module__', 'address', 'get_acceleration', 'get_actualvelocity', 'get_address', 'get_errorstatus', 'get_info', 'get_setvelocity', 'get_temperature', 'port', 'read', 'save_and_reset', 'sendmessage', 'set_acceleration', 'set_motormode', 'set_pumpspeed', 'set_velocity', 'unpackRequestedResponse', 'verbose', 'write']
     # ------------------------------- Method -------------------------------- #
     def GetAcceleration(self):
         """
         Read pump acceleration
         """
         pass
+
+    # ------------------------------- Method -------------------------------- #
+    def SetSetpoint(self, speed_rpm):
+        """
+        Set new pump setpoint
+        """
+        while not FellesBaseClass.lock.acquire():
+            pass
+        try:
+            self.module.set_velocity(speed_rpm)
+            print "Pump speed setpoint changed to {rpm}".format(rpm=speed_rpm)
+        except:
+            self.SetSetPoint(speed_rpm)
+        finally:
+            FellesBaseClass.lock.release()
+
 
 # =============================== Class ====================================== #
 class PumpFrame(FellesFrame):
@@ -248,18 +233,20 @@ class PumpFrame(FellesFrame):
 
         self.lables['spin_setpoint'] = FellesTextInput(self.panel,
                                                      source = self,
-                                                     value ='%s'%self.GetSetpoint(),
+                                                     value ='{setPt}'.format(setPt=self.GetSetpoint()),
                                                      initial=0,#float(self.GetSetpoint()),
                                                      min = self.Pump.GetMetaData('min_velocity'),
                                                      max = self.Pump.GetMetaData('max_velocity'),
+                                                     inc = 10,
                                                      name = 'Pump Setpoint',
                                                      target=self.SetSetpoint)
 
         self.lables['label_description_speed'] = FellesLabel(self.panel,
                     label='%s Speed %s' %(self.Pump.GetMetaData('label'), self.Pump.GetMetaData('unit')))
         self.lables['label_speed'] = FellesLabel(self.panel,
-                                        label='%s %s' %(self.Pump.GetSetpoint(),
-                                        self.Pump.GetMetaData('unit')))
+                                        label='{setpt} {unit}'.format(
+                                        setpt=self.Pump.GetSetpoint(),
+                                        unit=self.Pump.GetMetaData('unit')))
 
         # Buttons
         self.On  = FellesButton(self.panel, source=self, target=self.TurnOn,
@@ -311,14 +298,14 @@ class PumpFrame(FellesFrame):
         self.On.Disable()
         self.Off.Enable()
 
-        self.Pump.Initialise()
+        self.Pump.TurnOn()
 
     # ------------------------------- Method --------------------------------- #
     def TurnOff(self, event):
         self.Off.Disable()
         self.On.Enable()
 
-        self.Pump.ShutDown()
+        self.Pump.TurnOff()
 
     # ------------------------------- Method --------------------------------- #
     def SetSetpoint(self, rpm):
@@ -337,13 +324,9 @@ class PumpFrame(FellesFrame):
         """
         Method for updating GUI
         """
-        # Update label for sensor: s().GetMetaData('label')
-        # with the most recent measurement: s().data.history['data'][-1]
-
-        self.lables['spin_setpoint'].SetLabel( '%s' %(self.GetSetpoint()))
-        self.lables['label_speed'].SetLabel( '%.2f %s' %(
-                                             self.Pump.data.history['data'][-1],
-                                             self.Pump.GetMetaData('unit')),
+        self.lables['label_speed'].SetLabel( '{num} {unit}'.format(
+                                           num=self.Pump.data.history['data'][-1],
+                                           unit=self.Pump.GetMetaData('unit')),
                                            )
 
 #        pub.sendMessage( 'Plot.%s' %self.GetLabel() )
@@ -440,18 +423,16 @@ class FellesPlot(wx.Frame):
                                  findSensor(Sensor,id)().data.history['data'],
                                 )
 
-        self.plot_panel.set_xylims(\
-          [\
-           floor( min( [ min( findSensor(Sensor,id)().data.history['time'] )\
-                         for id,plt in self.plotIDs.iteritems() if plt ] ) ),\
-           ceil( max( [ max( findSensor(Sensor,id)().data.history['time'] )\
-                         for id,plt in self.plotIDs.iteritems() if plt ] ) ),\
-           floor( min( [ min( findSensor(Sensor,id)().data.history['data'] )\
-                         for id,plt in self.plotIDs.iteritems() if plt ] ) ),\
-           ceil( max( [ max( findSensor(Sensor,id)().data.history['data'] )\
-                          for id,plt in self.plotIDs.iteritems() if plt ] ) )\
-          ]\
-        )
+        xMin = [], xMax = [], yMin = [], yMax = []
+        for ID,plt in self.plotIDs.iteritems():
+            if plt:
+                tmp = FellesClassBase.FindInstance(ID)
+                xMin.append(min(tmp.data.history['time']))
+                xMax.append(max(tmp.data.history['time']))
+                yMin.append(min(tmp.data.history['data']))
+                yMax.append(max(tmp.data.history['data']))
+
+        self.plot_panel.set_xylims( [ floor(xMin)*0.9  , ceil(xMax)*1.1 , floor(yMin)*.9, ceil(yMax)*1.1 ] )
 
         self.panel_sizer.Fit(self)
 

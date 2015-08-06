@@ -318,9 +318,10 @@ class AnalogIn(AdamModule):
         """
         if channel == -1:
             # TODO for some reason analog_in_start_channel is a tuple... why!?
-            return self.read_registers(self.analog_in_start_channel[0] - 1, self.analog_in_number_of_channels)
+            return self.read_registers(self.analog_in_start_channel - 1, self.analog_in_number_of_channels)
         elif self.is_valid_channel(channel, self.analog_in_number_of_channels):
-            return self.read_register(self.analog_in_start_channel[0] - 1 + channel, numberOfDecimals)
+#            return self.read_register(self.analog_in_start_channel[0] - 1 + channel, numberOfDecimals)
+            return self.read_register(self.analog_in_start_channel + channel, numberOfDecimals)
         else:
             print('Channel out of range')
     # ------------------------------- Method -------------------------------- #

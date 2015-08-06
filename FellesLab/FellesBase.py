@@ -26,21 +26,43 @@ __email__   = "<firstname>ka<at>ntnu<dot>no"
 __license__ = "GPL.v3"
 __date__      = "$Date: 2015-06-23 (Tue, 23 Jun 2015) $"
 
-from time import time
-from SupportClasses import FellesSampler, ExtendedRef, DataStorage
-from SupportFunctions import sensorTypes
+from time import time, sleep
+from SupportClasses import ExtendedRef, DataStorage
+
 from collections import defaultdict
+from threading import Thread, Lock
+import os
+from time import localtime
+from calendar import weekday
+from tempfile import NamedTemporaryFile
+import csv
+import itertools as it
+
+
+FILE_PATH = '%s/Desktop/'%(os.path.expanduser("~"))
+SAMPLE = True
+IDLE = False
+
 # ================================ Class ==================================== #
-class FellesBaseClass(object):
+class MyThread(Thread):
+    def __init__(self, *args, **kwargs):
+        super(MyThread, self).__init__(group=None)
+
+# ================================ Class ==================================== #
+class FellesBaseClass(MyThread):
     """
-    Sensor parent class
+    Thread 
     """
-    # Class variables, when edited will affect **all** sensors
-    sample_rate = 0.5 # Default sampling rate
-    SAMPLING = True # Default start sampling
+    __refs__ = defaultdict(list)
+    __sfer__ = {}
+    t0 = time()
+    dt = time()
+    sampling_rate = 0.5
+    SAMPLE = True
     SAVE = False
-    # Create, Objects
-    Sampler = FellesSampler # thread used to perform sampling
+    ReSTART = False
+
+    lock = Lock() # Lock
     FellesMetaData = {
         'idlig' : True, # The gui is updated, but data is not necessarily stored
         'sampling' : False, # The sampling of data should not start imediately
@@ -61,17 +83,17 @@ class FellesBaseClass(object):
         'signalProcessing' : None, # filter sensor output, Fourrier(?), Laplace(?)
         'calibrationCurve' : lambda x: x, # Calibration curve
     }
-    Data = DataStorage # Dictionary containing sampling data
 
-    # List of object instances
-    __refs__ = defaultdict(list)
+    Data = DataStorage
 
     # ------------------------------- Method -------------------------------- #
-    def __init__(self, module, module_metadata = {}, meta_data={}, gui_configuration={}, data_processing={}):
+    def __init__(self, module, module_metadata = {}, meta_data={}, gui_configuration={}, data_processing={}, *args, **kwargs):
         """
         constructor
         """
+        super(FellesBaseClass, self).__init__(*args, **kwargs)
         self.__refs__[self.__class__].append(ExtendedRef(self)) # Add instance to references
+        self.__sfer__[hex(id(self))] = ExtendedRef(self)
 
         self.ID = hex(id(self)) # ID used to look up objects (Will change for each run!)
         self.module = module # This is the reference to the Adam module
@@ -97,137 +119,156 @@ class FellesBaseClass(object):
             if data_processing.has_key(k):
                 self.plot_config[k] = data_processing[k]
 
-
+        self.File = NamedTemporaryFile(delete=False)
         self.data = self.Data(self) # Dict object reading and writing data, capable of reporting to onClose
 
-        self.t0 = time()
-        self.thread = self.Sampler(group=None, target=self.Sample, source=self)
-        self.thread.start()
+        
+        self.start() # target -> sample source -> self
 
     # ------------------------------- Method -------------------------------- #
-    @classmethod
-    def GetAllInstances(cls):
-        for ref in cls.__refs__[cls]:
-            inst = ref()
-            if inst is not None:
-                yield inst
+    def GetID(self):
+        return hex(id(self))
 
     # ------------------------------- Method -------------------------------- #
-    @staticmethod
-    def EmptyIterator(iterable):
-        try:
-            first = next(iterable)
-        except StopIteration:
-            return None
-        return True
+    def run(self):
+        """
+        Instance method executed by "self.start()". 
+
+        This method performs the sampling
+        """
+#        while FellesBaseClass.STATUS == IDLE:
+#            self.data.Update(FellesBaseClass.Timer(), self.Sample())
+
+        while FellesBaseClass.SAMPLE:
+            # Attempt to aquire lock on the module
+            while not FellesBaseClass.lock.acquire():
+                pass
+            try:
+                s = self.GetMeassurements()
+                t = FellesBaseClass.Timer()
+                self.data.Update(t, s) # Sample Module
+            except:
+                print "'%s' instance: '%s'; Failed to read meassurement at time %.2f " %(self.__class__.__name__, self.GetMetaData('label'), FellesBaseClass.Timer())
+                pass # In the event that the sampling fails, the thread will not fail
+            finally:
+                FellesBaseClass.lock.release()
+
+            sleep(self.GetMetaData('sample_speed'))
+
+        # TODO: Implement method allowing "restart" aka. pause...
+        if FellesBaseClass.ReSTART:
+            print "Trying again"
+            FellesBaseClass.Start()
+            self.run()
+        else:
+            pass
+
+        print "Stopping Thread: '%s' in instance: '%s', base class: '%s'" %(
+                                               self.GetMetaData('label'),
+                                               self.__class__.__name__,
+                                  self.__class__.__bases__[0].__name__,
+                                  )
 
     # ------------------------------- Method -------------------------------- #
     def __call__(self):
         """
-        Magic method, executed when the object is called.
-
-        return:
-            object instance
+        Instance "magic method" returning the object instance itself
         """
         return self
 
     # ------------------------------- Method -------------------------------- #
-    def Timer(self):
+    @classmethod
+    def Timer(cls):
         """
-        Timer method, keeping track of the time since the sampling started
+        Class method returning a timestamp
+        """
+        return time() - cls.t0
 
-        return:
-            Elapsed time
-        """
-        return time() - self.t0
-
-    # ------------------------------- Method -------------------------------- #
-    def Sample(self, event=None):
-        """
-        TODO
-        """
-        self.data.Update( self.Timer(), self.GetMeassurements() )
-
-    # ------------------------------- Method -------------------------------- #
-    def StartSampling(self, event=None):
-        """
-        TODO
-        """
-        self.t0 = time()
-        self.SAVE = True
-        self.data.Restart(self.Timer(), self.GetMeassurements())
-        print "Sensor '%s' started at time: '%s' by event: '%s'" %(
-                                                      self.GetMetaData('label'),
-                                                      self.Timer(),
-                                                      event.__class__.__name__)
-
-    # ------------------------------- Method -------------------------------- #
-    def PauseSampling(self, event=None):
-        """
-        TODO: Write
-        """
-        pass
-
-    # ------------------------------- Method -------------------------------- #
-    def StopSampling(self, event=None):
-        """
-        TODO
-        """
-        self.SAMPLING = False
-        print "Instance '%s' terminated by event: '%s'" %(self.GetMetaData('label'), event.__class__.__name__)
-
-    # ------------------------------- Method -------------------------------- #
-    def UpdateData(self):
-        """
-        """
-        pass
-
-    # ------------------------------- Method -------------------------------- #
-    def GetID(self):
-        """
-        """
-        return hex(id(self))
-
-    # ------------------------------- Method -------------------------------- #
-    def HasID(self, ID):
-        """
-        """
-        return 1 if self.GetID() == ID else 0
 
     # ------------------------------- Method -------------------------------- #
     @classmethod
-    def Find(cls, ID):
+    def StartSampling(cls):
         """
+        Class method starting the Execution of the "static method" Exec by 
+        setting "START" to "True"
+        
+        Moreover, it sets the time stamp for the initial time when all sensors
+        started sampling
         """
-
-        for cls,lst in cls.__refs__.iteritems():
-            for inst in lst:
-                if inst().GetID() == ID:
-                    return inst()
-
-    # ------------------------------- Method -------------------------------- #
-    def FindAll(self):
-        """
-        """
-        pass
+        cls.t0 = time()
+        cls.SAVE = True
 
     # ------------------------------- Method -------------------------------- #
-    def UpdatePlotConfig(self, key, val):
+    @classmethod
+    def PauseThreads(cls):
         """
+        Class method starting the Execution of the "static method" Exec by 
+        setting "START" to "True"
+        
+        Moreover, it sets the time stamp for the initial time when all sensors
+        started sampling
         """
-        self.plot_config[key] = val
+
+        cls.t0 = time()
+        cls.SAMPLE = False
+
 
     # ------------------------------- Method -------------------------------- #
-    def UpdateDataProcessing(self, key, fnc):
+    @classmethod
+    def StopSampling(cls):
         """
+        Class method starting the Execution of the "static method" Exec by 
+        setting "START" to "True"
+        
+        Moreover, it sets the time stamp for the initial time when all sensors
+        started sampling
         """
-        self.data_config[key] = fnc
+        cls.SAVE = False
+        cls.SAMPLE = False
+#        cls.SaveData()
 
+    # ------------------------------- Method -------------------------------- #
+    @classmethod
+    def FindInstance(cls, ID):
+        """
+        Class method locating a sensor from "__refs__" using a unique string ID
+        which was created on object instantiation.
+
+        The method returns an instance of the object whose ID matches the input. 
+        """
+        for refID in cls.__sfer__.iterkeys():
+            if refID == ID:
+                return cls.__sfer__[refID]()
+    
     # ------------------------------- Method -------------------------------- #
     def GetMetaData(self, key=None):
         """
         """
         return self.MetaData if not key else self.MetaData[key]
+    
+    # ------------------------------- Method -------------------------------- #
+    def GetPlotConfig(self, key=None):
+        """
+        """
+        return self.PlotConfig if not key else self.PlotConfig[key]
+
+    # ------------------------------- Method -------------------------------- #
+    def GetDataProcessing(self, key=None):
+        """
+        """
+        return self.DataProcessing if not key else self.DataProcessing[key]
+
+    # ------------------------------- Method -------------------------------- #
+    def SetPlotConfig(self, key, val):
+        """
+        """
+        self.plot_config[key] = val
+
+    # ------------------------------- Method -------------------------------- #
+    def SetDataProcessing(self, key, fnc):
+        """
+        """
+        self.data_config[key] = fnc
 
     # ------------------------------- Method -------------------------------- #
     def SetMetaData(self, key, val):
@@ -249,4 +290,84 @@ class FellesBaseClass(object):
 
     # ------------------------------- Method -------------------------------- #
     def __repr__(self):
-        pass
+        """        
+        """
+        NotImplementedError("Method is overwritten by child")
+
+    # ------------------------------- Method -------------------------------- #
+    @classmethod
+    def SaveData(cls):
+        """
+        # Choose wether __refs__ contains id's
+        """
+        # Check if the backup directory exists
+        backup_dir = FILE_PATH + "FellesLab_Backup"
+        if not os.path.isdir(backup_dir):
+            os.mkdir(backup_dir)
+            with open( backup_dir + "/README", 'w') as f:
+                f.write(BACKUP_README)
+
+            #cmd = "python -m markdown {dir}/README > {dir}/README.html".format(dir=backup_dir)
+            #call([cmd])
+        # Check if the Backup directory has a directory for "today"
+        day = FILE_PATH + "FellesLab_Backup/" + cls.dayStamp()
+        if not os.path.isdir(day):
+            os.mkdir(day)
+
+        # Save data for all the sensors
+        # TODO: Rewrite, difficult to follow...
+        DATA = [ ] # This will become a list of lists, e.g.
+                   # [ [time, ...], [Temp1, ...], [time, ...], [Temp2, ...] ]
+        for subCls, lst in cls.__refs__.iteritems():
+            for inst in lst:
+                with inst().File as F:
+
+#                inst().File.seek(0) # Rewind file pointer
+
+                    F = csv.reader(inst().File, delimiter=',', quotechar='|')
+                    r = [[],[]]
+                    for row in F:
+                        for i,num in enumerate(row):
+                            r[i].append(num)
+                            if i > 1:
+                                r[i].append(float(num))
+
+                    for j in r:
+                        DATA.append(j)
+                    inst().File.close()
+
+        # Finally, write data file.
+        with open( day + "/" + cls.timeStamp() + '.csv', 'w') as f:
+            csv.writer(f).writerows( it.izip_longest(*DATA, fillvalue='NA') )
+
+    # ------------------------------- Method -------------------------------- #
+    @staticmethod
+    def timeStamp():
+        """
+        Function returning a timestamp (string) in the format:
+                        Wed_Jun_17_hourminsec_year
+        """
+        LT = localtime() # Timestamp information for filename
+        Day = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+        Mon = ['Jan','Feb','Mar','Apr','May','Jun',\
+               'Jul','Aug','Sep','Oct','Nov','Dec']
+        return '{D}_{M}_{d}_{h}{m}{s}_{Y}'.format(\
+               D= Day[weekday(LT[0],LT[1],LT[2])], M= Mon[LT[1]-1], d= LT[2],\
+               h= LT[3], m= LT[4], s= LT[5], Y= LT[0] )
+
+    # ------------------------------- Method -------------------------------- #
+    @staticmethod
+    def dayStamp():
+        """
+        Function returning a timestamp (string) in the format:
+                        Wed_Jun_17_hourminsec_year
+        """
+        LT = localtime() # Timestamp information for filename
+        Day = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+        Mon = ['Jan','Feb','Mar','Apr','May','Jun',\
+               'Jul','Aug','Sep','Oct','Nov','Dec']
+        return '{D}_{Num}_{M}_{Y}'.format(\
+               D= Day[weekday(LT[0],LT[1],LT[2])], M= Mon[LT[1]-1], Num= LT[2],\
+               Y= LT[0] )
+
+

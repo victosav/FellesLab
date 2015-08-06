@@ -31,79 +31,13 @@ from calendar import weekday
 from time import sleep, time, localtime
 from threading import Thread
 from SupportFunctions import timeStamp
-from tempfile import TemporaryFile, mkdtemp
 
-
-# ================================ Class ==================================== #
-class FellesSampler(Thread):
-    """
-    Thread class.
-    """
-
-    # ------------------------------- Method -------------------------------- #
-    def __init__(self, group=None, target=None, source=None):
-        """
-        args:
-            target (callable): Method to execute
-            source (instance): Object to which the thread belongs
-        """
-        self.target = target
-        self.source = source
-
-        super(FellesSampler, self).__init__()
-
-        # Create a vector holding historical data for the purpose of plotting.
-        # The length may vary because the sampling speed of the units are
-        # different. Moreover
-        history_length = int( round(self.source.plot_config['time_span']/ \
-                                    self.source.GetMetaData('sample_speed')) )
-        self.history = {'time': collections.deque( [], history_length ),\
-                        'data': collections.deque( [], history_length )
-                        }
-        del history_length
-
-    # ------------------------------- Method -------------------------------- #
-    def Update(self, time, val):
-        self.val = self.source.data_config['calibrationCurve'](val)
-        self.history['data'].append(self.val)
-        self.history['time'].append(time)
-
-        return None
-
-    # ------------------------------- Method -------------------------------- #
-    def run(self):
-        """
-        Method started when "instance.start()" is called
-
-        The thread will call "source.target()" at a rate determined by "sample
-        rate" in the caller.
-
-        "source.target" is the method that reads a sample
-        from the device
-        """
-
-        while self.source.SAMPLING:
-            self.target()
-            sleep(self.source.GetMetaData('sample_speed'))
-
-        self.Terminate()
-
-    # ------------------------------- Method -------------------------------- #
-    def Terminate(self):
-        """
-
-        """
-        print "Stopping Thread: '%s' in instance: '%s', base class: '%s'" %(
-                                               self.source.GetMetaData('label'),
-                                               self.source.__class__.__name__,
-                                  self.source.__class__.__bases__[0].__name__,
-                                  )
 
 
 # ================================ Class ==================================== #
 class GuiUpdater(Thread):
     """
-    Sugar class
+    Thread for updating GUI
     """
     # ------------------------------- Method -------------------------------- #
     def __init__(self, source, target, *args, **kwargs):
@@ -208,7 +142,7 @@ class DataStorage(object):
     """
 
     # List of object instances
-    ___refs___ = []
+    __refs__ = []
 
     # ------------------------------- Method -------------------------------- #
     def __init__(self, owner):
@@ -216,20 +150,20 @@ class DataStorage(object):
         args:
           owner (instance): Parent object to which the DataStorage instance belongs
         """
-        self.___refs___.append(ExtendedRef(self)) # Add instance to references
+        self.__refs__.append(ExtendedRef(self)) # Add instance to references
 
-        self.owner = owner # Object whose data will be saved
+        self.owner = owner#FindSensor.FindID(ownerID) # Object whose data will be saved
 
-        self.File = TemporaryFile()
-        self.File.write('time, %s %s\n' %(self.owner.GetMetaData('label'),self.owner.GetMetaData('unit')) )
+        self.owner.File.write('time, %s %s\n' %(self.owner.GetMetaData('label'),self.owner.GetMetaData('unit')) )
 
         self.Resize()
 
     # ------------------------------- Method -------------------------------- #
     def Scale(self, val):
         return self.owner.data_config['calibrationCurve'](val)
-    # ------------------------------- Method -------------------------------- #
 
+
+    # ------------------------------- Method -------------------------------- #
     def Resize(self):
         """
         Resize the array needed to store
@@ -273,7 +207,7 @@ class DataStorage(object):
         self.history['time'].append(time)
 
         if self.owner.SAVE:
-            self.File.write('%f , %f\n' %(time, self.history['data'][-1] ))
+            self.owner.File.write('%f , %f\n' %(time, self.history['data'][-1] ))
 
     # ------------------------------- Method -------------------------------- #
     def __call__(self):
@@ -281,4 +215,5 @@ class DataStorage(object):
 
         """
         return self
+
 

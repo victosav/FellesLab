@@ -29,12 +29,10 @@ from Sensors import Sensor, Temperature, Voltage, SensorFrame
 from Controllers import Controller
 from FellesBase import FellesBaseClass
 from GUI import FellesApp, FellesButton, FellesFrame, FellesLabel, FellesTextInput
-from SupportClasses import ExtendedRef, GuiUpdater, FellesSampler, DataStorage
-from SupportFunctions import timeStamp, findSensor, sensorTypes, dayStamp
+from SupportClasses import ExtendedRef, GuiUpdater, DataStorage
+
 
 from subprocess import call
-import csv
-import itertools as it
 
 FILE_PATH = '%s/Desktop/'%(os.path.expanduser("~"))
 
@@ -129,9 +127,10 @@ class MasterClass(object):
         super(MasterClass, self).__init__()
 
     # ------------------------------- Method -------------------------------- #
-    def InitialisationProcedure(self):
+    def Start(self):
         """
         """
+        FellesBaseClass.StartSampling()
         print "Welcome to the FellesLab!"
 
     # ------------------------------- Method -------------------------------- #
@@ -163,10 +162,7 @@ class MasterClass(object):
         """
         TODO: Can this be more clever?
         """
-        self.T = time() # Reference time, is used in SaveData
-        for cls, lst in FellesBaseClass.__refs__.iteritems():
-            for item in lst:
-                item().StartSampling(self)
+        FellesBaseClass.StartSampling()
         print "Start Sampling"
 
     # ------------------------------- Method -------------------------------- #
@@ -181,56 +177,8 @@ class MasterClass(object):
         """
         * Gather ALL DataStorage objects and save the results in a file
         """
-        Sensor.SAVE = False
-        Equipment.SAVE = False
+        FellesBaseClass.StopSampling()
 
-        for cls, lst in FellesBaseClass.__refs__.iteritems():
-            for item in lst:
-                item().StopSampling(self)
-
-        self.SaveData()
         print "Stop Sampling"
 
-    # ------------------------------- Method -------------------------------- #
-    def SaveData(self):
-        """
-        """
-        # Check if the backup directory exists
-        backup_dir = FILE_PATH + "FellesLab_Backup"
-        if not os.path.isdir(backup_dir):
-            os.mkdir(backup_dir)
-            with open( backup_dir + "/README", 'w') as f:
-                f.write(BACKUP_README)
 
-            #cmd = "python -m markdown {dir}/README > {dir}/README.html".format(dir=backup_dir)
-            #call([cmd])
-        # Check if the Backup directory has a directory for "today"
-        day = FILE_PATH + "FellesLab_Backup/" + dayStamp()
-        if not os.path.isdir(day):
-            os.mkdir(day)
-
-        # Save data for all the sensors
-        # TODO: Rewrite, difficult to follow...
-        DATA = [ ] # This will become a list of lists, e.g.
-                   # [ [time, ...], [Temp1, ...], [time, ...], [Temp2, ...] ]
-        for cls,lst in FellesBaseClass.__refs__.iteritems():
-            for inst in lst:
-                dt = self.T - inst().t0 # Ensure that the time stamps are adjusted to the same reference.
-
-                inst().data.File.seek(0) # Rewind file pointer
-
-                F = csv.reader(inst().data.File, delimiter=',', quotechar='|')
-                r = [[],[]]
-                for row in F:
-                    for i,num in enumerate(row):
-                        r[i].append(num)
-                        if i > 1:
-                            r[i].append(float(num) - dt )
-
-                for j in r:
-                    DATA.append(j)
-                inst().data.File.close()
-
-        # Finally, write data file.
-        with open( day + "/" + timeStamp() + '.csv', 'w') as f:
-            csv.writer(f).writerows( it.izip_longest(*DATA, fillvalue='NA') )

@@ -34,11 +34,12 @@ import wx
 from wx.lib.pubsub import pub
 import wxmplot
 
-from SupportClasses import FellesSampler, ExtendedRef, DataStorage
+from SupportClasses import ExtendedRef, DataStorage
 from FellesBase import FellesBaseClass
 from SupportFunctions import sensorTypes, findSensor
 from GUI import FellesFrame, FellesButton, FellesTextInput, FellesLabel
 from random import random
+
 # ================================ Class ==================================== #
 class Sensor(FellesBaseClass):
     """
@@ -232,9 +233,9 @@ class SensorFrame(FellesFrame):
         # Update label for sensor: s().GetMetaData('label')
         # with the most recent measurement: s().data.history['data'][-1]
         for s in self.sensors:
-            self.gValue[s().GetID()].SetLabel( '%.2f %s' %(
-                                                   s().data.history['data'][-1],
-                                                  str(s().GetMetaData('unit'))))
+            self.gValue[s().GetID()].SetLabel( '{num} {unit}'.format(
+                                               num = s().data.history['data'][-1],
+                                              unit = str(s().GetMetaData('unit'))))
 
         try:
             pub.sendMessage( 'Plot.%s' %self.GetLabel() )
@@ -340,7 +341,8 @@ class FellesPlot(wx.Frame):
         if self.first_time:
             for ID, plt in self.plotIDs.iteritems():
                 if plt:
-                    tmp = FellesBaseClass.Find(ID)
+                    print FellesBaseClass.FindInstance(ID)
+                    tmp = FellesBaseClass.FindInstance(ID)
                     self.plot_panel.oplot(
                            np.array(tmp.data.history['time']),
                            np.array(tmp.data.history['data']),
@@ -374,7 +376,7 @@ class FellesPlot(wx.Frame):
             i = 0
             for ID,plt in self.plotIDs.iteritems():
                 if plt:
-                    tmp = FellesBaseClass.Find(ID)
+                    tmp = FellesBaseClass.FindInstance(ID)
                     self.plot_panel.update_line(
                                 i,
                                 np.array(tmp.data.history['time']),
@@ -385,13 +387,13 @@ class FellesPlot(wx.Frame):
 
         self.plot_panel.set_xylims(\
           [\
-           floor( min( [ min( FellesBaseClass.Find(ID).data.history['time'] )\
+           floor( min( [ min( FellesBaseClass.FindInstance(ID).data.history['time'] )\
                          for ID,plt in self.plotIDs.iteritems() if plt ] ) ),\
-           ceil( max( [ max( FellesBaseClass.Find(ID).data.history['time'] )\
+           ceil( max( [ max( FellesBaseClass.FindInstance(ID).data.history['time'] )\
                          for ID,plt in self.plotIDs.iteritems() if plt ] ) ),\
-           floor( min( [ min( FellesBaseClass.Find(ID).data.history['data'] )\
+           floor( min( [ min( FellesBaseClass.FindInstance(ID).data.history['data'] )\
                          for ID,plt in self.plotIDs.iteritems() if plt ] ) ),\
-           ceil( max( [ max( FellesBaseClass.Find(ID).data.history['data'] )\
+           ceil( max( [ max( FellesBaseClass.FindInstance(ID).data.history['data'] )\
                           for ID,plt in self.plotIDs.iteritems() if plt ] ) )\
           ]\
         )
