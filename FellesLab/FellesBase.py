@@ -27,26 +27,16 @@ __license__ = "GPL.v3"
 __date__      = "$Date: 2015-06-23 (Tue, 23 Jun 2015) $"
 
 from time import time, sleep
-from SupportClasses import ExtendedRef, DataStorage
+from SupportClasses import ExtendedRef, DataStorage, MyThread
 
 from collections import defaultdict
 from threading import Thread, Lock
 import os
 from time import localtime
 from calendar import weekday
-from tempfile import NamedTemporaryFile
-import csv
-import itertools as it
 
-
-FILE_PATH = '%s/Desktop/'%(os.path.expanduser("~"))
 SAMPLE = True
 IDLE = False
-
-# ================================ Class ==================================== #
-class MyThread(Thread):
-    def __init__(self, *args, **kwargs):
-        super(MyThread, self).__init__(group=None)
 
 # ================================ Class ==================================== #
 class FellesBaseClass(MyThread):
@@ -93,8 +83,7 @@ class FellesBaseClass(MyThread):
         """
         super(FellesBaseClass, self).__init__(*args, **kwargs)
         self.__refs__[self.__class__].append(ExtendedRef(self)) # Add instance to references
-        self.__sfer__[hex(id(self))] = ExtendedRef(self)
-
+        self.__sfer__[hex(id(self))] =  ExtendedRef(self)
         self.ID = hex(id(self)) # ID used to look up objects (Will change for each run!)
         self.module = module # This is the reference to the Adam module
 
@@ -119,15 +108,10 @@ class FellesBaseClass(MyThread):
             if data_processing.has_key(k):
                 self.plot_config[k] = data_processing[k]
 
-        self.File = NamedTemporaryFile(delete=False)
         self.data = self.Data(self) # Dict object reading and writing data, capable of reporting to onClose
 
         
         self.start() # target -> sample source -> self
-
-    # ------------------------------- Method -------------------------------- #
-    def GetID(self):
-        return hex(id(self))
 
     # ------------------------------- Method -------------------------------- #
     def run(self):
@@ -225,7 +209,7 @@ class FellesBaseClass(MyThread):
         """
         cls.SAVE = False
         cls.SAMPLE = False
-#        cls.SaveData()
+        cls.Data.Save()
 
     # ------------------------------- Method -------------------------------- #
     @classmethod
@@ -294,80 +278,5 @@ class FellesBaseClass(MyThread):
         """
         NotImplementedError("Method is overwritten by child")
 
-    # ------------------------------- Method -------------------------------- #
-    @classmethod
-    def SaveData(cls):
-        """
-        # Choose wether __refs__ contains id's
-        """
-        # Check if the backup directory exists
-        backup_dir = FILE_PATH + "FellesLab_Backup"
-        if not os.path.isdir(backup_dir):
-            os.mkdir(backup_dir)
-            with open( backup_dir + "/README", 'w') as f:
-                f.write(BACKUP_README)
-
-            #cmd = "python -m markdown {dir}/README > {dir}/README.html".format(dir=backup_dir)
-            #call([cmd])
-        # Check if the Backup directory has a directory for "today"
-        day = FILE_PATH + "FellesLab_Backup/" + cls.dayStamp()
-        if not os.path.isdir(day):
-            os.mkdir(day)
-
-        # Save data for all the sensors
-        # TODO: Rewrite, difficult to follow...
-        DATA = [ ] # This will become a list of lists, e.g.
-                   # [ [time, ...], [Temp1, ...], [time, ...], [Temp2, ...] ]
-        for subCls, lst in cls.__refs__.iteritems():
-            for inst in lst:
-                with inst().File as F:
-
-#                inst().File.seek(0) # Rewind file pointer
-
-                    F = csv.reader(inst().File, delimiter=',', quotechar='|')
-                    r = [[],[]]
-                    for row in F:
-                        for i,num in enumerate(row):
-                            r[i].append(num)
-                            if i > 1:
-                                r[i].append(float(num))
-
-                    for j in r:
-                        DATA.append(j)
-                    inst().File.close()
-
-        # Finally, write data file.
-        with open( day + "/" + cls.timeStamp() + '.csv', 'w') as f:
-            csv.writer(f).writerows( it.izip_longest(*DATA, fillvalue='NA') )
-
-    # ------------------------------- Method -------------------------------- #
-    @staticmethod
-    def timeStamp():
-        """
-        Function returning a timestamp (string) in the format:
-                        Wed_Jun_17_hourminsec_year
-        """
-        LT = localtime() # Timestamp information for filename
-        Day = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-        Mon = ['Jan','Feb','Mar','Apr','May','Jun',\
-               'Jul','Aug','Sep','Oct','Nov','Dec']
-        return '{D}_{M}_{d}_{h}{m}{s}_{Y}'.format(\
-               D= Day[weekday(LT[0],LT[1],LT[2])], M= Mon[LT[1]-1], d= LT[2],\
-               h= LT[3], m= LT[4], s= LT[5], Y= LT[0] )
-
-    # ------------------------------- Method -------------------------------- #
-    @staticmethod
-    def dayStamp():
-        """
-        Function returning a timestamp (string) in the format:
-                        Wed_Jun_17_hourminsec_year
-        """
-        LT = localtime() # Timestamp information for filename
-        Day = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-        Mon = ['Jan','Feb','Mar','Apr','May','Jun',\
-               'Jul','Aug','Sep','Oct','Nov','Dec']
-        return '{D}_{Num}_{M}_{Y}'.format(\
-               D= Day[weekday(LT[0],LT[1],LT[2])], M= Mon[LT[1]-1], Num= LT[2],\
-               Y= LT[0] )
 
 

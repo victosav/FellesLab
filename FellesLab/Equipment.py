@@ -342,9 +342,6 @@ class PumpFrame(FellesFrame):
           event : instance, call the method using: <OBJ>.onClose(self)
 
         """
-        self.timer.sample = False
-        while self.timer.isAlive():
-            pass
 
         self.Off()
         pub.sendMessage( 'Close.%s' %self.GetLabel(), event=self )

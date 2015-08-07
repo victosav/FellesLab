@@ -41,11 +41,12 @@ class MainFrame(wx.Frame):
 
     """
     __frames__ = []
+
     # ------------------------------- Method --------------------------------- #
     def __init__(self, parent, id, title, pos, size, style, MasterClass):
         wx.Frame.__init__(self, parent, id, title, pos, size, style)
         self.__frames__.append(ExtendedRef(self))
-        self.MasterClass = MasterClass
+        self.__class__.MasterClass = MasterClass
 
         self.InitUI()
         self.Bind(wx.EVT_CLOSE, self.OnClose)
@@ -130,7 +131,7 @@ Yb,          ,dP 888     888    .o 888  888 888    .oo.  )88b  888    od8(  888 
         GetName 'button'
         """
 
-        self.MasterClass.StartSampling()
+        self.MasterClass.Start()
         event.GetEventObject().Disable()
         pub.sendMessage('DisableSampleRateChange')
         self.stop.Enable()
@@ -145,6 +146,7 @@ Yb,          ,dP 888     888    .o 888  888 888    .oo.  )88b  888    od8(  888 
 
         """
         self.MasterClass.StopSampling()
+        print event
         event.GetEventObject().Disable()
         pub.sendMessage('DisableSampleRateChange')
         self.OnClose(self)
@@ -154,10 +156,12 @@ Yb,          ,dP 888     888    .o 888  888 888    .oo.  )88b  888    od8(  888 
         """
 
         """
-        self.MasterClass.StopSampling()
+        #FellesFrame.SAMPLING = False
+        MainFrame.OnClose(self)
+        #self.MasterClass.Stop()
         event.GetEventObject().Disable()
         pub.sendMessage('DisableSampleRateChange')
-        self.OnClose(self)
+
 
     # ------------------------------- Method --------------------------------- #
     @classmethod
@@ -166,13 +170,14 @@ Yb,          ,dP 888     888    .o 888  888 888    .oo.  )88b  888    od8(  888 
         1. StopSampling
         2. close...
         """
-
-        FellesFrame.OnClose(event)
-
+        FellesFrame.SAMPLING = False
+#        MainFrame.OnClose(cls)
         print "Window: '%s', closed by event: '%s'" %(cls.__name__, event.__class__.__name__)
         for frame in cls.__frames__:
             frame().Destroy()
-            frame().MasterClass.app.ExitMainLoop()
+
+        cls.MasterClass.Stop()
+        cls.MasterClass.App.ExitMainLoop()
 
 # =============================== Class ====================================== #
 class FellesApp(wx.App):
@@ -239,18 +244,12 @@ class FellesFrame(wx.Frame):
 
         # Strategies to close the window
 #        pub.subscribe(self.OnClose, 'close.all')
-        self.Bind(wx.EVT_CLOSE, self.CloseMainFrame)
+        self.Bind(wx.EVT_CLOSE, MainFrame.OnClose)
+
 
     # ------------------------------- Method --------------------------------- #
-    @classmethod
-    def CloseMainFrame(cls, event):
+    def CloseMainWindow(self, event):
         MainFrame.OnClose(event)
-
-    # ------------------------------- Method --------------------------------- #
-    @classmethod
-    def OnClose(cls, event):
-        for inst in cls.__refs__:
-            inst().OnClose(cls)
 
     # ------------------------------- Method --------------------------------- #
     def __call__(self):
@@ -259,10 +258,6 @@ class FellesFrame(wx.Frame):
     # ------------------------------- Method --------------------------------- #
     def InitUI(self):
         NotImplementedError("User interface is not implemented")
-
-#    # ------------------------------- Method --------------------------------- #
-#    def OnClose(self, event):
-#        pass
 
     # ------------------------------- Method --------------------------------- #
     def UpdateFrame(self):
