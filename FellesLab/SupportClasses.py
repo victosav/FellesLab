@@ -169,25 +169,7 @@ class ExtendedRef(weakref.ref):
     """
     Weakreference class, creates an alias to "referee".
 
-    This is an important class, the example in the __call__ method shows how
-    to use it.
-    """
-
-    # ------------------------------- Method -------------------------------- #
-    def __init__(self, referee, callback=None):
-        self.referee = referee
-        super(ExtendedRef, self).__init__(referee, callback)
-
-    # ------------------------------- Method -------------------------------- #
-    def __call__(self):
-        """
-        Magic method.
-
-        Returns the object that the class referes to. The practical
-        implication is that it becomes possible to access the objects methods
-        and variables through the reference class.
-
-        Understand how to use this class through the following example:
+    Understand the class works by considering the following example:
 
         example.py
         ----------------------------------------------------------------------
@@ -218,9 +200,41 @@ class ExtendedRef(weakref.ref):
         b().ChangeMessage("A different message")
         print a.message
         ----------------------------------------------------------------------
+    """
 
+    # ------------------------------- Method -------------------------------- #
+    def __init__(self, referee, callback=None):
+        self.referee = referee
+        super(ExtendedRef, self).__init__(referee, callback)
+
+    # ------------------------------- Method -------------------------------- #
+    def __call__(self):
+        """
+        Magic method.
+
+        Returns the object that the class referes to. The practical
+        implication is that it becomes possible to access the objects methods
+        and variables through the reference class.
         """
         return self.referee()
+
+    # ------------------------------- Method -------------------------------- #
+    def __getitem__(self, key=None):
+        """
+        Magic method.
+        
+        Returns the value of "key" in the referee's MetaData directory
+        """
+        return self()[key]
+
+    # ------------------------------- Method -------------------------------- #
+    def __setitem__(self, key, val):
+        """
+        Magic method.
+        
+        Sets the value of "key" in the referee's MetaData directory
+        """
+        self()[key] = val
 
     # ------------------------------- Method -------------------------------- #
     def GetID(self):
@@ -247,13 +261,13 @@ class DataStorage(object):
         self.owner = owner#FindSensor.FindID(ownerID) # Object whose data will be saved
         
         self.File = TemporaryFile()
-        self.File.write('time, %s %s\n' %(self.owner.GetMetaData('label'),self.owner.GetMetaData('unit')) )
+        self.File.write('time, %s %s\n' %(self.owner['label'],self.owner['unit']))
 
         self.Resize()
 
     # ------------------------------- Method -------------------------------- #
     def Scale(self, val):
-        return self.owner.data_config['calibrationCurve'](val)
+        return self.owner['calibrationCurve'](val)
 
 
     # ------------------------------- Method -------------------------------- #
@@ -264,7 +278,7 @@ class DataStorage(object):
         Use this method if the sample rate is changed.
         """
 
-        self.history_length = int( round( self.owner.plot_config['time_span']/self.owner.GetMetaData('sample_speed')))
+        self.history_length = int( round( self.owner['time_span']/self.owner['sample_speed']))
         self.FreshStart()
 
     # ------------------------------- Method -------------------------------- #
@@ -373,8 +387,8 @@ class DataStorage(object):
     @staticmethod
     def dayStamp():
         """
-        Function returning a timestamp (string) in the format:
-                        Wed_Jun_17_hourminsec_year
+        Function returning a daystamp (string) in the format:
+                         Wed_17_Jun_year
         """
         LT = localtime() # Timestamp information for filename
         Day = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']

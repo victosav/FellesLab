@@ -47,6 +47,14 @@ class Equipment(FellesBaseClass):
         self.__equipment__[self.__class__].append(ExtendedRef(self)) # Add instance to references
 
     # ------------------------------- Method -------------------------------- #
+    def __repr__(self):
+        return '<%s.%s equipment at %s>' % (
+            self.__class__.__module__,
+            self.__class__.__name__,
+            self.ID
+        )
+
+    # ------------------------------- Method -------------------------------- #
     @classmethod
     def InitGUI(cls):
         """
@@ -55,19 +63,11 @@ class Equipment(FellesBaseClass):
         eGUI = {}
         for ref, instnts in cls.__equipment__.iteritems():
             for inst in instnts:
-                eGUI[inst().GetMetaData('label')] = inst().CreateGUI()
+                eGUI[inst['label']] = inst().CreateGUI()
 
             print "Creating GUI for Equipment: '%s'" %ref.__name__
 
         return eGUI
-
-    # ------------------------------- Method -------------------------------- #
-    def __repr__(self):
-        return '<%s.%s equipment at %s>' % (
-            self.__class__.__module__,
-            self.__class__.__name__,
-            self.ID
-        )
 
 # ================================ Class ==================================== #
 class Pump(Equipment):
@@ -198,7 +198,7 @@ class PumpFrame(FellesFrame):
         """
         self.Pump = pump
 
-        super(PumpFrame, self).__init__( title=pump.GetMetaData('label'))
+        super(PumpFrame, self).__init__( title=pump['label'])
 
         self.InitUI() # Create frame
         self.Show()   # Show frame
@@ -235,18 +235,18 @@ class PumpFrame(FellesFrame):
                                                      source = self,
                                                      value ='{setPt}'.format(setPt=self.GetSetpoint()),
                                                      initial=0,#float(self.GetSetpoint()),
-                                                     min = self.Pump.GetMetaData('min_velocity'),
-                                                     max = self.Pump.GetMetaData('max_velocity'),
+                                                     min = self.Pump['min_velocity'],
+                                                     max = self.Pump['max_velocity'],
                                                      inc = 10,
                                                      name = 'Pump Setpoint',
                                                      target=self.SetSetpoint)
 
         self.lables['label_description_speed'] = FellesLabel(self.panel,
-                    label='%s Speed %s' %(self.Pump.GetMetaData('label'), self.Pump.GetMetaData('unit')))
+                    label='%s Speed %s' %(self.Pump['label'], self.Pump['unit']))
         self.lables['label_speed'] = FellesLabel(self.panel,
                                         label='{setpt} {unit}'.format(
                                         setpt=self.Pump.GetSetpoint(),
-                                        unit=self.Pump.GetMetaData('unit')))
+                                        unit=self.Pump['unit'] ))
 
         # Buttons
         self.On  = FellesButton(self.panel, source=self, target=self.TurnOn,
@@ -326,7 +326,7 @@ class PumpFrame(FellesFrame):
         """
         self.lables['label_speed'].SetLabel( '{num} {unit}'.format(
                                            num=self.Pump.data.history['data'][-1],
-                                           unit=self.Pump.GetMetaData('unit')),
+                                           unit=self.Pump['unit']),
                                            )
 
 #        pub.sendMessage( 'Plot.%s' %self.GetLabel() )
@@ -380,7 +380,7 @@ class FellesPlot(wx.Frame):
         #      ID            bool  ,       ID          bool
         # {'0x7f921e6977a0': False , '0x7f921e696530': True }
         # (The ID is the address in memory of the sensor object)
-        self.plotIDs = { c().ID : c().plot_config['plot'] for c in self.candidates }
+        self.plotIDs = { c().ID : c['plot'] for c in self.candidates }
 
         # setting up plot
         # self.plot_panel = wxmplot.PlotPanel(parent=self, size=(500, 500), dpi=100)

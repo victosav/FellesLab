@@ -45,7 +45,7 @@ class Controller(FellesBaseClass):
     def InitGUI(cls):
         """
         Method creating sensor frames for the sensors
-
+        """
         GUI = {}
         for ControllerType,Instances in cls.Instances():
             print "Creating GUI for Sensor: '%s'" %ControllerType.__class__.__name__

@@ -47,7 +47,6 @@ class FellesBaseClass(MyThread):
     __sfer__ = {}
     t0 = time()
     dt = time()
-    sampling_rate = 0.5
     SAMPLE = True
     SAVE = False
     ReSTART = False
@@ -84,6 +83,7 @@ class FellesBaseClass(MyThread):
         super(FellesBaseClass, self).__init__(*args, **kwargs)
         self.__refs__[self.__class__].append(ExtendedRef(self)) # Add instance to references
         self.__sfer__[hex(id(self))] =  ExtendedRef(self)
+
         self.ID = hex(id(self)) # ID used to look up objects (Will change for each run!)
         self.module = module # This is the reference to the Adam module
 
@@ -101,16 +101,19 @@ class FellesBaseClass(MyThread):
         self.plot_config = {k:v for k,v in self.GuiMetaData.iteritems()}
         for k,v in self.GuiMetaData.iteritems():
             if gui_configuration.has_key(k):
-                self.plot_config[k] = gui_configuration[k]
+                self.MetaData[k] = gui_configuration[k]
+            else:
+                self.MetaData[k] = v
 
         self.data_config = {k:v for k,v in self.DataProcessing.iteritems()}
         for k,v in self.GuiMetaData.iteritems():
             if data_processing.has_key(k):
-                self.plot_config[k] = data_processing[k]
+                self.MetaData[k] = data_processing[k]
+            else:
+                self.MetaData[k] = v
 
-        self.data = self.Data(self) # Dict object reading and writing data, capable of reporting to onClose
 
-        
+        self.data = self.Data(self) # Dict object reading and writing data, capable of reporting to onClose        
         self.start() # target -> sample source -> self
 
     # ------------------------------- Method -------------------------------- #
@@ -120,9 +123,6 @@ class FellesBaseClass(MyThread):
 
         This method performs the sampling
         """
-#        while FellesBaseClass.STATUS == IDLE:
-#            self.data.Update(FellesBaseClass.Timer(), self.Sample())
-
         while FellesBaseClass.SAMPLE:
             # Attempt to aquire lock on the module
             while not FellesBaseClass.lock.acquire():
@@ -132,12 +132,12 @@ class FellesBaseClass(MyThread):
                 t = FellesBaseClass.Timer()
                 self.data.Update(t, s) # Sample Module
             except:
-                print "'%s' instance: '%s'; Failed to read meassurement at time %.2f " %(self.__class__.__name__, self.GetMetaData('label'), FellesBaseClass.Timer())
+                print "'%s' instance: '%s'; Failed to read meassurement at time %.2f " %(self.__class__.__name__, self['label'], FellesBaseClass.Timer())
                 pass # In the event that the sampling fails, the thread will not fail
             finally:
                 FellesBaseClass.lock.release()
 
-            sleep(self.GetMetaData('sample_speed'))
+            sleep(self['sample_speed'])
 
         # TODO: Implement method allowing "restart" aka. pause...
         if FellesBaseClass.ReSTART:
@@ -148,10 +148,8 @@ class FellesBaseClass(MyThread):
             pass
 
         print "Stopping Thread: '%s' in instance: '%s', base class: '%s'" %(
-                                               self.GetMetaData('label'),
-                                               self.__class__.__name__,
-                                  self.__class__.__bases__[0].__name__,
-                                  )
+                                       self['label'], self.__class__.__name__,
+                                         self.__class__.__bases__[0].__name__)
 
     # ------------------------------- Method -------------------------------- #
     def __call__(self):
@@ -161,13 +159,33 @@ class FellesBaseClass(MyThread):
         return self
 
     # ------------------------------- Method -------------------------------- #
+    def __setitem__(self, key, val):
+        """
+        """
+        print "Updating '%s' seting from '%s to '%s'"\
+                                   %( self['label'], self.MetaData[key], val )
+
+        self.MetaData[key] = val
+
+    # ------------------------------- Method -------------------------------- #
+    def __getitem__(self, key=None):
+        """
+        """
+        return self.MetaData if not key else self.MetaData[key]
+
+    # ------------------------------- Method -------------------------------- #
+    def __repr__(self):
+        """        
+        """
+        NotImplementedError("Method is overwritten by child")
+
+    # ------------------------------- Method -------------------------------- #
     @classmethod
     def Timer(cls):
         """
         Class method returning a timestamp
         """
         return time() - cls.t0
-
 
     # ------------------------------- Method -------------------------------- #
     @classmethod
@@ -192,10 +210,8 @@ class FellesBaseClass(MyThread):
         Moreover, it sets the time stamp for the initial time when all sensors
         started sampling
         """
-
         cls.t0 = time()
         cls.SAMPLE = False
-
 
     # ------------------------------- Method -------------------------------- #
     @classmethod
@@ -223,60 +239,4 @@ class FellesBaseClass(MyThread):
         for refID in cls.__sfer__.iterkeys():
             if refID == ID:
                 return cls.__sfer__[refID]()
-    
-    # ------------------------------- Method -------------------------------- #
-    def GetMetaData(self, key=None):
-        """
-        """
-        return self.MetaData if not key else self.MetaData[key]
-    
-    # ------------------------------- Method -------------------------------- #
-    def GetPlotConfig(self, key=None):
-        """
-        """
-        return self.PlotConfig if not key else self.PlotConfig[key]
-
-    # ------------------------------- Method -------------------------------- #
-    def GetDataProcessing(self, key=None):
-        """
-        """
-        return self.DataProcessing if not key else self.DataProcessing[key]
-
-    # ------------------------------- Method -------------------------------- #
-    def SetPlotConfig(self, key, val):
-        """
-        """
-        self.plot_config[key] = val
-
-    # ------------------------------- Method -------------------------------- #
-    def SetDataProcessing(self, key, fnc):
-        """
-        """
-        self.data_config[key] = fnc
-
-    # ------------------------------- Method -------------------------------- #
-    def SetMetaData(self, key, val):
-        """
-        """
-        self.MetaData[key] = val
-
-    # ------------------------------- Method -------------------------------- #
-    def UpdateSampleSpeed(self, speed):
-        """
-        Method updating the sample_speed
-        """
-        print "Updating '%s' sampling speed from '%s to '%s'"\
-             %( self.GetMetaData('label'),\
-                self.GetMetaData('sample_speed'),\
-                speed )
-
-        self.SetMetaData('sample_speed', speed)
-
-    # ------------------------------- Method -------------------------------- #
-    def __repr__(self):
-        """        
-        """
-        NotImplementedError("Method is overwritten by child")
-
-
 

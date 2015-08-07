@@ -36,21 +36,38 @@ import wxmplot
 
 from SupportClasses import ExtendedRef, DataStorage
 from FellesBase import FellesBaseClass
-from SupportFunctions import sensorTypes, findSensor
 from GUI import FellesFrame, FellesButton, FellesTextInput, FellesLabel
-from random import random
 
 # ================================ Class ==================================== #
 class Sensor(FellesBaseClass):
     """
     Syntactic sugar...
     """
-    __sensors__ = defaultdict(list)
+    __sensors__ = defaultdict(list) #{ <class 'Temperature'> : [ <ref ... >] ,
+                                    # <class 'Pressure'> : [ <ref ... > ,...]}
     # ------------------------------- Method -------------------------------- #
     def __init__(self, *args, **kwargs):
+        """
+        """
         super(Sensor, self).__init__(*args, **kwargs)
         self.__sensors__[self.__class__].append(ExtendedRef(self)) # Add instance to references
 
+    # ------------------------------- Method -------------------------------- #
+    def GetMeassurements(self):
+        """
+        """
+        msmnt = self.module.get_analog_in( self['channel'], self['decimals'] )
+        return msmnt
+
+    # ------------------------------- Method -------------------------------- #
+    def __repr__(self):
+        """
+        """
+        return '<%s.%s sensor at %s>' % (
+            self.__class__.__module__,
+            self.__class__.__name__,
+            self.ID
+        )
     # ------------------------------- Method -------------------------------- #
     @classmethod
     def InitGUI(cls):
@@ -66,19 +83,6 @@ class Sensor(FellesBaseClass):
                                          )
 
         return SensorGUI
-
-    # ------------------------------- Method -------------------------------- #
-    def GetMeassurements(self):
-        return self.module.get_analog_in(self.GetMetaData('channel'),
-                                         self.GetMetaData('decimals'))
-
-    # ------------------------------- Method -------------------------------- #
-    def __repr__(self):
-        return '<%s.%s sensor at %s>' % (
-            self.__class__.__module__,
-            self.__class__.__name__,
-            self.ID
-        )
 
 # ================================ Class ==================================== #
 class Temperature(Sensor):
@@ -98,6 +102,25 @@ class Voltage(Sensor):
     # ------------------------------- Method -------------------------------- #
     def __init__(self, *args, **kwargs):
         super(Voltage, self).__init__(*args, **kwargs)
+
+# ================================ Class ==================================== #
+class Conductivity(Sensor):
+    """
+        Syntactic sugar...
+    """
+    # ------------------------------- Method -------------------------------- #
+    def __init__(self, *args, **kwargs):
+        super(Conductivity, self).__init__(*args, **kwargs)
+
+# ================================ Class ==================================== #
+class Pressure(Sensor):
+    """
+        Syntactic sugar...
+    """
+    # ------------------------------- Method -------------------------------- #
+    def __init__(self, *args, **kwargs):
+        super(Pressure, self).__init__(*args, **kwargs)
+
 
 # =============================== Class ====================================== #
 class SensorFrame(FellesFrame):
@@ -166,10 +189,9 @@ class SensorFrame(FellesFrame):
                 s().data.history['time'].append(random())
 
         self.gLabel = {\
-                      s.GetID():FellesLabel(
-                                               self.panel, wx.ID_ANY,\
-                                                label=s().GetMetaData('label'),\
-                                                        style=wx.ALIGN_CENTER )\
+                      s.GetID():FellesLabel(self.panel, wx.ID_ANY,\
+                                            label=s['label'],\
+                                            style=wx.ALIGN_CENTER )\
                                                     for s in iter(self.sensors)\
                       }
         self.gValue = {\
@@ -182,12 +204,13 @@ class SensorFrame(FellesFrame):
         self.gSetpt = {\
                       s.GetID():FellesTextInput(
                                     self.panel,
-                                    value='%s' %s().GetMetaData('sample_speed'),
-                                    initial=s().GetMetaData('sample_speed'),
+                                    value='%s' %s['sample_speed'],
+                                    initial=s['sample_speed'],
                                     min=s().module.min,
                                     max=10,
                                     name='asdf',
-                                    target=s().UpdateSampleSpeed,
+                                    target=s.__setitem__,
+                                    arg='sample_speed',
                                     source=self )   for s in iter(self.sensors)\
                       }
 
@@ -219,6 +242,11 @@ class SensorFrame(FellesFrame):
     # ------------------------------- Method --------------------------------- #
     def ToggleOff(self):
         """
+        Method disabling the sampling speed selection, it is activated when
+        "Start Sampling" (a button in MainFrame, GUI.py) is pushed.
+        
+        The trigger is the event 'DisableSampleRateChange' as set above in:
+            "pub.subscribe(self.ToggleOff, 'DisableSampleRateChange')"
         """
         for s in self.sensors:
             self.gSetpt[s.GetID()].Disable()
@@ -236,13 +264,13 @@ class SensorFrame(FellesFrame):
         for s in self.sensors:
             self.gValue[s.GetID()].SetLabel( '{num} {unit}'.format(
                                                num = s().data.history['data'][-1],
-                                              unit = str(s().GetMetaData('unit'))))
-
+                                              unit = str(s['unit'])) )
         try:
             pub.sendMessage( 'Plot.%s' %self.GetLabel() )
         except:
             self.plot_deleted = True
 
+        
         self.top_sizer.Layout()
 
     # ------------------------------- Method --------------------------------- #
@@ -315,7 +343,7 @@ class FellesPlot(wx.Frame):
         #      ID            bool  ,       ID          bool
         # {'0x7f921e6977a0': False , '0x7f921e696530': True }
         # (The ID is the address in memory of the sensor object)
-        self.plotIDs = {c.GetID() : c().plot_config['plot'] for c in self.candidates}
+        self.plotIDs = {c.GetID() : c['plot'] for c in self.candidates}
 
         # fit the sizer to the panel
         self.Fit()
@@ -341,8 +369,8 @@ class FellesPlot(wx.Frame):
                            np.array(tmp.data.history['data']),
                            draw = True,
                            side ='left',
-                           label = tmp.GetMetaData('label'),
-                           color = tmp.plot_config['color'],
+                           label = tmp['label'],
+                           color = tmp['color'],
                            xlabel = None, ylabel = None, y2label = None,
                            title = None,
                            dy = None,

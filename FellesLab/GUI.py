@@ -237,6 +237,7 @@ class FellesFrame(wx.Frame):
         if not kwargs.has_key('pos'):
             kwargs['pos'] = wx.DefaultPosition
 
+        
         super(FellesFrame, self).__init__(parent, *args, **kwargs)
 
 
@@ -341,6 +342,11 @@ class FellesTextInput(wx.SpinCtrlDouble): #(wx.SpinCtrl):
         del kwargs['target']
         del kwargs['source']
 
+        self.arg = None
+        if kwargs.has_key('arg'):
+            self.arg = kwargs['arg']
+            del kwargs['arg']
+
         if not kwargs.has_key('name'):
             kwargs['name'] = self.source.GetName()
 
@@ -366,7 +372,10 @@ class FellesTextInput(wx.SpinCtrlDouble): #(wx.SpinCtrl):
 
     # ------------------------------- Method --------------------------------- #
     def OnSetpointChange(self, event):
-        self.target(event.GetEventObject().GetValue())
+        if not self.arg:
+            self.target(event.GetEventObject().GetValue())
+        else:
+            self.target(self.arg, event.GetEventObject().GetValue())
 
 # =============================== Class ====================================== #
 class FellesLabel(wx.StaticText):

@@ -128,7 +128,7 @@ def main(GUI=False):
          meta_data = {
             'label' : 'Temperature 1',
             'unit' : '[K]',
-            'sample_speed' : 0.5,
+            'sample_speed' : 0.1,
          },
          data_processing = {
              'signalFiltering' : None, # Noise filter
