@@ -261,16 +261,16 @@ class FellesBaseClass(MyThread):
         self.MetaData[key] = val
 
     # ------------------------------- Method -------------------------------- #
-    def UpdateSampleSpeed(self, event, caller):
+    def UpdateSampleSpeed(self, speed):
         """
         Method updating the sample_speed
         """
         print "Updating '%s' sampling speed from '%s to '%s'"\
              %( self.GetMetaData('label'),\
                 self.GetMetaData('sample_speed'),\
-                event.GetValue() )
+                speed )
 
-        self.SetMetaData('sample_speed', event.GetValue())
+        self.SetMetaData('sample_speed', speed)
 
     # ------------------------------- Method -------------------------------- #
     def __repr__(self):
