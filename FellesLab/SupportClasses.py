@@ -114,12 +114,6 @@ Let us say that together, "If I do not push the Stop Sampling button I will not 
 ```
 '''
 
-
-# ================================ Class ==================================== #
-class MyThread(Thread):
-    def __init__(self, *args, **kwargs):
-        super(MyThread, self).__init__(group=None)
-
 # ================================ Class ==================================== #
 class GuiUpdater(Thread):
     """
@@ -219,26 +213,25 @@ class ExtendedRef(weakref.ref):
         return self.referee()
 
     # ------------------------------- Method -------------------------------- #
-    def __getitem__(self, key=None):
+    def __getitem__(self, key):
         """
-        Magic method.
-        
-        Returns the value of "key" in the referee's MetaData directory
+        Synonymous of calling "__getitem__" in the referee instance
         """
         return self()[key]
 
     # ------------------------------- Method -------------------------------- #
     def __setitem__(self, key, val):
         """
-        Magic method.
-        
-        Sets the value of "key" in the referee's MetaData directory
+        Synonymous of calling "__setitem__" in the referee instance
         """
         self()[key] = val
 
     # ------------------------------- Method -------------------------------- #
     def GetID(self):
-        return hex(id(self.__call__()))
+        """
+        Returns "ID" of the referee object
+        """
+        return hex(id(self()))
 
 
 # =============================== Class ===================================== #
@@ -267,7 +260,7 @@ class DataStorage(object):
 
     # ------------------------------- Method -------------------------------- #
     def Scale(self, val):
-        return self.owner['calibrationCurve'](val)
+        return val # self.owner['calibrationCurve'](val)
 
 
     # ------------------------------- Method -------------------------------- #
@@ -310,18 +303,23 @@ class DataStorage(object):
         """
         Method updating the history
         """
-        self.history['data'].append(self.Scale(val))
-        self.history['time'].append(time)
+        self['data'] = self.Scale(val)
+        self['time'] = time
 
         if self.owner.SAVE:
-            self.File.write('%f , %f\n' %(time, self.history['data'][-1] ))
+            self.File.write('%f , %f\n' %(time, self['data'][-1] ))
 
     # ------------------------------- Method -------------------------------- #
     def __call__(self):
-        """
-
-        """
         return self
+
+    # ------------------------------- Method -------------------------------- #
+    def __getitem__(self, key):
+        return self.history if not key else self.history[key]
+
+    # ------------------------------- Method -------------------------------- #
+    def __setitem__(self, key, val):
+        self.history[key].append(val)
 
     # ------------------------------- Method -------------------------------- #
     @classmethod

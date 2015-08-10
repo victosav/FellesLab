@@ -124,12 +124,13 @@ class AlicatModule(Device):
       * Change port baudrate: stty --file=/dev/ttyUSB0 19200
     """
 
-    fluids = ["Air", "Ar", "CH4", "CO", "CO2", "C2H6", "H2", "He", "N2", "N2O",
-              "Ne", "O2", "C3H8", "n-C4H10", "C2H2", "C2H4", "i-C2H10", "Kr", 
-              "Xe", "SF6", "C-25", "C-10", "C-8", "C-2", "C-75", "A-75", 
-              "A-25", "A1025", "Star29", "P-5"]
+    FLUIDS = {"Air":0, "Ar":1, "CH4":2, "CO":3, "CO2":4, "C2H6":5, "H2":6, 
+              "He":7, "N2":8, "N2O":9, "Ne":10, "O2":11, "C3H8":12, 
+              "n-C4H10":13, "C2H2":14, "C2H4":15, "i-C2H10":16, "Kr":17, 
+              "Xe":18, "SF6":19, "C-25":20, "C-10":21, "C-8":22, "C-2":23, 
+              "C-75":24, "A-75":25, "A-25":26, "A1025":27, "Star29":28, "P-5":29}
 
-    info = ["flow_setpoint", "gas", "mass_flow", "pressure", "temperature", 
+    INFO = ["flow_setpoint", "gas", "mass_flow", "pressure", "temperature", 
             "volumetric_flow"]
 
     # ------------------------------- Method -------------------------------- #
@@ -166,7 +167,7 @@ class AlicatModule(Device):
             Exception("Required arguments are missing")
 
         if ('mode') not in kwargs:
-          kwargs['mode'] = minimalmodbus.MODE_ASCII
+          kwargs['mode'] = minimalmodbus.MODE_RTU
 
         if not kwargs.has_key('port'):
             # Search for port
@@ -174,43 +175,81 @@ class AlicatModule(Device):
             #       regex to match "hint" to portnames.
             for port in list(scan_ports()):
                 try:
-                    super(AdamModule, self).__init__(port, kwargs['slaveaddress'], mode=kwargs['mode'])
+                    super(AlicatModule, self).__init__(port, kwargs['slaveaddress'], mode=kwargs['mode'])
                     if self.is_correct_module():
                         break
                 except:
                     Exception("Signal portname on the ADAM module is missing")
         else:
-            super(AdamModule, self).__init__(kwargs['port'], kwargs['slaveaddress'], mode=kwargs['mode'])
-
-
+            super(AlicatModule, self).__init__(kwargs['port'], kwargs['slaveaddress'], mode=kwargs['mode'])
 
 # ================================= Class =================================== #
 class FlowMeter(AlicatModule):
     """
-    
     """
+    REGISTER = { 'ID': 65, 'setpoint': 24, 'gas': 46}
+
     # ------------------------------- Method -------------------------------- #
     def __init__(self, *args, **kwargs):
+        """
+        """
         super(FlowMeter, self).__init__(*args, **kwargs)
+
+    # ------------------------------- Method -------------------------------- #
+    def GetID(self):
+        """
+        """
+        ID = self.read_register(self.REGISTER['ID'])
+        return ID
+
+    # ------------------------------- Method -------------------------------- #
+    def SetID(self, val):
+        """
+        """
+        self.write_register(self.REGISTER['ID'], val)
+
+    # ------------------------------- Method -------------------------------- #
+    def GetSetpoint(self):
+        """
+        """
+        setpoint = self.read_register(self.REGISTER['setpoint'])
+        return setpoint
+
+    # ------------------------------- Method -------------------------------- #
+    def SetSetpoint(self, val):
+        """
+        """
+        self.write_register(self.REGISTER['setpoint'], val)
+        
+    # ------------------------------- Method -------------------------------- #
+    def GetGas(self):
+        """
+        """
+        gas = self.read_register(self.REGISTER['gas'])
+        return gas
+
+    # ------------------------------- Method -------------------------------- #
+    def SetGas(self, gas, value):
+        """
+        """
+        self.write_register(self.REGISTER['gas'], self.FLUIDS[key])
 
 # ================================= Class =================================== #
 class FlowController(AlicatModule):
     """
     
     """
+
+    MIN_FLOW_RATE = 0
+    MAX_FLOW_RATE = 64000 # 65535
+
     # ------------------------------- Method -------------------------------- #
     def __init__(self, *args, **kwargs):
         super(FlowController, self).__init__(*args, **kwargs)
+
     # ------------------------------- Method -------------------------------- #
-    def set_flow_rate(self, flow, retries=2):
-        """Sets the target flow rate.
-
-        Args:
-            flow: The target flow rate, in units specified at time of purchase
+    def set_flow_rate(self, flow_rate):
         """
-        command = "{addr}S{flow:.2f}\r\n".format(addr=self.address, flow=flow)
-        line = self._write_and_read(command, retries)
-        if abs(float(line) - flow) > 0.01:
-            raise IOError("Could not set flow.")
-
+        """
+        self.write_register(24, flow_rate)
 

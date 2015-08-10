@@ -321,6 +321,54 @@ class FellesButton(wx.Button):
         """
         self.OnButtonClicked(self)
 
+# =============================== Class ====================================== #
+class FellesComboBox(wx.wx.ComboBox):
+    """
+    Class
+    """
+    # ------------------------------- Method --------------------------------- #
+    def __init__(self, parent = None, *args, **kwargs):
+
+        self.source = kwargs['source']
+        self.target = kwargs['target']
+        del kwargs['target']
+        del kwargs['source']
+
+        self.arg = None
+        if kwargs.has_key('arg'):
+            self.arg = kwargs['arg']
+            del kwargs['arg']
+
+        if not kwargs.has_key('name'):
+            kwargs['name'] = self.source.GetName()
+
+        if not kwargs.has_key('max'):
+            kwargs['max'] = 1
+
+        if not kwargs.has_key('min'):
+            kwargs['min'] = 0
+
+        if not kwargs.has_key('initial'):
+            kwargs['initial'] = kwargs['min']
+
+        if not kwargs.has_key('value'):
+            kwargs['value'] = '%f' %(kwargs['initial'])
+
+        if not kwargs.has_key('inc'):
+            kwargs['inc'] = 0.01
+
+        super(FellesTextInput, self).__init__(parent, *args, **kwargs)
+
+#        self.Bind(wx.EVT_SPINCTRL, self.OnSetpointChange)
+        self.Bind(wx.EVT_SPINCTRLDOUBLE, self.OnSetpointChange)
+
+    # ------------------------------- Method --------------------------------- #
+    def OnSetpointChange(self, event):
+        if not self.arg:
+            self.target(event.GetEventObject().GetValue())
+        else:
+            self.target(self.arg, event.GetEventObject().GetValue())
+
 
 # =============================== Class ====================================== #
 class FellesTextInput(wx.SpinCtrlDouble): #(wx.SpinCtrl):
@@ -376,6 +424,53 @@ class FellesTextInput(wx.SpinCtrlDouble): #(wx.SpinCtrl):
             self.target(event.GetEventObject().GetValue())
         else:
             self.target(self.arg, event.GetEventObject().GetValue())
+
+# =============================== Class ====================================== #
+class FellesSlider(wx.Slider):
+    """
+    Class
+    """
+    # ------------------------------- Method --------------------------------- #
+    def __init__(self, parent = None, *args, **kwargs):
+
+        self.source = kwargs['source']
+        self.target = kwargs['target']
+        del kwargs['target']
+        del kwargs['source']
+
+        super(FellesSlider, self).__init__(parent, id=wx.ID_ANY, value=0, minValue=0, maxValue=100, pos=wx.DefaultPosition, size=wx.DefaultSize, style=wx.SL_MIN_MAX_LABELS|wx.SL_INVERSE|wx.SL_RIGHT, validator=wx.DefaultValidator, name="SliderNameStr")
+
+        self.Bind(wx.EVT_SLIDER, self.OnSelect)
+
+    # ------------------------------- Method --------------------------------- #
+    def OnSelect(self, event):
+        self.target(event.GetEventObject().GetValue())
+
+# =============================== Class ====================================== #
+class FellesComboBox(wx.ComboBox):
+    """
+    Class
+    """
+    # ------------------------------- Method --------------------------------- #
+    def __init__(self, parent = None, *args, **kwargs):
+
+        self.source = kwargs['source']
+        self.target = kwargs['target']
+        del kwargs['target']
+        del kwargs['source']
+
+#        ComboBox(parent, id=ID_ANY, value="", pos=DefaultPosition,
+#         size=DefaultSize, choices=[], style=0, validator=DefaultValidator,
+#         name=ComboBoxNameStr)
+
+        super(FellesComboBox, self).__init__(parent, *args, **kwargs)
+
+        self.Bind(wx.EVT_COMBOBOX, self.OnSelect)
+
+    # ------------------------------- Method --------------------------------- #
+    def OnSelect(self, event):
+        self.target(event.GetEventObject().GetValue())
+
 
 # =============================== Class ====================================== #
 class FellesLabel(wx.StaticText):

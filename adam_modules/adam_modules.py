@@ -79,6 +79,7 @@ class DummyModbus(object):
         self.serial = DummySerial()
     # ------------------------------- Method -------------------------------- #
     def read_register(self, channel, numberOfDecimals):
+
         if numberOfDecimals == 0:
             return random()
         else:
@@ -172,6 +173,7 @@ class AdamModule(object):
 
         return  super(AdamModule, cls).__new__(cls)
 
+    # ------------------------------- Method -------------------------------- #
     def __init__(self, *args, **kwargs):
         """
         Constructor.
@@ -198,17 +200,17 @@ class AdamModule(object):
             super(AdamModule, self).__init__(kwargs['port'], kwargs['slaveaddress'], mode=kwargs['mode'])
 
         self.metaData = {
-            'port' : 'asdf',#self.serial.port,
             'baudrate' : 'asdf',#self.serial.baudrate,
             'bytesize' : 'asdf',#self.serial.bytesize,
             'parity' : 'asdf',#self.serial.parity,
             'timeout' : 'asdf',#self.serial.timeout,
             'channel': None,
             'decimals' : 0,
+            'debug' : False,
         }
 
     # ------------------------------- Method -------------------------------- #
-    def SetMetaData(self, key, val):
+    def __setitem__(self, key, val):
         """
         Configuration method for changing the following parameters:
           port = str       # serial port name
@@ -228,10 +230,14 @@ class AdamModule(object):
         self.metaData[key] = val
 
     # ------------------------------- Method -------------------------------- #
-    def GetMetaData(self, key=None):
+    def __iter__(self):
+        return self.metaData.iteritems()
+
+    # ------------------------------- Method -------------------------------- #
+    def __getitem__(self, key):
         """
         """
-        return self.metaData if not key else self.metaData[key]
+        return self.metaData[key]
 
     # ------------------------------- Method -------------------------------- #
     def module_name(self):
@@ -243,7 +249,7 @@ class AdamModule(object):
     # ------------------------------- Method -------------------------------- #
     def module_version(self):
         """
-            Read module version
+        Read module version
         """
         return self.read_register(212) # child.moduleVersion
 
@@ -278,73 +284,47 @@ class AdamModule(object):
             print('Channel input outside available channels: [0, ' + str(number_of_channels) + ']')
             return False
 
-    # ------------------------------- Method -------------------------------- #
-    def __getitem__(self, key):
-        """
-        Method for retrieving meta information
-        """
-        return self.metaData[key]
-
-    # ------------------------------- Method -------------------------------- #
-    def __setitem__(self, key, val):
-        """
-        Method for setting meta information
-        """
-        self.metaData[key] = val
-        return None
-
-    # ------------------------------- Method -------------------------------- #
-    def get_in(self):
-        """
-        TODO: write a general getter/setter method for the modules!
-        """
-        pass
-
 # ================================= Class =================================== #
 class AnalogIn(AdamModule):
     """
-        Class for analog input ADAM modules
+    Class for analog input ADAM modules
     """
     # ------------------------------- Method -------------------------------- #
     def __init__(self, *args, **kwargs):
         """
-            Constructor
+        Constructor
         """
-        AdamModule.__init__(self, *args, **kwargs)
+        super(AnalogIn, self).__init__(*args, **kwargs)
+
     # ------------------------------- Method -------------------------------- #
-    def get_analog_in(self, channel=-1, numberOfDecimals=0):
+    def get_analog_in(self, channel=None, numberOfDecimals=0):
         """
         Getter method
+        TODO: Add exception checking if channel is out of range 
         """
-        if channel == -1:
-            # TODO for some reason analog_in_start_channel is a tuple... why!?
-            return self.read_registers(self.analog_in_start_channel - 1, self.analog_in_number_of_channels)
-        elif self.is_valid_channel(channel, self.analog_in_number_of_channels):
-#            return self.read_register(self.analog_in_start_channel[0] - 1 + channel, numberOfDecimals)
-            return self.read_register(self.analog_in_start_channel + channel, numberOfDecimals)
-        else:
-            print('Channel out of range')
+        modbus_base = self.analog_in_start_channel[0]
+        return self.read_registers(modbus_base - 1, self.analog_in_number_of_channels) if not channel else self.read_register(modbus_base - 1 + channel, numberOfDecimals)
+
     # ------------------------------- Method -------------------------------- #
     def set_type_analog_in(self, channel, value):
         """
         Setter method
         """
         return self.write_register(self.type_analog_in_start_channel - 1 + channel, value)
+
     # ------------------------------- Method -------------------------------- #
-    def get_type_analog_in(self, channel=-1, numberOfDecimals = 0):
+    def get_type_analog_in(self, channel=None, numberOfDecimals = 0):
         """
-            Getter method
+        Getter method
+        
+        TODO: Add exception checking if channel is out of range 
         """
-        if channel == -1:
-            return self.read_registers(self.type_analog_in_start_channel - 1, self.analog_in_number_of_channels)
-        elif self.is_valid_channel(channel, self.analog_in_number_of_channels):
-            return self.read_register(self.type_analog_in_start_channel - 1 + channel, numberOfDecimals)
-        else:
-            print('Channel out of range')
+        return self.read_registers(self.type_analog_in_start_channel - 1, self.analog_in_number_of_channels) if not channel else self.read_register(self.type_analog_in_start_channel - 1 + channel, numberOfDecimals)
+
     # ------------------------------- Method -------------------------------- #
     def get_burn_out_signal(self, channel):
         """
-            Burn signal
+        Burn signal
         """
         return self.read_bit(self.burn_out_signal_start_channel - 1 + channel)
 
@@ -353,49 +333,58 @@ class AnalogOut(AdamModule):
     analog_out_start_channel = 1
     type_analog_out_start_channel = 201
     analog_out_number_of_channels = 8
+
+    # ------------------------------- Method -------------------------------- #
+    def __init__(self, *args, **kwargs):
+        """
+        Constructor
+        """
+        super(AnalogOut, self).__init__(*args, **kwargs)
+
     # ------------------------------- Method -------------------------------- #
     def set_analog_out(self, channel, value):
         """
-            Setter
+        Setter
         """
         return self.write_register(self.analog_out_start_channel - 1 + channel, value)
     # ------------------------------- Method -------------------------------- #
-    def get_analog_out(self, channel=-1):
+    def get_analog_out(self, channel=None):
         """
-            Getter
+        Getter
+        TODO: Add exception checking if channel is out of range 
         """
-        if channel == -1:
-            return self.read_registers(self.analog_out_start_channel - 1, self.analog_out_number_of_channels)
-        elif self.is_valid_channel(channel, self.analog_out_number_of_channels):
-            return self.read_register(self.analog_out_start_channel - 1 + channel)
-        else:
-            print('Channel out of range')
+        return self.read_registers(self.analog_out_start_channel - 1, self.analog_out_number_of_channels) if not channel else self.read_register(self.analog_out_start_channel - 1 + channel)
+        
     # ------------------------------- Method -------------------------------- #
     def set_type_analog_out(self, channel, value):
         """
-            Setter
+        Setter
         """
         return self.read_register(self.analog_out_start_channel - 1 + channel, value)
     # ------------------------------- Method -------------------------------- #
-    def get_type_analog_out(self, channel=False):
+    def get_type_analog_out(self, channel=None):
         """
-            Getter
+        Getter
+        TODO: Add exception checking if channel is out of range 
         """
-        if channel == -1:
-            return self.read_registers(self.analog_out_start_channel - 1, self.analog_out_number_of_channels)
-        elif self.is_valid_channel(channel, self.analog_out_number_of_channels):
-            return self.read_register(self.analog_out_start_channel - 1 + channel)
-        else:
-            print('Channel out of range')
+        return self.read_registers(self.analog_out_start_channel - 1, self.analog_out_number_of_channels) if not channel else self.read_register(self.analog_out_start_channel - 1 + channel)
 
 # ================================= Class =================================== #
 class DigitalIn(AdamModule):
     diginal_in_start_channel = 1
     digital_in_number_of_channels = 8
+
+    # ------------------------------- Method -------------------------------- #
+    def __init__(self, *args, **kwargs):
+        """
+        Constructor
+        """
+        super(DigitalIn, self).__init__(*args, **kwargs)
+
     # ------------------------------- Method -------------------------------- #
     def get_digital_in(self, channel):
         """
-            Getter
+        Getter
         """
         return self.read_bit(self.diginal_in_start_channel - 1 + channel)
 
@@ -403,16 +392,25 @@ class DigitalIn(AdamModule):
 class DigitalOut(AdamModule):
     digital_out_start_channel = 17
     digital_out_number_of_channels = 8
+
+    # ------------------------------- Method -------------------------------- #
+    def __init__(self, *args, **kwargs):
+        """
+        Constructor
+        """
+        super(DigitalOut, self).__init__(*args, **kwargs)
+
     # ------------------------------- Method -------------------------------- #
     def set_digital_out(self, channel, value):
         """
-            Setter
+        Setter
         """
         return self.write_bit(self.digital_out_start_channel - 1 + channel, value)
+
     # ------------------------------- Method -------------------------------- #
     def get_digital_out(self, channel):
         """
-            Getter
+        Getter
         """
         return self.read_bit(self.digital_out_start_channel - 1 + channel)
 
@@ -432,24 +430,7 @@ class Adam4117(AnalogIn):
         """
         Constructor
         """
-        kwargs['module'] = self
         super(Adam4117, self).__init__(self, *args, **kwargs)
-    # Type       Code
-    # +/- 100mV: 2
-    # +/-500 mV: 3
-    # +/-1V:     4
-    # +/- 2,5V:  5
-    # 4~20mA:    7
-    # +/-10V:    8
-    # +/-5V:     9
-    # 0~20 mA:   13
-    # K:         15
-    # T:         16
-    # E:         17
-    # R:         18
-    # S:         19
-    # B:         20
-    # J:         14
 
 # ================================= Class =================================== #
 class Adam4019(AnalogIn):
@@ -466,9 +447,7 @@ class Adam4019(AnalogIn):
         """
         Constructor
         """
-        kwargs['module'] = self
         super(Adam4019, self).__init__(self, *args, **kwargs)
-
 
 # ================================= Class =================================== #
 class Adam4024(AnalogOut, DigitalIn):
@@ -487,15 +466,13 @@ class Adam4024(AnalogOut, DigitalIn):
         """
         Constructor
         """
-    # Analog out signal range is 0 to 409[5 or 6]
-    # should scale such that value goes from 0 to 1
-
-    # Types
-    # 48: 0~20 mA
-    # 49: +/- 10V
-    # 50: 4~20 mA
-        kwargs['module'] = self
         super(Adam4024, self).__init__(self, *args, **kwargs)
+
+    def GetOut():
+        AnalogOut.GetOut()
+
+    def GetIn():
+        DigitalIn.GetIn()
 
 # ================================= Class =================================== #
 class Adam4055(DigitalIn, DigitalOut):
@@ -512,7 +489,6 @@ class Adam4055(DigitalIn, DigitalOut):
         """
         Constructor
         """
-        kwargs['module'] = self
         super(Adam4055, self).__init__(self, *args, **kwargs)
 
 # ================================= Class =================================== #
@@ -528,5 +504,4 @@ class Adam4069(DigitalOut):
         """
         Constructor
         """
-        kwargs['module'] = self
         super(Adam4069, self).__init__(self, *args, **kwargs)

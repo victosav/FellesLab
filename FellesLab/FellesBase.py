@@ -27,26 +27,41 @@ __license__ = "GPL.v3"
 __date__      = "$Date: 2015-06-23 (Tue, 23 Jun 2015) $"
 
 from time import time, sleep
-from SupportClasses import ExtendedRef, DataStorage, MyThread
-
+from SupportClasses import ExtendedRef, DataStorage
 from collections import defaultdict
 from threading import Thread, Lock
 import os
 from time import localtime
 from calendar import weekday
 
-SAMPLE = True
-IDLE = False
-
 # ================================ Class ==================================== #
-class FellesBaseClass(MyThread):
-    """
-    Thread 
+class FellesBaseClass(Thread):
+    """Class for performing asynchronous sampling
+    @summary: The required input is a callable, function or class.
+              1. Overwrite the "self.CallResource" method
+              2. Implement "__call__(self, *args, **kwargs)"
+              
+              def fnc():
+                
+              
+    @type MyThread: Inherited class "Thread" 
+    @cvar t0:
+    @cvar __refs__:
+    @cvar __sfer__:
+    @cvar SAMPLE:
+    @type SAMPLE: bool
+    @cvar SAVE:
+    @cvar ReStart:
+    @cvar lock:
+    @cvar FellesMetaData:
+    @cvar GuiMetaData:
+    @cvar DataProcessing:
+    @cvar Data:
     """
     __refs__ = defaultdict(list)
     __sfer__ = {}
     t0 = time()
-    dt = time()
+
     SAMPLE = True
     SAVE = False
     ReSTART = False
@@ -76,37 +91,92 @@ class FellesBaseClass(MyThread):
     Data = DataStorage
 
     # ------------------------------- Method -------------------------------- #
-    def __init__(self, module, module_metadata = {}, meta_data={}, gui_configuration={}, data_processing={}, *args, **kwargs):
+    def __init__(self, resource, resource_settings = {}, meta_data={}, gui_configuration={}, data_processing={}):
+        """ 
+        @summary : The initialiser for the class. It gets passed whatever the 
+                   primary constructor was called with (for example, if it was
+                   called x = MyClass(1, {a : '1'}), __init__ will be passed 
+                   1 and {a : '1'} as arguments. __init__ is almost universally 
+                   used in Python class definitions.
+
+                   Minimal Working Example:
+                   -----------------------------------------------------------
+                   from FellesLab import FellesBaseClass
+
+                    class Test(object):
+
+                    dct = {'a':1,'b':2}
+
+                    def __call__(self):
+                    return 3
+
+                    def __iter__(self):
+                    for (key, val) in self.dct.iteritems():
+                        yield key, val
+
+                    def __getitem__(self, key):
+                        return dct[key]
+
+                    f = Test()
+                    a = FellesBaseClass(f)
+                   -----------------------------------------------------------
+
+        @param self:
+        @param resource:
+        @type resource:
+        @param resource_settings:
+        @param meta_data:
+        @param gui_configuration:
+        @param data_processing:
+        @param args:
+        @param kwargs:
+        
+        @ivar ID: 
+        @ivar MetaData: 
+        @ivar data:
         """
-        constructor
-        """
-        super(FellesBaseClass, self).__init__(*args, **kwargs)
+        super(FellesBaseClass, self).__init__()
+
         self.__refs__[self.__class__].append(ExtendedRef(self)) # Add instance to references
         self.__sfer__[hex(id(self))] =  ExtendedRef(self)
 
         self.ID = hex(id(self)) # ID used to look up objects (Will change for each run!)
-        self.module = module # This is the reference to the Adam module
+        self.resource = resource # This is the reference to the Adam resource
 
+        # Create "metadata" dictionary based on the common FellesMetaData dict
         self.MetaData = { k : v for k,v in self.FellesMetaData.iteritems()}
-        for k,v in self.FellesMetaData.iteritems():
+        # If the arg "meta_data" contains a key that is already in the dict,
+        # replace the key with the input. 
+        # This way the user can specify soft settings: "label", etc...
+        for (k, v) in self.FellesMetaData.iteritems():
             if meta_data.has_key(k):
                 self.MetaData[k] = meta_data[k]
 
-        for k,v in self.module.GetMetaData().iteritems():
-            if module_metadata.has_key(k):
-                self.MetaData[k] = module_metadata[k]
+        # Check the "resource_settings" from the user. 
+        # Loop through all the standard settings (k,v) from the resource.
+        for k,v in iter(self.resource):
+            # If a one of the keys in the "resource" has been provided as an
+            # argument in "resource_settings", the user wants to change
+            # this setting.
+            #
+            # In this event the "resource" will be asked to change the setting
+            # and report back.
+            if resource_settings.has_key(k):
+                self.resource[k] = resource_settings[k]
+                # Add the new setting to the "MetaData"
+                self.MetaData[k] = self.resource[k]
+            # Otherwise, add the un-changed resource setting to "MetaData"
             else:
                 self.MetaData[k] = v
 
-        self.plot_config = {k:v for k,v in self.GuiMetaData.iteritems()}
-        for k,v in self.GuiMetaData.iteritems():
+        # Now we add plot configurations to the "MetaData"
+        for (k, v) in self.GuiMetaData.iteritems():
             if gui_configuration.has_key(k):
                 self.MetaData[k] = gui_configuration[k]
             else:
                 self.MetaData[k] = v
 
-        self.data_config = {k:v for k,v in self.DataProcessing.iteritems()}
-        for k,v in self.GuiMetaData.iteritems():
+        for (k, v) in self.DataProcessing.iteritems():
             if data_processing.has_key(k):
                 self.MetaData[k] = data_processing[k]
             else:
@@ -117,20 +187,24 @@ class FellesBaseClass(MyThread):
         self.start() # target -> sample source -> self
 
     # ------------------------------- Method -------------------------------- #
+    def CallResource(self, *args, **kwargs):
+        return self.resource(*args, **kwargs)
+
+    # ------------------------------- Method -------------------------------- #
     def run(self):
-        """
+        """ Class
         Instance method executed by "self.start()". 
 
         This method performs the sampling
         """
         while FellesBaseClass.SAMPLE:
-            # Attempt to aquire lock on the module
+            # Attempt to aquire lock on the resource
             while not FellesBaseClass.lock.acquire():
                 pass
             try:
-                s = self.GetMeassurements()
+                s = self.CallResource()
                 t = FellesBaseClass.Timer()
-                self.data.Update(t, s) # Sample Module
+                self.data.Update(t, s) # Sample resource
             except:
                 print "'%s' instance: '%s'; Failed to read meassurement at time %.2f " %(self.__class__.__name__, self['label'], FellesBaseClass.Timer())
                 pass # In the event that the sampling fails, the thread will not fail
@@ -153,14 +227,27 @@ class FellesBaseClass(MyThread):
 
     # ------------------------------- Method -------------------------------- #
     def __call__(self):
-        """
-        Instance "magic method" returning the object instance itself
+        """ 
+        @ summary: Allows an instance of a class to be called as a function. 
+                   This means that x() is the same as x.__call__().            
         """
         return self
+
+
+#     def __iter__(self):
+#         """
+#         """
+#         for (key, val) in self.MetaData.iteritems():
+#             yield (key, val)
 
     # ------------------------------- Method -------------------------------- #
     def __setitem__(self, key, val):
         """
+        @summary : Defines behavior for when an item is assigned to, using the
+                   notation:
+                                  self[key] = val
+ 
+        @todo: Raise "Key" and "TypeError" when appropriate
         """
         print "Updating '%s' seting from '%s to '%s'"\
                                    %( self['label'], self.MetaData[key], val )
@@ -168,16 +255,31 @@ class FellesBaseClass(MyThread):
         self.MetaData[key] = val
 
     # ------------------------------- Method -------------------------------- #
-    def __getitem__(self, key=None):
+    def __getitem__(self, key):
         """
+        @summary : Defines behavior for when an item is accessed, using the 
+                   notation self[key]. 
+        @todo : Raise exceptions "TypeError" if the type of the key is wrong KeyError if there is no corresponding value for the key.
         """
         return self.MetaData if not key else self.MetaData[key]
 
     # ------------------------------- Method -------------------------------- #
-    def __repr__(self):
-        """        
+    def __str__(self):
         """
-        NotImplementedError("Method is overwritten by child")
+        Defines behavior for when str() is called on an instance of your class.
+        @TODO Implement
+        """
+        return "FellesBase"
+
+    # ------------------------------- Method -------------------------------- #
+    def __repr__(self):
+        """
+        Defines behavior for when repr() is called on an instance of your class. 
+        The major difference between str() and repr() is intended audience. 
+        repr() is intended to produce output that is mostly machine-readable 
+        """
+        return '<Instance of %s at %s>'%(self.__class__.__name__,
+                                          hex(id(self)) )
 
     # ------------------------------- Method -------------------------------- #
     @classmethod

@@ -37,7 +37,7 @@ import wxmplot
 from SupportClasses import ExtendedRef, DataStorage
 from FellesBase import FellesBaseClass
 from GUI import FellesFrame, FellesButton, FellesTextInput, FellesLabel
-
+from random import random
 # ================================ Class ==================================== #
 class Sensor(FellesBaseClass):
     """
@@ -53,10 +53,10 @@ class Sensor(FellesBaseClass):
         self.__sensors__[self.__class__].append(ExtendedRef(self)) # Add instance to references
 
     # ------------------------------- Method -------------------------------- #
-    def GetMeassurements(self):
+    def CallResource(self):
         """
         """
-        msmnt = self.module.get_analog_in( self['channel'], self['decimals'] )
+        msmnt = self.resource.get_analog_in(self['channel'], self['decimals'])
         return msmnt
 
     # ------------------------------- Method -------------------------------- #
@@ -64,7 +64,7 @@ class Sensor(FellesBaseClass):
         """
         """
         return '<%s.%s sensor at %s>' % (
-            self.__class__.__module__,
+            self.__class__.__resource__,
             self.__class__.__name__,
             self.ID
         )
@@ -76,11 +76,9 @@ class Sensor(FellesBaseClass):
         """
         SensorGUI = {}
         for subCls,instnts in cls.__sensors__.iteritems():
-            print "Creating GUI for Sensor: '%s'" %subCls.__name__
-            SensorGUI[subCls.__name__] = SensorFrame(
-                                         sensors = instnts ,
-                                         title = subCls.__name__ ,
-                                         )
+            print "Creating GUI for Sensor: '%s'" %(subCls.__name__)
+            SensorGUI[subCls.__name__] = SensorFrame(sensors = instnts ,
+                                                     title = subCls.__name__ )
 
         return SensorGUI
 
@@ -156,7 +154,7 @@ class SensorFrame(FellesFrame):
 
         self.sensors = sensors
         # Dictionary keeping track of which sensors to plot
-        self.plot_config = { s.GetID() : s().plot_config for s in self.sensors}
+        self.plot_config = { s.GetID() : s['plot'] for s in self.sensors}
 
         self.InitUI() # Create frame
         self.Show()   # Show frame
@@ -180,39 +178,32 @@ class SensorFrame(FellesFrame):
         #
         #  This means that s().GetMetaData('label') is simply a way of looking up the
         #  'label' key of a Sensor.
-        for s in iter(self.sensors):
+        for s in self.sensors:
             try:
-                iii = s().data.history['data'][-1]
-                jjj = s().data.history['time'][-1]
+                iii = s().data['data'][-1]
+                jjj = s().data['time'][-1]
             except:
-                s().data.history['data'].append(random())
-                s().data.history['time'].append(random())
+                s().data['data'] = random()
+                s().data['time'] = random()
 
-        self.gLabel = {\
-                      s.GetID():FellesLabel(self.panel, wx.ID_ANY,\
-                                            label=s['label'],\
-                                            style=wx.ALIGN_CENTER )\
-                                                    for s in iter(self.sensors)\
-                      }
-        self.gValue = {\
-                      s.GetID():FellesLabel(
-                                      self.panel, wx.ID_ANY,\
-                                       label=str(s().data.history['data'][-1]),\
-                                                        style=wx.ALIGN_CENTER )\
-                                                    for s in iter(self.sensors)\
-                      }
-        self.gSetpt = {\
-                      s.GetID():FellesTextInput(
-                                    self.panel,
-                                    value='%s' %s['sample_speed'],
+        self.gLabel = { s.GetID() : FellesLabel(self.panel, wx.ID_ANY,\
+                                                  label=s['label'],\
+                                                  style=wx.ALIGN_CENTER )\
+                                                    for s in self.sensors }
+
+        self.gValue = { s.GetID() : FellesLabel(self.panel, wx.ID_ANY,\
+                                             label='%.2f'%s().data['data'][-1],\
+                                                      style=wx.ALIGN_CENTER )\
+                                                      for s in self.sensors }
+
+        self.gSetpt = { s.GetID():FellesTextInput(
+                                    self.panel, value='%s' %s['sample_speed'],
                                     initial=s['sample_speed'],
-                                    min=s().module.min,
-                                    max=10,
-                                    name='asdf',
-                                    target=s.__setitem__,
+                                    min=s().resource.min, max=9.99,
+                                    size=wx.Size(50,22.5),
+                                    name='asdf', target=s.__setitem__,
                                     arg='sample_speed',
-                                    source=self )   for s in iter(self.sensors)\
-                      }
+                                    source=self ) for s in self.sensors }
 
         # arranging and sizing the widgets
         grid_sizer.Add( FellesLabel( self.panel, wx.ID_ANY, label='Label' ,
@@ -259,11 +250,11 @@ class SensorFrame(FellesFrame):
         """
         Method for updating GUI
         """
-        # Update label for sensor: s().GetMetaData('label')
-        # with the most recent measurement: s().data.history['data'][-1]
+        # Update label for sensor: s['label']
+        # with the most recent measurement: s().data['data'][-1]
         for s in self.sensors:
             self.gValue[s.GetID()].SetLabel( '{num} {unit}'.format(
-                                               num = s().data.history['data'][-1],
+                                               num = s().data['data'][-1],
                                               unit = str(s['unit'])) )
         try:
             pub.sendMessage( 'Plot.%s' %self.GetLabel() )
@@ -365,8 +356,8 @@ class FellesPlot(wx.Frame):
                 if plt:
                     tmp = FellesBaseClass.FindInstance(ID)
                     self.plot_panel.oplot(
-                           np.array(tmp.data.history['time']),
-                           np.array(tmp.data.history['data']),
+                           np.array(tmp.data['time']),
+                           np.array(tmp.data['data']),
                            draw = True,
                            side ='left',
                            label = tmp['label'],
@@ -400,21 +391,21 @@ class FellesPlot(wx.Frame):
                     tmp = FellesBaseClass.FindInstance(ID)
                     self.plot_panel.update_line(
                                 i,
-                                np.array(tmp.data.history['time']),
-                                np.array(tmp.data.history['data']),
+                                np.array(tmp.data['time']),
+                                np.array(tmp.data['data']),
                                 draw=True,
                                 )
                 i += 1
 
         self.plot_panel.set_xylims(\
           [\
-           floor( min( [ min( FellesBaseClass.FindInstance(ID).data.history['time'] )\
+           floor( min( [ min( FellesBaseClass.FindInstance(ID).data['time'] )\
                          for ID,plt in self.plotIDs.iteritems() if plt ] ) ),\
-           ceil( max( [ max( FellesBaseClass.FindInstance(ID).data.history['time'] )\
+           ceil( max( [ max( FellesBaseClass.FindInstance(ID).data['time'] )\
                          for ID,plt in self.plotIDs.iteritems() if plt ] ) ),\
-           floor( min( [ min( FellesBaseClass.FindInstance(ID).data.history['data'] )\
+           floor( min( [ min( FellesBaseClass.FindInstance(ID).data['data'] )\
                          for ID,plt in self.plotIDs.iteritems() if plt ] ) ),\
-           ceil( max( [ max( FellesBaseClass.FindInstance(ID).data.history['data'] )\
+           ceil( max( [ max( FellesBaseClass.FindInstance(ID).data['data'] )\
                           for ID,plt in self.plotIDs.iteritems() if plt ] ) )\
           ]\
         )

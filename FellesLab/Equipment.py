@@ -88,7 +88,7 @@ class Pump(Equipment):
 
     # ------------------------------- Method -------------------------------- #
     def GetMeassurements(self):
-        return 0.0#self.GetSpeed()#module.data.history['data'][-1]
+        return 0.0#self.GetSpeed()#module.data['data'][-1]
 
     # ------------------------------- Method -------------------------------- #
     def TurnOn(self):
@@ -218,20 +218,19 @@ class PumpFrame(FellesFrame):
         button_sizer    = wx.BoxSizer(wx.HORIZONTAL)
 
         try:
-            iii = self.Pump.data.history['data'][-1]
-            jjj = self.Pump.data.history['time'][-1]
+            iii = self.Pump.data['data'][-1]
+            jjj = self.Pump.data['time'][-1]
         except:
-            self.Pump.data.history['data'].append(random())
-            self.Pump.data.history['time'].append(random())
+            self.Pump.data['data'].append(random())
+            self.Pump.data['time'].append(random())
 
-        self.lables = {}
 
         # adding GUI widgets
         self.label_name = wx.StaticText(self.panel, label=self.GetName())
         self.lables['label_setpoint'] = FellesLabel(self.panel,
                                                    label='Speed setpoint [rpm]')
 
-        self.lables['spin_setpoint'] = FellesTextInput(self.panel,
+        self.lables = { 'spin_setpoint' : FellesTextInput(self.panel,
                                                      source = self,
                                                      value ='{setPt}'.format(setPt=self.GetSetpoint()),
                                                      initial=0,#float(self.GetSetpoint()),
@@ -239,14 +238,11 @@ class PumpFrame(FellesFrame):
                                                      max = self.Pump['max_velocity'],
                                                      inc = 10,
                                                      name = 'Pump Setpoint',
-                                                     target=self.SetSetpoint)
-
-        self.lables['label_description_speed'] = FellesLabel(self.panel,
-                    label='%s Speed %s' %(self.Pump['label'], self.Pump['unit']))
-        self.lables['label_speed'] = FellesLabel(self.panel,
-                                        label='{setpt} {unit}'.format(
-                                        setpt=self.Pump.GetSetpoint(),
-                                        unit=self.Pump['unit'] ))
+                                                     target=self.SetSetpoint),
+                       'label_description_speed' : FellesLabel(self.panel, label='%s Speed %s' %(self.Pump['label'], self.Pump['unit'])),
+                       'label_speed' : FellesLabel(self.panel, label='{setpt} {unit}'.format( setpt=self.Pump.GetSetpoint(),
+                                        unit=self.Pump['unit'] )) 
+                      }
 
         # Buttons
         self.On  = FellesButton(self.panel, source=self, target=self.TurnOn,
@@ -325,7 +321,7 @@ class PumpFrame(FellesFrame):
         Method for updating GUI
         """
         self.lables['label_speed'].SetLabel( '{num} {unit}'.format(
-                                           num=self.Pump.data.history['data'][-1],
+                                           num=self.Pump.data['data'][-1],
                                            unit=self.Pump['unit']),
                                            )
 
@@ -416,18 +412,18 @@ class FellesPlot(wx.Frame):
         for id, plt in self.plotIDs.iteritems():
             if plt:
                 self.plotPanels[id].update_line(0,
-                                 findSensor(Sensor,id)().data.history['time'],
-                                 findSensor(Sensor,id)().data.history['data'],
+                                 findSensor(Sensor,id)().data['time'],
+                                 findSensor(Sensor,id)().data['data'],
                                 )
 
         xMin = [], xMax = [], yMin = [], yMax = []
         for ID,plt in self.plotIDs.iteritems():
             if plt:
                 tmp = FellesClassBase.FindInstance(ID)
-                xMin.append(min(tmp.data.history['time']))
-                xMax.append(max(tmp.data.history['time']))
-                yMin.append(min(tmp.data.history['data']))
-                yMax.append(max(tmp.data.history['data']))
+                xMin.append(min(tmp.data['time']))
+                xMax.append(max(tmp.data['time']))
+                yMin.append(min(tmp.data['data']))
+                yMax.append(max(tmp.data['data']))
 
         self.plot_panel.set_xylims( [ floor(xMin)*0.9  , ceil(xMax)*1.1 , floor(yMin)*.9, ceil(yMax)*1.1 ] )
 
