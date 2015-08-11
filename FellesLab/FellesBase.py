@@ -34,8 +34,6 @@ import os
 from time import localtime
 from calendar import weekday
 
-
-
 # ================================ Class ==================================== #
 class FellesBaseClass(Thread):
     """Class for performing asynchronous sampling
@@ -68,11 +66,11 @@ class FellesBaseClass(Thread):
     SAVE = False
     ReSTART = False
 
-    lock = Lock() # Lock
+    LOCK = Lock() # Lock
     FellesMetaData = {
         'idlig' : True, # The gui is updated, but data is not necessarily stored
         'sampling' : False, # The sampling of data should not start imediately
-        'label' : 'NoLabel', # Some unique string
+        'label' : None, # Some unique string
         'sample_speed' : 0.5, # Default sampling rate
         'unit' : '[]', # Unit of the sampled data
     } # Dictionary containing default meta data
@@ -143,8 +141,8 @@ class FellesBaseClass(Thread):
         self.__sfer__[hex(id(self))] =  ExtendedRef(self)
 
         self.ID = hex(id(self)) # ID used to look up objects (Will change for each run!)
-        
         self.resource = resource # This is the reference to the Adam resource
+
         # Create "metadata" dictionary based on the common FellesMetaData dict
         self.MetaData = { k : v for k,v in self.FellesMetaData.iteritems()}
         # If the arg "meta_data" contains a key that is already in the dict,
@@ -156,20 +154,20 @@ class FellesBaseClass(Thread):
 
         # Check the "resource_settings" from the user. 
         # Loop through all the standard settings (k,v) from the resource.
-        for k,v in resource_settings.iteritems():
+        for k,v in iter(self.resource):
             # If a one of the keys in the "resource" has been provided as an
             # argument in "resource_settings", the user wants to change
             # this setting.
             #
             # In this event the "resource" will be asked to change the setting
             # and report back.
-            #if self.resource.has_key(k):
-            self.resource[k] = resource_settings[k]
+            if resource_settings.has_key(k):
+                self.resource[k] = resource_settings[k]
                 # Add the new setting to the "MetaData"
-            self.MetaData[k] = self.resource[k]
+                self.MetaData[k] = self.resource[k]
             # Otherwise, add the un-changed resource setting to "MetaData"
-            #else:
-            #    self.MetaData[k] = v
+            else:
+                self.MetaData[k] = v
 
         # Now we add plot configurations to the "MetaData"
         for (k, v) in self.GuiMetaData.iteritems():
@@ -184,35 +182,35 @@ class FellesBaseClass(Thread):
             else:
                 self.MetaData[k] = v
 
+
         self.data = self.Data(self) # Dict object reading and writing data, capable of reporting to onClose        
         self.start() # target -> sample source -> self
 
     # ------------------------------- Method -------------------------------- #
     def CallResource(self, *args, **kwargs):
-        """
-        """
-        NotImplementedError("Should be implemented in children")
-#        return self.resource(*args, **kwargs)
+        return self.resource(*args, **kwargs)
 
     # ------------------------------- Method -------------------------------- #
     def run(self):
-        """ Method executed by "self.start()".
+        """ Class
+        Instance method executed by "self.start()". 
 
         This method performs the sampling
         """
         while FellesBaseClass.SAMPLE:
+            
             # Attempt to aquire lock on the resource
-            while not FellesBaseClass.lock.acquire():
-                pass
-            try:
-                s = self.CallResource()
-                t = FellesBaseClass.Timer()
-                self.data.Update(t, s) # Sample resource
-            except:
-                print "'%s' instance: '%s'; Failed to read meassurement at time %.2f " %(self.__class__.__name__, self['label'], FellesBaseClass.Timer())
-            finally:
-                FellesBaseClass.lock.release()
-
+            with FellesBaseClass.LOCK:
+                try:
+                    s = self.CallResource()
+                    t = FellesBaseClass.Timer()
+                    self.data.Update(t, s) # Sample resource
+                except:
+                    print "'%s' instance: '%s'; Failed to read meassurement at time %.2f " %(self.__class__.__name__, self['label'], FellesBaseClass.Timer())
+                finally:
+                    pass
+                    # TODO: Add verbose statement
+            # Go to sleep
             sleep(self['sample_speed'])
 
         # TODO: Implement method allowing "restart" aka. pause...
