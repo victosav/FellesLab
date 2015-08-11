@@ -56,8 +56,7 @@ class Sensor(FellesBaseClass):
     def CallResource(self):
         """
         """
-        msmnt = self.resource.get_analog_in(self['channel'], self['decimals'])
-        return msmnt
+        return  self.resource.get_analog_in(self['channel'], self['decimals'])
 
     # ------------------------------- Method -------------------------------- #
     def __repr__(self):
@@ -200,7 +199,7 @@ class SensorFrame(FellesFrame):
                                     self.panel, value='%s' %s['sample_speed'],
                                     initial=s['sample_speed'],
                                     min=s().resource.min, max=9.99,
-                                    size=wx.Size(50,22.5),
+                                    size=wx.Size(70,22.5),
                                     name='asdf', target=s.__setitem__,
                                     arg='sample_speed',
                                     source=self ) for s in self.sensors }

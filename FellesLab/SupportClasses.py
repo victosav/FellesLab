@@ -303,7 +303,7 @@ class DataStorage(object):
         """
         Method updating the history
         """
-        self['data'] = self.Scale(val)
+        self['data'] = self.owner['calibrationCurve'](val)
         self['time'] = time
 
         if self.owner.SAVE:

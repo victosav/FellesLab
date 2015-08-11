@@ -34,7 +34,7 @@ from random import random
 from GUI import FellesFrame, FellesButton, FellesTextInput, FellesLabel
 from FellesBase import FellesBaseClass
 from SupportClasses import ExtendedRef
-
+from mac_motor import Mac050
 # ================================ Class ==================================== #
 class Equipment(FellesBaseClass):
     """
@@ -78,17 +78,15 @@ class Pump(Equipment):
     # ------------------------------- Method -------------------------------- #
     def __init__(self, *args, **kwargs):
         super(Pump, self).__init__(*args, **kwargs)
-        self.SetSetpoint(0.0)
-        self.TurnOff()
-
+#        self.resource = Mac050(self.resource.serial, 2)
 
     # ------------------------------- Method -------------------------------- #
     def CreateGUI(self):
         return PumpFrame(self)
 
     # ------------------------------- Method -------------------------------- #
-    def GetMeassurements(self):
-        return 0.0#self.GetSpeed()#module.data['data'][-1]
+    def CallResource(self):
+        return self.GetSpeed()#resource.data['data'][-1]
 
     # ------------------------------- Method -------------------------------- #
     def TurnOn(self):
@@ -96,38 +94,39 @@ class Pump(Equipment):
         Method turning on pump
         """
         while not FellesBaseClass.lock.acquire():
-            pass
+                pass
         try:
-            self.module.set_motormode(1)
+            self.resource.set_motormode(1)
+            print "Pump status ON"
         except:
             self.TurnOn()
+            print "Failed to change pump status"
         finally:
-            FellesBaseClass.lock.release()
+            self.lock.release()
 
+        
     # ------------------------------- Method -------------------------------- #
     def TurnOff(self):
         """
         Method turning off pump
         """
         while not FellesBaseClass.lock.acquire():
-            pass
+                pass
         try:
-            self.module.set_motormode(0)
+            self.resource.set_motormode(0)
+            print "Pump status OFF"
         except:
             self.TurnOff()
+            print "Failed to change pump status"
         finally:
-            FellesBaseClass.lock.release()
-
+            self.lock.release()
 
     # ------------------------------- Method -------------------------------- #
     def GetSetpoint(self):
         """
         Read pump setpoint
         """
-        while not FellesBaseClass.lock.acquire():
-            pass        
-        self.cmd = self.module.get_setvelocity() # float
-        FellesBaseClass.lock.release()
+        self.cmd = self.resource.get_setvelocity() # This is a float
         return self.cmd
             
         
@@ -136,11 +135,21 @@ class Pump(Equipment):
         """
         Read the actual pump speed
         """
+
+        """
         while not FellesBaseClass.lock.acquire():
-            pass        
-        self.cmd = self.module.get_actualvelocity() 
-        FellesBaseClass.lock.release()
-        return cmd
+            print "Queuing"
+
+        try:
+            print "Trying"
+            self.cmd = self.resource.get_actualvelocity() 
+        except:
+            print "Failing"
+        finally:
+            self.lock.release()
+        """
+        self.cmd = self.resource.get_actualvelocity() # This is a string
+        return float(self.cmd)
 
     # ------------------------------- Method -------------------------------- #
     def GetTemperature(self):
@@ -160,17 +169,18 @@ class Pump(Equipment):
     def SetSetpoint(self, speed_rpm):
         """
         Set new pump setpoint
-        """
+
         while not FellesBaseClass.lock.acquire():
             pass
         try:
-            self.module.set_velocity(speed_rpm)
-            print "Pump speed setpoint changed to {rpm}".format(rpm=speed_rpm)
+            self.resource.set_velocity(speed_rpm)
         except:
-            self.SetSetPoint(speed_rpm)
+            self.SetSetpoint(speed_rpm)
         finally:
-            FellesBaseClass.lock.release()
-
+            self.lock.release()
+        """
+        self.resource.set_velocity(speed_rpm)
+        print "Pump speed setpoint changed to {rpm}".format(rpm=speed_rpm)
 
 # =============================== Class ====================================== #
 class PumpFrame(FellesFrame):
@@ -198,7 +208,7 @@ class PumpFrame(FellesFrame):
         """
         self.Pump = pump
 
-        super(PumpFrame, self).__init__( title=pump['label'])
+        super(PumpFrame, self).__init__( title=self.Pump['label'] )
 
         self.InitUI() # Create frame
         self.Show()   # Show frame
@@ -227,22 +237,21 @@ class PumpFrame(FellesFrame):
 
         # adding GUI widgets
         self.label_name = wx.StaticText(self.panel, label=self.GetName())
-        self.lables['label_setpoint'] = FellesLabel(self.panel,
-                                                   label='Speed setpoint [rpm]')
 
         self.lables = { 'spin_setpoint' : FellesTextInput(self.panel,
                                                      source = self,
-                                                     value ='{setPt}'.format(setPt=self.GetSetpoint()),
-                                                     initial=0,#float(self.GetSetpoint()),
+                                                     value =self.GetSetpoint(),
+                                                     initial=float(self.GetSpeed()),
                                                      min = self.Pump['min_velocity'],
                                                      max = self.Pump['max_velocity'],
-                                                     inc = 10,
+                                                     inc = 100,
                                                      name = 'Pump Setpoint',
                                                      target=self.SetSetpoint),
                        'label_description_speed' : FellesLabel(self.panel, label='%s Speed %s' %(self.Pump['label'], self.Pump['unit'])),
-                       'label_speed' : FellesLabel(self.panel, label='{setpt} {unit}'.format( setpt=self.Pump.GetSetpoint(),
-                                        unit=self.Pump['unit'] )) 
-                      }
+                       'label_speed' : FellesLabel(self.panel, label='{setpt} {unit}'.format( setpt= 0,#self.Pump.GetSetpoint(),
+                                        unit=self.Pump['unit'] )), 
+                      'label_setpoint' : FellesLabel(self.panel,
+                                                   label='Speed setpoint [rpm]') }
 
         # Buttons
         self.On  = FellesButton(self.panel, source=self, target=self.TurnOn,
@@ -322,8 +331,7 @@ class PumpFrame(FellesFrame):
         """
         self.lables['label_speed'].SetLabel( '{num} {unit}'.format(
                                            num=self.Pump.data['data'][-1],
-                                           unit=self.Pump['unit']),
-                                           )
+                                           unit=self.Pump['unit']) )
 
 #        pub.sendMessage( 'Plot.%s' %self.GetLabel() )
         self.top_sizer.Layout()

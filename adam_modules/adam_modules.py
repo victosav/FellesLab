@@ -302,7 +302,7 @@ class AnalogIn(AdamModule):
         Getter method
         TODO: Add exception checking if channel is out of range 
         """
-        modbus_base = self.analog_in_start_channel[0]
+        modbus_base = self.analog_in_start_channel
         return self.read_registers(modbus_base - 1, self.analog_in_number_of_channels) if not channel else self.read_register(modbus_base - 1 + channel, numberOfDecimals)
 
     # ------------------------------- Method -------------------------------- #

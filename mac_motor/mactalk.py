@@ -113,6 +113,7 @@ class Communications(object):
 
         BYTESIZE = 19
         message = translations.createcommand_read(address, parameter)
+
         values = self.sendmessage(message, BYTESIZE, True)
 
         if values == None:
@@ -138,44 +139,59 @@ class Mac050(Communications):
                    'min_acceleration' : 0, # %
                    'max_acceleration' : 100, # %
                    }
-    def __init__(self, *args, **kwargs):
 
+    # ------------------------------- Method -------------------------------- #    
+    def __init__(self,  *args, **kwargs):
         super(Mac050, self).__init__(*args, **kwargs)
+        
 
         self.metaData = {
-                      'min_velocity' : self.defaultData['min_velocity'],
-                      'max_velocity' : self.defaultData['max_velocity'],
-                      'min_speed': self.defaultData['min_speed'],
-                      'max_speed': self.defaultData['max_speed'],
-                      'min_acceleration' : self.defaultData['min_acceleration'],
-                      'max_acceleration' : self.defaultData['min_acceleration'],
-                      }
+            'baudrate' : 'asdf',#self.serial.baudrate,
+            'bytesize' : 'asdf',#self.serial.bytesize,
+            'parity' : 'asdf',#self.serial.parity,
+            'timeout' : 'asdf',#self.serial.timeout,
+            'channel': None,
+            'decimals' : 0,
+            'debug' : False,
+            'min_velocity' : self.defaultData['min_velocity'],
+            'max_velocity' : self.defaultData['max_velocity'],
+            'min_speed': self.defaultData['min_speed'],
+            'max_speed': self.defaultData['max_speed'],
+            'min_acceleration' : self.defaultData['min_acceleration'],
+            'max_acceleration' : self.defaultData['min_acceleration'],
+            }
 
-
-
-    def GetMetaData(self, key=None):
+    # ------------------------------- Method -------------------------------- #
+    def __setitem__(self, key, val):
         """
+        Configuration method for changing the following parameters:
+          port = str       # serial port name
+          baudrate = int   # 9600 (default) or 19200
+          bytesize = int   # 8 (default) or 16
+          parity   = str   # serial.PARITY_NONE (default)
+          stopbits = int   # 1 (default)
+          timeout  = float # 0.05 (default)
+          address          # this is the slave address number
+          mode = str       # minimalmodbus.MODE_RTU,   'rtu' (default) or
+                             minimalmodbus.MODE_ASCII, 'ascii' mode
 
+        The method is inked by __init__ when called as:
+            xxxModule(portname, slaveaddress, config={ key:val} )
+        using the keys listed above.
         """
-        if not key:
-            return self.metaData
+        self.metaData[key] = val
 
+    # ------------------------------- Method -------------------------------- #
+    def __iter__(self):
+        return self.metaData.iteritems()
+
+    # ------------------------------- Method -------------------------------- #
+    def __getitem__(self, key):
+        """
+        """
         return self.metaData[key]
 
 
-    def SetMetaData(self, key, val):
-        """
-        Method making it possible to update the meta data used to set limits of
-        spedd, acceleration etc.
-
-        :param key: string, one of the eays in the 'metaData' vaiable.
-        :param val: float, value to set the key.
-        """
-
-        if val > self.defaultData[key] or val < self.defaultData[key]:
-            raise ValueError("Key: '%s' can't be updated to: '%.2f',\n The limit is: '%.2f'" %(key,val,self.defaultData[key]))
-
-        self.metaData[key] = val
 
     def set_motormode(self, mode, parameter = 'motormode'):
         '''
@@ -198,7 +214,7 @@ class Mac050(Communications):
         '''
 
         pulses = constants.SPPS/constants.RPM*rpm
-        if rpm > self.metaData['max_velocity'] or rpm < self.metaData['min_velocity']:
+        if rpm > self['max_velocity'] or rpm < self['min_velocity']:
             raise  ValueError('rpm must be between 0 and 4000')
 
         else:
@@ -213,7 +229,7 @@ class Mac050(Communications):
 
         rpm = constants.RPMMAX/constants.PUMPMAX*pumpspeed
         pulses = constants.SPPS/constants.RPM*rpm
-        if pumpspeed <= self.metaData['max_speed'] and pumpspeed >= self.metaData['min_speed']:
+        if pumpspeed <= self['max_speed'] and pumpspeed >= self['min_speed']:
             self.write(pulses, self.address, self.PARAMETER[parameter])
 
         else:
@@ -226,7 +242,7 @@ class Mac050(Communications):
 
         acc = constants.SET_ACC/constants.PERC*perc
         pulses = constants.PPSS/constants.ACCEL*acc
-        if perc > self.metaData['max_acceleration'] or perc < self.metaData['min_acceleration']:
+        if perc > self['max_acceleration'] or perc < self['min_acceleration']:
             raise ValueError('acceleration is in %, value must be between 0 and 100')
             return 0
 
