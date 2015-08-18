@@ -16,10 +16,13 @@ o888o     `Y8bod8P'o888oo888o`Y8bod8P'8""888P'  o888ooooood8`Y888""8o `Y8bod8P'
 @license:      Free (GPL.v3)
 @requires:     Python 2.7.x or higher
 @since:        18.06.2015
-@version:      2.7
+@version:      0.9
 @todo 1.0:
 @change:
 @note:
+
+
+
 """
 __author__  = "Sigve Karolius"
 __email__   = "<firstname>ka<at>ntnu<dot>no"

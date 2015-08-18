@@ -35,7 +35,7 @@ from wx.lib.pubsub import pub
 import wxmplot
 
 from SupportClasses import ExtendedRef, DataStorage
-from FellesBase import FellesBaseClass
+from FellesBase import FellesBaseClass, synchronized
 from GUI import FellesFrame, FellesButton, FellesTextInput, FellesLabel
 from random import random
 # ================================ Class ==================================== #
@@ -53,17 +53,17 @@ class Sensor(FellesBaseClass):
         self.__sensors__[self.__class__].append(ExtendedRef(self)) # Add instance to references
 
     # ------------------------------- Method -------------------------------- #
-    def CallResource(self):
+    @synchronized
+    def CallResource(self, *args, **kwargs):
         """
         """
-        return  self.resource.get_analog_in(self['channel'], self['decimals'])
+        return self.resource.get_analog_in(self['channel'], self['decimals'])
 
     # ------------------------------- Method -------------------------------- #
     def __repr__(self):
         """
         """
-        return '<%s.%s sensor at %s>' % (
-            self.__class__.__resource__,
+        return '<%s sensor at %s>' % (
             self.__class__.__name__,
             self.ID
         )

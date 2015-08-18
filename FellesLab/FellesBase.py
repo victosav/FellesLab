@@ -34,6 +34,25 @@ import os
 from time import localtime
 from calendar import weekday
 
+
+# ------------------------- Decorator Method ---------------------------- #
+def synchronized(func):
+    """ Synchronization decorator
+    """
+    def wrap(f):
+        def newFunction(self,*args, **kwargs):
+
+            with self.__class__.LOCK:
+                try:
+                    return func(self, *args, **kwargs)
+                except:
+                    print "'%s' instance: '%s'; Failed to read meassurement at time %.2f " %(self.__class__.__name__, self['label'], FellesBaseClass.Timer())
+                finally:
+                    pass # Just for completeness
+        return newFunction
+    return wrap
+
+
 # ================================ Class ==================================== #
 class FellesBaseClass(Thread):
     """Class for performing asynchronous sampling
@@ -131,8 +150,8 @@ class FellesBaseClass(Thread):
         @param args:
         @param kwargs:
         
-        @ivar ID: 
-        @ivar MetaData: 
+        @ivar ID:
+        @ivar MetaData:
         @ivar data:
         """
         super(FellesBaseClass, self).__init__()
@@ -187,6 +206,7 @@ class FellesBaseClass(Thread):
         self.start() # target -> sample source -> self
 
     # ------------------------------- Method -------------------------------- #
+    @synchronized
     def CallResource(self, *args, **kwargs):
         return self.resource(*args, **kwargs)
 
@@ -198,18 +218,9 @@ class FellesBaseClass(Thread):
         This method performs the sampling
         """
         while FellesBaseClass.SAMPLE:
-            
-            # Attempt to aquire lock on the resource
-            with FellesBaseClass.LOCK:
-                try:
-                    s = self.CallResource()
-                    t = FellesBaseClass.Timer()
-                    self.data.Update(t, s) # Sample resource
-                except:
-                    print "'%s' instance: '%s'; Failed to read meassurement at time %.2f " %(self.__class__.__name__, self['label'], FellesBaseClass.Timer())
-                finally:
-                    pass
-                    # TODO: Add verbose statement
+            s = self.CallResource()(self)
+            t = FellesBaseClass.Timer()
+            self.data.Update(t, s) # Sample resource
             # Go to sleep
             sleep(self['sample_speed'])
 

@@ -300,9 +300,9 @@ class AnalogIn(AdamModule):
     def get_analog_in(self, channel=None, numberOfDecimals=0):
         """
         Getter method
-        TODO: Add exception checking if channel is out of range 
+        TODO: Add exception checking if channel is out of range
         """
-        modbus_base = self.analog_in_start_channel
+        modbus_base = self.analog_in_start_channel[0]
         return self.read_registers(modbus_base - 1, self.analog_in_number_of_channels) if not channel else self.read_register(modbus_base - 1 + channel, numberOfDecimals)
 
     # ------------------------------- Method -------------------------------- #
@@ -316,8 +316,8 @@ class AnalogIn(AdamModule):
     def get_type_analog_in(self, channel=None, numberOfDecimals = 0):
         """
         Getter method
-        
-        TODO: Add exception checking if channel is out of range 
+
+        TODO: Add exception checking if channel is out of range
         """
         return self.read_registers(self.type_analog_in_start_channel - 1, self.analog_in_number_of_channels) if not channel else self.read_register(self.type_analog_in_start_channel - 1 + channel, numberOfDecimals)
 

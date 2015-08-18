@@ -103,14 +103,14 @@ def main(GUI=False):
             'decimals' : 2,
          },
          meta_data = {
-            'label' : 'Temperature 1',
+            'label' : 'Temperature 2',
             'unit' : '[K]',
             'sample_speed' : 0.5,
          },
          data_processing = {
              'signalFiltering' : None, # Noise filter
              'signalProcessing' : None, # filter sensor output, Fourrier(?), Laplace(?)
-             'calibrationCurve' : lambda (x): x**2, # Calibration curve
+             'calibrationCurve' : lambda (x): x, # Calibration curve
          },
          gui_configuration = {
             'plot' : True,
