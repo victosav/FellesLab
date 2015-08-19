@@ -35,6 +35,12 @@ Registers Integers | read_registers()| 3 [or 4] | write_registers()| 16      |
 """
 
 import minimalmodbus
+from random import random
+
+import serial
+import platform
+from serial.tools import list_ports
+
 
 # ================================= Class =================================== #
 class DummySerial(object):
@@ -65,11 +71,14 @@ class DummyModbus(object):
     from random import random
 
     def __init__(self, *args, **kwargs):
-        self.slaveaddress = 'slaveaddress'
+        self.slaveaddress = 1
         self.portname = 'COMport'
         self.serial = DummySerial()
     # ------------------------------- Method -------------------------------- #
     def read_register(self, channel):
+        if channel == 2053 or channel == 2048:
+            return 1
+        
         return random()
     # ------------------------------- Method -------------------------------- #
     def read_registers(self, channel, number_of_channels):
@@ -106,22 +115,17 @@ class DummyModbus(object):
         pass
 
 # ================================= Class =================================== #
-class Device(minimalmodbus.Instrument, object):
+class Instrument(minimalmodbus.Instrument, object):
     """
     
     """
-    def __init__(self, *args, **kwargs):
-        super(Device, self).__init__(**kwargs)
+    # ------------------------------- Method -------------------------------- #
+    def __init__(self, portname, slaveaddress, mode=minimalmodbus.MODE_RTU):
+        super(Instrument, self).__init__(portname, slaveaddress, mode)
 
 # ================================= Class =================================== #
-class AlicatModule(Device):
+class AlicatModule(object):
     """
-      * Print port settings: stty --file=/dev/ttyUSB0
-      * Print all settings for port: stty --file=/dev/USB0 -a
-      * Reset port to default values: stty --file=/dev/ttyUSB0 sane
-      * Change port to raw behaviour: stty --file=/dev/ttyUSB0 raw
-      * and: stty --file=/dev/ttyUSB0 -echo -echoe -echok
-      * Change port baudrate: stty --file=/dev/ttyUSB0 19200
     """
 
     FLUIDS = {"Air":0, "Ar":1, "CH4":2, "CO":3, "CO2":4, "C2H6":5, "H2":6, 
@@ -148,13 +152,13 @@ class AlicatModule(Device):
             MODULE: Adam4019 etc...
             MODE: Dummy or Instrument
         """
-        addCls = {'Dummy': DummyModbus, 'Instrument': Device}[base]
+        addCls = {'Dummy': DummyModbus, 'Instrument': Instrument}[base]
         cls = type(cls.__name__ + '+' + addCls.__name__, (cls, addCls), {})
 
         return  super(AlicatModule, cls).__new__(cls)
 
     # ------------------------------- Method -------------------------------- #
-    def __init__(self, port="/dev/ttyUSB0", baudrate=19200, address="A", timeout=0.25):
+    def __init__(self, *args, **kwargs):
         """
         Connects with the appropriate USB / serial port.
 
@@ -173,7 +177,7 @@ class AlicatModule(Device):
             # Search for port
             # TODO: Implement possibility for adding a "hint" e.g. 'USB', use
             #       regex to match "hint" to portnames.
-            for port in list(scan_ports()):
+            for port in list(self.scan_ports()):
                 try:
                     super(AlicatModule, self).__init__(port, kwargs['slaveaddress'], mode=kwargs['mode'])
                     if self.is_correct_module():
@@ -183,73 +187,149 @@ class AlicatModule(Device):
         else:
             super(AlicatModule, self).__init__(kwargs['port'], kwargs['slaveaddress'], mode=kwargs['mode'])
 
+        self.metaData = {
+            'baudrate' : 'asdf',#self.serial.baudrate,
+            'bytesize' : 'asdf',#self.serial.bytesize,
+            'parity' : 'asdf',#self.serial.parity,
+            'timeout' : 'asdf',#self.serial.timeout,
+            'channel': None,
+            'decimals' : 0,
+            'debug' : False,
+        }
+
+    # ------------------------------- Method -------------------------------- #
+    def __setitem__(self, key, val):
+        """
+        Configuration method for changing the following parameters:
+          port = str       # serial port name
+          baudrate = int   # 9600 (default) or 19200
+          bytesize = int   # 8 (default) or 16
+          parity   = str   # serial.PARITY_NONE (default)
+          stopbits = int   # 1 (default)
+          timeout  = float # 0.05 (default)
+          address          # this is the slave address number
+          mode = str       # minimalmodbus.MODE_RTU,   'rtu' (default) or
+                             minimalmodbus.MODE_ASCII, 'ascii' mode
+
+        The method is inked by __init__ when called as:
+            xxxModule(portname, slaveaddress, config={ key:val} )
+        using the keys listed above.
+        """
+        self.metaData[key] = val
+
+    # ------------------------------- Method -------------------------------- #
+    def __iter__(self):
+        return self.metaData.iteritems()
+
+    # ------------------------------- Method -------------------------------- #
+    def __getitem__(self, key):
+        """
+        """
+        return self.metaData[key]
+
+    # ------------------------------- Method -------------------------------- #
+    @staticmethod
+    def scan_ports():
+        """
+        Returns a generator for all available serial ports.
+        """
+        system = platform.system()  # Checks the current operating system
+        if system == 'Windows':  # Windows
+            print('Windows system')
+            for i in range(256):
+                try:   
+                    serial_port = serial.Serial(i)
+                    serial_port.close()
+                    yield i
+                except serial.SerialException:
+                    pass
+        elif system == 'Linux' or 'Darwin':  # Linux or osX
+            print('Unix system')
+            for port in list_ports.comports():
+                yield port[0]
+
 # ================================= Class =================================== #
-class FlowMeter(AlicatModule):
+class AlicatFM(AlicatModule):
     """
     """
-    REGISTER = { 'ID': 65, 'setpoint': 24, 'gas': 46}
+    WRITE_REGISTER = { 'ID': 65, 'setpoint': 24, 'gas': 46 }
+    READ_REGISTER = { 'ID': 2053, 'setpoint': 2048, 'gas': 2054 ,
+                                        'pressure': 2040, 'temperature': 2042,
+                                         'vol_flow': 2044, 'mass_flow' : 2046,
+                                 'setpoint': 2048, 'totalized_massflow': 2051}
 
     # ------------------------------- Method -------------------------------- #
     def __init__(self, *args, **kwargs):
         """
         """
-        super(FlowMeter, self).__init__(*args, **kwargs)
+        super(AlicatFM, self).__init__(*args, **kwargs)
 
     # ------------------------------- Method -------------------------------- #
     def GetID(self):
         """
         """
-        ID = self.read_register(self.REGISTER['ID'])
-        return ID
+        return self.read_register(self.READ_REGISTER['ID'])
 
     # ------------------------------- Method -------------------------------- #
-    def SetID(self, val):
+    def GetPressure(self):
         """
         """
-        self.write_register(self.REGISTER['ID'], val)
+        return read_float(self.READ_REGISTER['pressure'])
+
+    # ------------------------------- Method -------------------------------- #
+    def GetTemperature(self):
+        """
+        """
+        return read_float(self.READ_REGISTER['temperature'])
 
     # ------------------------------- Method -------------------------------- #
     def GetSetpoint(self):
         """
         """
-        setpoint = self.read_register(self.REGISTER['setpoint'])
-        return setpoint
+        return self.read_float(self.READ_REGISTER['setpoint'])
 
-    # ------------------------------- Method -------------------------------- #
-    def SetSetpoint(self, val):
-        """
-        """
-        self.write_register(self.REGISTER['setpoint'], val)
-        
     # ------------------------------- Method -------------------------------- #
     def GetGas(self):
         """
         """
-        gas = self.read_register(self.REGISTER['gas'])
-        return gas
+        num = self.read_register(self.READ_REGISTER['gas'])
+        for k,v in self.FLUIDS.iteritems():
+            if v == num:
+                return k
 
     # ------------------------------- Method -------------------------------- #
-    def SetGas(self, gas, value):
+    def ChangeID(self, val):
         """
         """
-        self.write_register(self.REGISTER['gas'], self.FLUIDS[key])
+        self.write_register(self.WRITE_REGISTER['ID'], val)
+
+    # ------------------------------- Method -------------------------------- #
+    def ChangeSetpoint(self, val):
+        """
+        """
+        self.write_register(self.WRITE_REGISTER['setpoint'], val)
+
+    # ------------------------------- Method -------------------------------- #
+    def ChangeGas(self, gas, value):
+        """
+        """
+        self.write_register(self.WRITE_REGISTER['gas'], self.FLUIDS[key])
 
 # ================================= Class =================================== #
-class FlowController(AlicatModule):
+class AlicatFMC(AlicatFM):
     """
-    
     """
 
     MIN_FLOW_RATE = 0
-    MAX_FLOW_RATE = 64000 # 65535
+    MAX_FLOW_RATE = 64000 #
 
     # ------------------------------- Method -------------------------------- #
     def __init__(self, *args, **kwargs):
-        super(FlowController, self).__init__(*args, **kwargs)
+        super(AlicatFMC, self).__init__(*args, **kwargs)
 
-    # ------------------------------- Method -------------------------------- #
-    def set_flow_rate(self, flow_rate):
-        """
-        """
-        self.write_register(24, flow_rate)
+    def setFlowrate(self, rate):
+        self.write_register(self.WRITE_REGISTER['setpoint'], rate)
+    
+    def readFlowrate(self):
+        return random()
 

@@ -24,10 +24,11 @@ o888o     `Y8bod8P'o888oo888o`Y8bod8P'8""888P'  o888ooooood8`Y888""8o `Y8bod8P'
 """
 import os
 
+from FellesBase import FellesBaseClass
 from Equipment import Equipment, Pump
 from Sensors import Sensor, Temperature, Voltage, SensorFrame
-from Controllers import Controller
-from FellesBase import FellesBaseClass
+from Controllers import Controller, AlicatFlowController
+
 from GUI import FellesApp, FellesButton, FellesFrame, FellesLabel, FellesTextInput
 from SupportClasses import ExtendedRef, GuiUpdater, DataStorage
 
@@ -79,7 +80,7 @@ class MasterClass(object):
         """
         cls.App = FellesApp(cls)
         cls.gui = {}
-        for subCls in [Sensor, Equipment]:
+        for subCls in [Sensor, Equipment, Controller]:
             cls.gui[cls] = subCls.InitGUI()
         
         print "Framework is ready..."

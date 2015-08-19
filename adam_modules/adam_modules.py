@@ -44,8 +44,12 @@ __license__ = "GPL.v3"
 __date__      = "$Date: 2015-06-23 (Tue, 23 Jun 2015) $"
 
 import minimalmodbus
-from utils import scan_ports
 from random import random
+
+import serial
+import platform
+from serial.tools import list_ports
+
 
 # ================================= Class =================================== #
 class DummySerial(object):
@@ -189,7 +193,7 @@ class AdamModule(object):
             # Search for port
             # TODO: Implement possibility for adding a "hint" e.g. 'USB', use
             #       regex to match "hint" to portnames.
-            for port in list(scan_ports()):
+            for port in list(self.scan_ports()):
                 try:
                     super(AdamModule, self).__init__(port, kwargs['slaveaddress'], mode=kwargs['mode'])
                     if self.is_correct_module():
@@ -283,6 +287,28 @@ class AdamModule(object):
         else:
             print('Channel input outside available channels: [0, ' + str(number_of_channels) + ']')
             return False
+
+    # ------------------------------- Method -------------------------------- #
+    @staticmethod
+    def scan_ports():
+        """
+        Returns a generator for all available serial ports.
+        """
+        system = platform.system()  # Checks the current operating system
+        if system == 'Windows':  # Windows
+            print('Windows system')
+            for i in range(256):
+                try:   
+                    serial_port = serial.Serial(i)
+                    serial_port.close()
+                    yield i
+                except serial.SerialException:
+                    pass
+        elif system == 'Linux' or 'Darwin':  # Linux or osX
+            print('Unix system')
+            for port in list_ports.comports():
+                yield port[0]
+
 
 # ================================= Class =================================== #
 class AnalogIn(AdamModule):

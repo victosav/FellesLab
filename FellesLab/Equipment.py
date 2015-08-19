@@ -75,7 +75,6 @@ class Equipment(FellesBaseClass):
 # ================================ Class ==================================== #
 class Pump(Equipment):
     """
-
     """
 
     # ------------------------------- Method -------------------------------- #
@@ -107,7 +106,7 @@ class Pump(Equipment):
         finally:
             self.lock.release()
 
-        
+
     # ------------------------------- Method -------------------------------- #
     def TurnOff(self):
         """
@@ -139,18 +138,6 @@ class Pump(Equipment):
         Read the actual pump speed
         """
 
-        """
-        while not FellesBaseClass.lock.acquire():
-            print "Queuing"
-
-        try:
-            print "Trying"
-            self.cmd = self.resource.get_actualvelocity() 
-        except:
-            print "Failing"
-        finally:
-            self.lock.release()
-        """
         self.cmd = self.resource.get_actualvelocity() # This is a string
         return float(self.cmd)
 
@@ -160,7 +147,7 @@ class Pump(Equipment):
         Read pump temperature
         """
         pass
-#['PARAMETER', '__doc__', '__init__', '__module__', 'address', 'get_acceleration', 'get_actualvelocity', 'get_address', 'get_errorstatus', 'get_info', 'get_setvelocity', 'get_temperature', 'port', 'read', 'save_and_reset', 'sendmessage', 'set_acceleration', 'set_motormode', 'set_pumpspeed', 'set_velocity', 'unpackRequestedResponse', 'verbose', 'write']
+
     # ------------------------------- Method -------------------------------- #
     def GetAcceleration(self):
         """

@@ -40,8 +40,9 @@ __date__    = "$Date: 2015-06-23 (Tue, 23 Jun 2015) $"
 
 from adam_modules import Adam4019
 from mac_motor_module import Mac050
+from alicat_devices import AlicatFMC
 
-from FellesLab import MasterClass, Temperature, Voltage, Pump
+from FellesLab import MasterClass, Temperature, Voltage, Pump, AlicatFlowController
 
 
 
@@ -49,7 +50,8 @@ def main(GUI=False):
 
     module1 = Adam4019(base='Dummy')
     module2 = Adam4019(base='Dummy')
-#   module3 = Mac050(module1.serial, 1)
+    module3 = AlicatFMC(base='Dummy', portname='COMport', slaveaddress=1)
+#    module3 = Mac050(module1.serial, 1)
 
 
     Framework = MasterClass()
@@ -72,6 +74,28 @@ def main(GUI=False):
 #             'color': 'red',
 #            },
 #     )
+
+    a1 = AlicatFlowController(
+         resource = module3,
+         resource_settings = {
+            'channel' : 17, # Configure module, set channel etc...
+         },
+         meta_data = {
+            'label' : 'Flow Rate',
+            'unit' : '[ml/h]',
+            'sample_speed' : 0.5,
+         },
+         data_processing = {
+             'signalFiltering' : None, # Noise filter
+             'signalProcessing' : None, # filter sensor output, Fourrier(?), Laplace(?)
+             'calibrationCurve' : lambda (x): x, # Calibration curve
+         },
+         gui_configuration = {
+            'plot' : True,
+            'time_span' : 20, # seconds
+            'color': 'cyan',
+         },
+         )
 
     v1 = Voltage(
          resource = module1,

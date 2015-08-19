@@ -27,10 +27,18 @@ __license__ = "GPL.v3"
 __date__      = "$Date: 2015-06-23 (Tue, 23 Jun 2015) $"
 
 from SupportClasses import ExtendedRef, DataStorage
-from FellesBase import FellesBaseClass
-from GUI import FellesFrame, FellesButton, FellesTextInput, FellesLabel
+from FellesBase import FellesBaseClass, synchronized
+from GUI import FellesFrame, FellesButton, FellesTextInput, FellesLabel, FellesComboBox, FellesSlider
 
 from collections import defaultdict
+
+
+import wx
+from wx.lib.pubsub import pub
+from collections import defaultdict
+from random import random
+
+from alicat_devices import AlicatFMC
 
 # ================================ Class ==================================== #
 class Controller(FellesBaseClass):
@@ -40,28 +48,23 @@ class Controller(FellesBaseClass):
     __controllers__ = defaultdict(list)
     # ------------------------------- Method -------------------------------- #
     def __init__(self, *args, **kwargs):
-        super(Sensor, self).__init__(*args, **kwargs)
+        super(Controller, self).__init__(*args, **kwargs)
         self.__controllers__[self.__class__].append(ExtendedRef(self)) # Add instance to references
 
     # ------------------------------- Method -------------------------------- #
     @classmethod
     def InitGUI(cls):
         """
-        Method creating sensor frames for the sensors
+        Method creating GUI
         """
-        GUI = {}
-        for ControllerType,Instances in cls.Instances():
-            print "Creating GUI for Sensor: '%s'" %ControllerType.__class__.__name__
-            SensorGUI[ControllerType.__class__.__name__] = SensorFrame(
-                                         sensors = Instances ,
-                                         title = ControllerType.__class__.__name__ ,
-                                         )
+        eGUI = {}
+        for ref, instnts in cls.__controllers__.iteritems():
+            for inst in instnts:
+                eGUI[inst['label']] = inst().CreateGUI()
 
-        return GUI
+            print "Creating GUI for Controller: '%s'" %ref.__name__
 
-    # ------------------------------- Method -------------------------------- #
-    def GetMeassurements(self):
-        return self.module.get_analog_in()
+        return eGUI
 
     # ------------------------------- Method -------------------------------- #
     def __repr__(self):
@@ -70,6 +73,30 @@ class Controller(FellesBaseClass):
             self.__class__.__name__,
             self.ID
         )
+
+# =============================== Class ====================================== #
+class AlicatFlowController(Controller):
+    """
+    """
+
+    # ------------------------------- Method -------------------------------- #
+    def __init__(self, *args, **kwargs):
+        """
+        """
+        super(AlicatFlowController, self).__init__(*args, **kwargs)
+
+    # ------------------------------- Method -------------------------------- #
+    @synchronized
+    def CallResource(self):
+        return self.resource.readFlowrate()
+
+    # ------------------------------- Method -------------------------------- #
+    def CreateGUI(self):
+        """
+        """
+        return AlicatFrame(self)
+
+
 
 # =============================== Class ====================================== #
 class AlicatFrame(FellesFrame):
@@ -89,10 +116,11 @@ class AlicatFrame(FellesFrame):
 
     """
     # ------------------------------- Method --------------------------------- #
-    def __init__(self):
+    def __init__(self, module, parent=None, debug=False, *args, **kwargs):
         """
         """
-        self.resource = resource()
+        self.Module = module
+
         super(AlicatFrame, self).__init__()
 
         self.InitUI()
@@ -117,10 +145,10 @@ class AlicatFrame(FellesFrame):
         self.title_sizer = FellesLabel(self.panel, label='Title')
         self.combo_box = FellesComboBox(self.panel, id=wx.ID_ANY,
                                          size=wx.DefaultSize,
-                                         choices=self.resource.FLUIDS.keys(),
+                                         choices=self.Module.resource.FLUIDS.keys(),
                                          style=wx.CB_DROPDOWN|wx.CB_READONLY,
-                                         value="%s"%self.resource.GetGas(),
-                                         source=self, target=self.SelectGas )
+                                         value="%s"%self.Module.resource.GetGas(),
+                                         source=self, target=self.Module.resource.ChangeGas )
 
         self.smpl_speed = FellesTextInput(self.panel, value='%s' %1,
                                           initial=1, min=0, max=10,
@@ -132,7 +160,7 @@ class AlicatFrame(FellesFrame):
 
         self.lble_speed = FellesLabel(self.panel, label='Sampling rate')
         self.valvLabel = FellesLabel(self.panel, label='Valve %')
-        self.valvSlder = FellesSlider(self.panel, source=self, target=self.setFlowrate)
+        self.valvSlder = FellesSlider(self.panel, source=self, target=self.Module.resource.setFlowrate)
 
         self.labels = ['lables', 'Pressure', 'Temperature', 'Flow']
         self.Gridlabels = ['label', 'value', 'unit']
@@ -193,15 +221,8 @@ class AlicatFrame(FellesFrame):
 
     # ------------------------------- Method --------------------------------- #
     def UpdateFrame(self, sender=None, args=None):
+        """ Method updating GUI
         """
-        Method for updating GUI
-        """
-        self.lables['label_speed'].SetLabel( '{num} {unit}'.format(
-                                           num=self.Pump.data['data'][-1],
-                                           unit=self.Pump['unit']),
-                                           )
-
-#        pub.sendMessage( 'Plot.%s' %self.GetLabel() )
         self.top_sizer.Layout()
 
     # ------------------------------- Method --------------------------------- #
@@ -209,13 +230,9 @@ class AlicatFrame(FellesFrame):
         print event
 
     # ------------------------------- Method --------------------------------- #
-    def setFlowrate(self, event):
+    def ChangeSetpoint(self, event):
         print event
 
     # ------------------------------- Method --------------------------------- #
     def SelectGas(self, event):
-        self.resource.SetGas(event)
-
-    # ------------------------------- Method --------------------------------- #
-    def UpdateFrame(self, event):
-        pass
+        self.Module.ChangeGas(event)

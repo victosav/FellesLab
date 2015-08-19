@@ -124,16 +124,16 @@ class FellesBaseClass(Thread):
 
                     class Test(object):
 
-                    dct = {'a':1,'b':2}
+                      dct = {'a':1,'b':2}
 
-                    def __call__(self):
-                    return 3
+                      def __call__(self):
+                        return 3
 
-                    def __iter__(self):
-                    for (key, val) in self.dct.iteritems():
-                        yield key, val
+                      def __iter__(self):
+                        for (key, val) in self.dct.iteritems():
+                          yield key, val
 
-                    def __getitem__(self, key):
+                      def __getitem__(self, key):
                         return dct[key]
 
                     f = Test()
