@@ -224,24 +224,38 @@ class PumpFrame(FellesFrame):
             self.Pump.data['data'].append(random())
             self.Pump.data['time'].append(random())
 
-
         # adding GUI widgets
         self.label_name = wx.StaticText(self.panel, label=self.GetName())
 
-        self.lables = { 'spin_setpoint' : FellesTextInput(self.panel,
-                                                     source = self,
-                                                     value =self.GetSetpoint(),
-                                                     initial=float(self.GetSpeed()),
-                                                     min = self.Pump['min_velocity'],
-                                                     max = self.Pump['max_velocity'],
-                                                     inc = 100,
-                                                     name = 'Pump Setpoint',
-                                                     target=self.SetSetpoint),
-                       'label_description_speed' : FellesLabel(self.panel, label='%s Speed %s' %(self.Pump['label'], self.Pump['unit'])),
-                       'label_speed' : FellesLabel(self.panel, label='{setpt} {unit}'.format( setpt= 0,#self.Pump.GetSetpoint(),
-                                        unit=self.Pump['unit'] )), 
-                      'label_setpoint' : FellesLabel(self.panel,
-                                                   label='Speed setpoint [rpm]') }
+        self.lables = { 
+          'spin_setpoint' : FellesTextInput(
+                              self.panel,
+                              source = self,
+                              value =self.GetSetpoint(),
+                              initial=float(self.GetSpeed()),
+                              min = self.Pump['min_velocity'],
+                              max = self.Pump['max_velocity'],
+                              inc = 100,
+                              name = 'Pump Setpoint',
+                              target=self.SetSetpoint,
+                            ),
+          'label_description_speed' : FellesLabel(
+                              self.panel, 
+                              label='%s Speed %s' %(
+                                          self.Pump['label'], 
+                                          self.Pump['unit']),
+                                      ),
+          'label_speed' : FellesLabel(
+                              self.panel, 
+                              label='{setpt} {unit}'.format( 
+                              setpt= 0,#self.Pump.GetSetpoint(),
+                              unit=self.Pump['unit']),
+                          ), 
+          'label_setpoint' : FellesLabel(
+                              self.panel,
+                              label='Speed setpoint [rpm]',
+                            ),
+        }
 
         # Buttons
         self.On  = FellesButton(self.panel, source=self, target=self.TurnOn,

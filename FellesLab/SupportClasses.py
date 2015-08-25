@@ -254,7 +254,8 @@ class DataStorage(object):
         self.owner = owner#FindSensor.FindID(ownerID) # Object whose data will be saved
         
         self.File = TemporaryFile()
-        self.File.write('time, %s %s\n' %(self.owner['label'],self.owner['unit']))
+        self.File.write('time, %s %s\n' %(self.owner['label'], 
+                                          self.owner['unit']))
 
         self.Resize()
 
@@ -300,8 +301,7 @@ class DataStorage(object):
 
     # ------------------------------- Method -------------------------------- #
     def Update(self, time, val):
-        """
-        Method updating the history
+        """ Method updating the history
         """
         self['data'] = val #self.owner['calibrationCurve'](val)
         self['time'] = time

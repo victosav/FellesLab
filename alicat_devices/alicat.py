@@ -76,10 +76,11 @@ class DummyModbus(object):
         self.serial = DummySerial()
     # ------------------------------- Method -------------------------------- #
     def read_register(self, channel):
-        if channel == 2053 or channel == 2048:
-            return 1
-        
-        return random()
+        return 1
+#        if channel == 2054 or channel == 2048:
+#            return 1
+#        
+#        return random()
     # ------------------------------- Method -------------------------------- #
     def read_registers(self, channel, number_of_channels):
         return list()

@@ -39,12 +39,10 @@ __license__ = "GPL.v3"
 __date__    = "$Date: 2015-06-23 (Tue, 23 Jun 2015) $"
 
 from adam_modules import Adam4019
-from mac_motor_module import Mac050
+from mac_motor import Mac050
 from alicat_devices import AlicatFMC
 
 from FellesLab import MasterClass, Temperature, Voltage, Pump, AlicatFlowController
-
-
 
 def main(GUI=False):
 
@@ -81,7 +79,7 @@ def main(GUI=False):
             'channel' : 17, # Configure module, set channel etc...
          },
          meta_data = {
-            'label' : 'Flow Rate',
+            'label' : 'Flow Controller: Permeate',
             'unit' : '[ml/h]',
             'sample_speed' : 0.5,
          },

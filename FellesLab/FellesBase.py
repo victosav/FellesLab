@@ -25,7 +25,7 @@ __author__  = "Sigve Karolius"
 __email__   = "<firstname>ka<at>ntnu<dot>no"
 __license__ = "GPL.v3"
 __date__      = "$Date: 2015-06-23 (Tue, 23 Jun 2015) $"
-
+#0123456789012345678901234567890123456789012345678901234567890123456789012345678
 from time import time, sleep
 from SupportClasses import ExtendedRef, DataStorage
 from collections import defaultdict
@@ -202,7 +202,7 @@ class FellesBaseClass(Thread):
                 self.MetaData[k] = v
 
 
-        self.data = self.Data(self) # Dict object reading and writing data, capable of reporting to onClose        
+        self.data = self.Data(self) # Dict object reading and writing data
         self.start() # target -> sample source -> self
 
     # ------------------------------- Method -------------------------------- #
@@ -217,6 +217,8 @@ class FellesBaseClass(Thread):
 
         This method performs the sampling
         """
+        # TODO: Write a decorator @datastorage to allow automatical storage
+        #       of the sampled data without an explicit call to data.Update...
         while FellesBaseClass.SAMPLE:
             s = self.CallResource()(self)
             t = FellesBaseClass.Timer()

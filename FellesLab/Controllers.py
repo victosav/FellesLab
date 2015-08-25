@@ -26,18 +26,14 @@ __email__   = "<firstname>ka<at>ntnu<dot>no"
 __license__ = "GPL.v3"
 __date__      = "$Date: 2015-06-23 (Tue, 23 Jun 2015) $"
 
-from SupportClasses import ExtendedRef, DataStorage
-from FellesBase import FellesBaseClass, synchronized
-from GUI import FellesFrame, FellesButton, FellesTextInput, FellesLabel, FellesComboBox, FellesSlider
-
-from collections import defaultdict
-
-
 import wx
 from wx.lib.pubsub import pub
 from collections import defaultdict
 from random import random
 
+from SupportClasses import ExtendedRef, DataStorage
+from FellesBase import FellesBaseClass, synchronized
+from GUI import FellesFrame, FellesButton, FellesTextInput, FellesLabel, FellesComboBox, FellesSlider
 from alicat_devices import AlicatFMC
 
 # ================================ Class ==================================== #
@@ -121,12 +117,13 @@ class AlicatFrame(FellesFrame):
         """
         self.Module = module
 
-        super(AlicatFrame, self).__init__()
-
+        super(AlicatFrame, self).__init__( title=self.Module['label'] )
+    
         self.InitUI()
-
+        self.Show()   # Show frame
+       
     def InitUI(self):
-        """
+        """ Method creating widgets
         """
         # Add a panel so it looks the correct on all platforms
         self.panel = wx.Panel(self, wx.ID_ANY)
@@ -206,8 +203,8 @@ class AlicatFrame(FellesFrame):
         center_sizer.Add(valv_sizer, proportion=0, flag=wx.ALIGN_RIGHT, border=5)
 
         # Overall arrangement of the panel
-        top_sizer.Add(title_sizer, proportion=0, flag=wx.CENTER|wx.EXPAND|wx.TOP)
-        top_sizer.Add(wx.StaticLine(self.panel), 0, wx.ALL|wx.EXPAND, 5)
+        top_sizer.Add(title_sizer, proportion=0, flag=wx.CENTER, border=5)
+        top_sizer.Add(wx.StaticLine(self.panel), proportion=0, flag=wx.ALL|wx.EXPAND, border=5)
         top_sizer.Add(first_sizer, proportion=0, flag=wx.CENTER|wx.EXPAND, border=5)
         top_sizer.Add(center_sizer, proportion=0, flag=wx.ALL|wx.CENTER, border=5)
         top_sizer.Add(last_sizer, proportion=0, flag=wx.ALIGN_LEFT, border=5)

@@ -475,7 +475,9 @@ class FellesComboBox(wx.ComboBox):
 # =============================== Class ====================================== #
 class FellesLabel(wx.StaticText):
     """
-    Sugar class, should be expanded to make it easier to change font
+    Sugar class.
+    
+    TODO: expand class to make it easier to change font
     """
     # ------------------------------- Method --------------------------------- #
     def __init__(self, *args, **kwargs):
