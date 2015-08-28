@@ -85,7 +85,7 @@ def main(GUI=False):
          },
          data_processing = {
              'signalFiltering' : None, # Noise filter
-             'signalProcessing' : None, # filter sensor output, Fourrier(?), Laplace(?)
+             'signalProcessing' : None, # filter sensor output, Fourier(?), Laplace(?)
              'calibrationCurve' : lambda (x): x, # Calibration curve
          },
          gui_configuration = {

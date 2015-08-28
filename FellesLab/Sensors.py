@@ -118,6 +118,23 @@ class Pressure(Sensor):
     def __init__(self, *args, **kwargs):
         super(Pressure, self).__init__(*args, **kwargs)
 
+# ================================ Class ==================================== #
+class Consentration(Sensor):
+    """
+        Syntactic sugar...
+    """
+    # ------------------------------- Method -------------------------------- #
+    def __init__(self, *args, **kwargs):
+        super(Consentration, self).__init__(*args, **kwargs)
+
+# ================================ Class ==================================== #
+class Humidity(Sensor):
+    """
+        Syntactic sugar...
+    """
+    # ------------------------------- Method -------------------------------- #
+    def __init__(self, *args, **kwargs):
+        super(Humidity, self).__init__(*args, **kwargs)
 
 # =============================== Class ====================================== #
 class SensorFrame(FellesFrame):
