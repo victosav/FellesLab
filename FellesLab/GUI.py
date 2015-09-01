@@ -367,6 +367,7 @@ class FellesComboBox(wx.wx.ComboBox):
         if not self.arg:
             self.target(event.GetEventObject().GetValue())
         else:
+            print 'self.arg = ',self.arg
             self.target(self.arg, event.GetEventObject().GetValue())
 
 
@@ -423,7 +424,9 @@ class FellesTextInput(wx.SpinCtrlDouble): #(wx.SpinCtrl):
         if not self.arg:
             self.target(event.GetEventObject().GetValue())
         else:
+            # print 'self.arg = ',self.arg
             self.target(self.arg, event.GetEventObject().GetValue())
+            # self.target(event.GetEventObject().GetValue())
 
 # =============================== Class ====================================== #
 class FellesSlider(wx.Slider):

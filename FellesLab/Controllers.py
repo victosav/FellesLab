@@ -223,7 +223,7 @@ class AlicatFrame(FellesFrame):
         self.top_sizer.Layout()
 
     # ------------------------------- Method --------------------------------- #
-    def setSampleSpeed(self, event):
+    def setSampleSpeed(self, args, event):
         print event
 
     # ------------------------------- Method --------------------------------- #
@@ -232,4 +232,6 @@ class AlicatFrame(FellesFrame):
 
     # ------------------------------- Method --------------------------------- #
     def SelectGas(self, event):
+        # print 'Hei du skifter gass!'
+        # print 'event = ',event
         self.Module.ChangeGas(event)

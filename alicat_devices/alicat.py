@@ -10,7 +10,7 @@ o888o     `Y8bod8P'o888oo888o`Y8bod8P'8""888P'  o888ooooood8`Y888""8o `Y8bod8P'
 
 
 @summary:      Python driver for Alicat mass flow controller devices
-@author:       Sigve Karolius
+@author:       Sigve Karolius and Arne Tobias Elve
 @organization: Department of Chemical Engineering, NTNU, Norway
 @contact:      sigveka@ntnu.no
 @license:      Free (GPL.v3)
@@ -310,11 +310,18 @@ class AlicatFM(AlicatModule):
         """
         self.write_register(self.WRITE_REGISTER['setpoint'], val)
 
+    # # ------------------------------- Method -------------------------------- #
+    # def ChangeGas(self, gas, value): # Sigve fail
+    #     """
+    #     """
+    #     self.write_register(self.WRITE_REGISTER['gas'], self.FLUIDS[key])
+
     # ------------------------------- Method -------------------------------- #
-    def ChangeGas(self, gas, value):
+    def ChangeGas(self, gas):
         """
         """
-        self.write_register(self.WRITE_REGISTER['gas'], self.FLUIDS[key])
+        # print 'gas = ',gas
+        self.write_register(self.WRITE_REGISTER['gas'], self.FLUIDS[gas])
 
 # ================================= Class =================================== #
 class AlicatFMC(AlicatFM):
