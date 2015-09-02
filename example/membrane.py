@@ -43,7 +43,7 @@ from mac_motor import Mac050
 from alicat_devices import AlicatFMC
 
 from FellesLab import MasterClass, Temperature, Voltage, Pump, AlicatFlowController, Pressure
-from FellesLab import Consentration, Humidity
+from FellesLab import Consentration, Humidity, AlicatPressureController
 
 def main(GUI=False):
 
@@ -57,161 +57,162 @@ def main(GUI=False):
 
     Framework = MasterClass()
 
-    p1 = Pressure(
-        resource = module1,
-        resource_settings = {'channel': 0,},
-        meta_data = {
-            'label' : 'Pressure transmitter: gas feed',
-            'unit'  : '[bara]',
-            'sample_speed' : 0.5,
-        },
-        data_processing = {
-             'signalFiltering' : None, # Noise filter
-             'signalProcessing' : None, # filter sensor output, Fourrier(?), Laplace(?)
-             'calibrationCurve' : lambda (x): x, # Calibration curve
-         },
-         gui_configuration = {
-            'plot' : True,
-            'time_span' : 20, # seconds
-            'color': 'green',
-         },
-        )
+    # p1 = Pressure(
+    #     resource = module1,
+    #     resource_settings = {'channel': 0,},
+    #     meta_data = {
+    #         'label' : 'Pressure transmitter: gas feed',
+    #         'unit'  : '[bara]',
+    #         'sample_speed' : 0.5,
+    #     },
+    #     data_processing = {
+    #          'signalFiltering' : None, # Noise filter
+    #          'signalProcessing' : None, # filter sensor output, Fourrier(?), Laplace(?)
+    #          'calibrationCurve' : lambda (x): x, # Calibration curve
+    #      },
+    #      gui_configuration = {
+    #         'plot' : True,
+    #         'time_span' : 20, # seconds
+    #         'color': 'green',
+    #      },
+    #     )
 
-    p2 = Pressure(
-        resource = module1,
-        resource_settings = {'channel': 1,},
-        meta_data = {
-            'label' : 'Pressure transmitter: gas product',
-            'unit'  : '[bara]',
-            'sample_speed' : 0.5,
-        },
-        data_processing = {
-             'signalFiltering' : None, # Noise filter
-             'signalProcessing' : None, # filter sensor output, Fourrier(?), Laplace(?)
-             'calibrationCurve' : lambda (x): x, # Calibration curve
-         },
-         gui_configuration = {
-            'plot' : True,
-            'time_span' : 20, # seconds
-            'color': 'green',
-         },
-        )
+    # p2 = Pressure(
+    #     resource = module1,
+    #     resource_settings = {'channel': 1,},
+    #     meta_data = {
+    #         'label' : 'Pressure transmitter: gas product',
+    #         'unit'  : '[bara]',
+    #         'sample_speed' : 0.5,
+    #     },
+    #     data_processing = {
+    #          'signalFiltering' : None, # Noise filter
+    #          'signalProcessing' : None, # filter sensor output, Fourrier(?), Laplace(?)
+    #          'calibrationCurve' : lambda (x): x, # Calibration curve
+    #      },
+    #      gui_configuration = {
+    #         'plot' : True,
+    #         'time_span' : 20, # seconds
+    #         'color': 'green',
+    #      },
+    #     )
 
-    p3 = Pressure(
-        resource = module1,
-        resource_settings = {'channel': 2,},
-        meta_data = {
-            'label' : 'Pressure transmitter: water feed',
-            'unit'  : '[bara]',
-            'sample_speed' : 0.5,
-        },
-        data_processing = {
-             'signalFiltering' : None, # Noise filter
-             'signalProcessing' : None, # filter sensor output, Fourrier(?), Laplace(?)
-             'calibrationCurve' : lambda (x): x, # Calibration curve
-         },
-         gui_configuration = {
-            'plot' : True,
-            'time_span' : 20, # seconds
-            'color': 'green',
-         },
-        )
+    # p3 = Pressure(
+    #     resource = module1,
+    #     resource_settings = {'channel': 2,},
+    #     meta_data = {
+    #         'label' : 'Pressure transmitter: water feed',
+    #         'unit'  : '[bara]',
+    #         'sample_speed' : 0.5,
+    #     },
+    #     data_processing = {
+    #          'signalFiltering' : None, # Noise filter
+    #          'signalProcessing' : None, # filter sensor output, Fourrier(?), Laplace(?)
+    #          'calibrationCurve' : lambda (x): x, # Calibration curve
+    #      },
+    #      gui_configuration = {
+    #         'plot' : True,
+    #         'time_span' : 20, # seconds
+    #         'color': 'green',
+    #      },
+    #     )
 
-    p4= Pressure(
-        resource = module1,
-        resource_settings = {'channel': 3,},
-        meta_data = {
-            'label' : 'Pressure transmitter: water product',
-            'unit'  : '[bara]',
-            'sample_speed' : 0.5,
-        },
-        data_processing = {
-             'signalFiltering' : None, # Noise filter
-             'signalProcessing' : None, # filter sensor output, Fourrier(?), Laplace(?)
-             'calibrationCurve' : lambda (x): x, # Calibration curve
-         },
-         gui_configuration = {
-            'plot' : True,
-            'time_span' : 20, # seconds
-            'color': 'green',
-         },
-        )
-
-
-    c1 = Consentration(
-         resource = module1,
-         resource_settings = {
-            'channel' : 4, # Configure module, set channel etc...
-            'decimals' : 1,
-         },
-         meta_data = {
-            'label' : 'CO_2 sensor',
-            'unit' : '[%]',
-            'sample_speed' : 0.5,
-         },
-         data_processing = {
-             'signalFiltering' : None, # Noise filter
-             'signalProcessing' : None, # filter sensor output, Fourrier(?), Laplace(?)
-             'calibrationCurve' : lambda (x): x, # Calibration curve
-         },
-         gui_configuration = {
-            'plot' : True,
-            'time_span' : 20, # seconds
-            'color': 'cyan',
-         },
-    )
-
-    h1 = Humidity(
-        resource = module1,
-        resource_settings = {
-            'channel' : 5, # Configure module, set channel etc...
-            'decimals' : 1,
-        },
-        meta_data = {
-            'label' : 'Humidity sensor',
-            'unit' : '[%]',
-            'sample_speed' : 0.5,
-        },
-        data_processing = {
-            'signalFiltering' : None, # Noise filter
-            'signalProcessing' : None, # filter sensor output, Fourrier(?), Laplace(?)
-            'calibrationCurve' : lambda (x): x, # Calibration curve
-        },
-        gui_configuration = {
-            'plot' : True,
-            'time_span' : 20, # seconds
-            'color': 'cyan',
-        },
-    )
+    # p4= Pressure(
+    #     resource = module1,
+    #     resource_settings = {'channel': 3,},
+    #     meta_data = {
+    #         'label' : 'Pressure transmitter: water product',
+    #         'unit'  : '[bara]',
+    #         'sample_speed' : 0.5,
+    #     },
+    #     data_processing = {
+    #          'signalFiltering' : None, # Noise filter
+    #          'signalProcessing' : None, # filter sensor output, Fourrier(?), Laplace(?)
+    #          'calibrationCurve' : lambda (x): x, # Calibration curve
+    #      },
+    #      gui_configuration = {
+    #         'plot' : True,
+    #         'time_span' : 20, # seconds
+    #         'color': 'green',
+    #      },
+    #     )
 
 
-    t1 = Temperature(
-         resource = module1,
-         resource_settings = {
-            'channel' : 6, # Configure module, set channel etc...
-            'decimals' : 1,
-         },
-         meta_data = {
-            'label' : 'Humidity sensor temperature',
-            'unit' : '[Celcius]',
-            'sample_speed' : 0.5,
-         },
-         data_processing = {
-             'signalFiltering' : None, # Noise filter
-             'signalProcessing' : None, # filter sensor output, Fourrier(?), Laplace(?)
-             'calibrationCurve' : lambda (x): x, # Calibration curve
-         },
-         gui_configuration = {
-            'plot' : True,
-            'time_span' : 20, # seconds
-            'color': 'blue',
-         },
-    )
+    # c1 = Consentration(
+    #      resource = module1,
+    #      resource_settings = {
+    #         'channel' : 4, # Configure module, set channel etc...
+    #         'decimals' : 1,
+    #      },
+    #      meta_data = {
+    #         'label' : 'CO_2 sensor',
+    #         'unit' : '[%]',
+    #         'sample_speed' : 0.5,
+    #      },
+    #      data_processing = {
+    #          'signalFiltering' : None, # Noise filter
+    #          'signalProcessing' : None, # filter sensor output, Fourrier(?), Laplace(?)
+    #          'calibrationCurve' : lambda (x): x, # Calibration curve
+    #      },
+    #      gui_configuration = {
+    #         'plot' : True,
+    #         'time_span' : 20, # seconds
+    #         'color': 'cyan',
+    #      },
+    # )
+
+    # h1 = Humidity(
+    #     resource = module1,
+    #     resource_settings = {
+    #         'channel' : 5, # Configure module, set channel etc...
+    #         'decimals' : 1,
+    #     },
+    #     meta_data = {
+    #         'label' : 'Humidity sensor',
+    #         'unit' : '[%]',
+    #         'sample_speed' : 0.5,
+    #     },
+    #     data_processing = {
+    #         'signalFiltering' : None, # Noise filter
+    #         'signalProcessing' : None, # filter sensor output, Fourrier(?), Laplace(?)
+    #         'calibrationCurve' : lambda (x): x, # Calibration curve
+    #     },
+    #     gui_configuration = {
+    #         'plot' : True,
+    #         'time_span' : 20, # seconds
+    #         'color': 'cyan',
+    #     },
+    # )
+
+
+    # t1 = Temperature(
+    #      resource = module1,
+    #      resource_settings = {
+    #         'channel' : 6, # Configure module, set channel etc...
+    #         'decimals' : 1,
+    #      },
+    #      meta_data = {
+    #         'label' : 'Humidity sensor temperature',
+    #         'unit' : '[Celcius]',
+    #         'sample_speed' : 0.5,
+    #      },
+    #      data_processing = {
+    #          'signalFiltering' : None, # Noise filter
+    #          'signalProcessing' : None, # filter sensor output, Fourrier(?), Laplace(?)
+    #          'calibrationCurve' : lambda (x): x, # Calibration curve
+    #      },
+    #      gui_configuration = {
+    #         'plot' : True,
+    #         'time_span' : 20, # seconds
+    #         'color': 'blue',
+    #      },
+    # )
 
     a1 = AlicatFlowController(
          resource = module3,
          resource_settings = {
-            'channel' : 17, # Configure module, set channel etc...
+            'channel' : 2040, # Configure module, set channel etc...
+            'setpoint': 0,
          },
          meta_data = {
             'label' : 'Flow Controller: CO_2',
@@ -230,27 +231,27 @@ def main(GUI=False):
          },
          )
 
-    a2 = AlicatFlowController(
-         resource = module4,
-         resource_settings = {
-            'channel' : 17, # Configure module, set channel etc...
-         },
-         meta_data = {
-            'label' : 'Flow Controller: N_2',
-            'unit' : '[ml/h]',
-            'sample_speed' : 0.5,
-         },
-         data_processing = {
-             'signalFiltering' : None, # Noise filter
-             'signalProcessing' : None, # filter sensor output, Fourier(?), Laplace(?)
-             'calibrationCurve' : lambda (x): x, # Calibration curve
-         },
-         gui_configuration = {
-            'plot' : True,
-            'time_span' : 20, # seconds
-            'color': 'black',
-         },
-         )
+    # a2 = AlicatPressureController(
+    #      resource = module4,
+    #      resource_settings = {
+    #         'channel' : 17, # Configure module, set channel etc...
+    #      },
+    #      meta_data = {
+    #         'label' : 'Flow Controller: N_2',
+    #         'unit' : '[ml/h]',
+    #         'sample_speed' : 0.5,
+    #      },
+    #      data_processing = {
+    #          'signalFiltering' : None, # Noise filter
+    #          'signalProcessing' : None, # filter sensor output, Fourier(?), Laplace(?)
+    #          'calibrationCurve' : lambda (x): x, # Calibration curve
+    #      },
+    #      gui_configuration = {
+    #         'plot' : True,
+    #         'time_span' : 20, # seconds
+    #         'color': 'black',
+    #      },
+         # )
 
     if GUI:
         Framework.InitGUI()

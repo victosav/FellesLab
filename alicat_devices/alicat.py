@@ -89,6 +89,7 @@ class DummyModbus(object):
         return None
     # ------------------------------- Method -------------------------------- #
     def read_float(self, channel):
+        print 'jalla'
         return random()
     # ------------------------------- Method -------------------------------- #
     def read_long(self, channel):
@@ -228,6 +229,9 @@ class AlicatModule(object):
         """
         return self.metaData[key]
 
+    def readFloat(self, channel):
+        return self.read_float(channel) #-1
+
     # ------------------------------- Method -------------------------------- #
     @staticmethod
     def scan_ports():
@@ -338,6 +342,9 @@ class AlicatFMC(AlicatFM):
     def setFlowrate(self, rate):
         self.write_register(self.WRITE_REGISTER['setpoint'], rate)
     
-    def readFlowrate(self):
-        return random()
+    def readFlowrate(self, channel):
+        return self.read_float(channel)
+
+    # def readFlowrate(self):
+    #     return random()
 

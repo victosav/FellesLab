@@ -71,7 +71,53 @@ class Controller(FellesBaseClass):
         )
 
 # =============================== Class ====================================== #
-class AlicatFlowController(Controller):
+class AlicatController(Controller):
+    """ Parent class for **all** alicat measurement devices.
+    This class should be inherited by all the alicat subclasses as follwos:
+
+            def AlicatExample(AlicatController):
+                ... ..
+
+    This ensures they have the same basic properties, i.e. class/instance
+    methods and variables.
+    """
+
+    # ------------------------------- Method -------------------------------- #
+    def __init__(self, *args, **kwargs):
+        """
+        """
+        super(AlicatController, self).__init__(*args, **kwargs)
+
+
+    # # ------------------------------- Method -------------------------------- #
+    # def CreateGUI(self):
+    #     """
+    #     """
+    #     return AlicatFrame(self)
+
+    # ------------------------------- Method -------------------------------- #
+    @synchronized
+    def CallResource(self):
+        return self.resource.readFlowrate(self['channel'])
+
+# =============================== Class ====================================== #
+class AlicatFlowController(AlicatController):
+    """ MMMMMMM sugar 
+    """
+    # ------------------------------- Method -------------------------------- #
+    def __init__(self, *args, **kwargs):
+        """
+        """
+        super(AlicatFlowController, self).__init__(*args, **kwargs)
+
+        # ------------------------------- Method -------------------------------- #
+    def CreateGUI(self):
+        """
+        """
+        return AlicatFrame(self)
+
+# =============================== Class ====================================== #
+class AlicatPressureController(AlicatController):
     """
     """
 
@@ -79,18 +125,35 @@ class AlicatFlowController(Controller):
     def __init__(self, *args, **kwargs):
         """
         """
-        super(AlicatFlowController, self).__init__(*args, **kwargs)
+        super(AlicatPressureController, self).__init__(*args, **kwargs)
 
-    # ------------------------------- Method -------------------------------- #
-    @synchronized
-    def CallResource(self):
-        return self.resource.readFlowrate()
-
-    # ------------------------------- Method -------------------------------- #
+        # ------------------------------- Method -------------------------------- #
     def CreateGUI(self):
         """
         """
-        return AlicatFrame(self)
+        return AlicatPressureFrame(self)
+
+
+
+
+# =============================== Class ====================================== #
+class AlicatLiquidController(AlicatController):
+    """
+    """
+
+    # ------------------------------- Method -------------------------------- #
+    def __init__(self, *args, **kwargs):
+        """
+        """
+
+        super(AlicatLiquidController, self).__init__(*args, **kwargs)
+
+
+        # ------------------------------- Method -------------------------------- #
+    def CreateGUI(self):
+        """
+        """
+        return AlicatLiquidFrame(self)
 
 
 
@@ -154,10 +217,21 @@ class AlicatFrame(FellesFrame):
                                           target=self.setSampleSpeed,
                                           arg='sample_speed',
                                           source=self )
+        # self.valvSlder = FellesTextInput(
+        #                       self.panel,
+        #                       source = self,
+        #                       value = self.GetSetpoint(),
+        #                       initial=float(self.GetFlowrate()),
+        #                       min = 0,
+        #                       max = 64000,
+        #                       inc = 1000,
+        #                       name = 'Setpoint',
+        #                       target=self.setFlowrate,
+        #                     ),
 
         self.lble_speed = FellesLabel(self.panel, label='Sampling rate')
         self.valvLabel = FellesLabel(self.panel, label='Valve %')
-        self.valvSlder = FellesSlider(self.panel, source=self, target=self.Module.resource.setFlowrate)
+        self.valvSlder = FellesSlider(self.panel, source=self, target=self.setFlowrate)
 
         self.labels = ['lables', 'Pressure', 'Temperature', 'Flow']
         self.Gridlabels = ['label', 'value', 'unit']
@@ -223,6 +297,10 @@ class AlicatFrame(FellesFrame):
         self.top_sizer.Layout()
 
     # ------------------------------- Method --------------------------------- #
+    def setFlowrate(self, rate):
+        self.Module.resource.setFlowrate(rate)
+
+    # ------------------------------- Method --------------------------------- #
     def setSampleSpeed(self, args, event):
         print event
 
@@ -235,3 +313,262 @@ class AlicatFrame(FellesFrame):
         # print 'Hei du skifter gass!'
         # print 'event = ',event
         self.Module.ChangeGas(event)
+
+# =============================== Class ====================================== #
+class AlicatPressureFrame(FellesFrame):
+
+
+    """
+
+
+    """
+    # ------------------------------- Method --------------------------------- #
+    def __init__(self, module, parent=None, debug=False, *args, **kwargs):
+        """
+        """
+        self.Module = module
+
+        super(AlicatPressureFrame, self).__init__( title=self.Module['label'] )
+    
+        self.InitUI()
+        self.Show()   # Show frame
+       
+    def InitUI(self):
+        """ Method creating widgets
+        """
+        # Add a panel so it looks the correct on all platforms
+        self.panel = wx.Panel(self, wx.ID_ANY)
+
+        top_sizer = wx.BoxSizer(wx.VERTICAL) # Main sizer, all sizers are added
+        title_sizer = wx.BoxSizer(wx.HORIZONTAL) # Contains "status"
+
+        center_sizer = wx.BoxSizer(wx.HORIZONTAL) # Contains grid and valve
+        valv_sizer = wx.BoxSizer(wx.VERTICAL) # 
+
+        first_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        grid_sizer = wx.GridSizer(rows=4, cols=3, hgap=5, vgap=3)
+        last_sizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        # Create labels:
+        self.title_sizer = FellesLabel(self.panel, label='Title')
+        # self.combo_box = FellesComboBox(self.panel, id=wx.ID_ANY,
+        #                                  size=wx.DefaultSize,
+        #                                  choices=self.Module.resource.FLUIDS.keys(),
+        #                                  style=wx.CB_DROPDOWN|wx.CB_READONLY,
+        #                                  value="%s"%self.Module.resource.GetGas(),
+        #                                  source=self, target=self.Module.resource.ChangeGas )
+
+        self.smpl_speed = FellesTextInput(self.panel, value='%s' %1,
+                                          initial=1, min=0, max=10,
+                                          size=wx.Size(50,20),
+                                          name='asdf',
+                                          target=self.setSampleSpeed,
+                                          arg='sample_speed',
+                                          source=self )
+
+        self.lble_speed = FellesLabel(self.panel, label='Sampling rate')
+        self.valvLabel = FellesLabel(self.panel, label='Valve %')
+        self.valvSlder = FellesSlider(self.panel, source=self, target=self.Module.resource.setFlowrate)
+
+        self.labels = ['lables', 'Pressure', 'Temperature', 'Flow']
+        self.Gridlabels = ['label', 'value', 'unit']
+        self.Grid = { self.labels[0] : {
+                   self.Gridlabels[0]:FellesLabel(self.panel, label='Variable'), 
+                   self.Gridlabels[1]:FellesLabel(self.panel, label='Value'), 
+                   self.Gridlabels[2]:FellesLabel(self.panel, label='Unit'),
+                         } ,
+                    self.labels[1] : { 
+                self.Gridlabels[0]: FellesLabel(self.panel, label=self.labels[1]), 
+                    self.Gridlabels[1]: FellesLabel(self.panel, label='0.00'), 
+                    self.Gridlabels[2]: FellesLabel(self.panel, label='[bar]'),
+                         } ,
+                    self.labels[2] : { 
+                self.Gridlabels[0]: FellesLabel(self.panel, label=self.labels[2]), 
+                    self.Gridlabels[1]: FellesLabel(self.panel, label='0.00'), 
+                    self.Gridlabels[2]: FellesLabel(self.panel, label='[K]'),
+                         } ,
+                    self.labels[3]: {
+                self.Gridlabels[0]: FellesLabel(self.panel, label=self.labels[3]), 
+                self.Gridlabels[1]: FellesLabel(self.panel, label='0.00'), 
+                self.Gridlabels[2]: FellesLabel(self.panel, label='[cm^3/L]'),
+                         } ,
+                      }
+
+        # Add labels to sizers:
+        # first_sizer.Add(self.combo_box, proportion=0, flag=wx.ALIGN_LEFT|wx.EXPAND, border=5)
+        first_sizer.Add(wx.Size(90,25))
+        first_sizer.Add(self.lble_speed, proportion=0, flag=wx.EXPAND|wx.ALIGN_RIGHT, border=5)
+        first_sizer.Add(self.smpl_speed, proportion=0, flag=wx.ALIGN_RIGHT, border=5)
+
+        valv_sizer.Add(self.valvLabel, proportion=0, flag=wx.CENTER, border=5)
+        valv_sizer.Add(self.valvSlder, proportion=0, flag=wx.CENTER, border=5)
+
+        for i,lab in enumerate(self.labels):
+            for j,glab in enumerate(self.Gridlabels):
+                if i ==0 or j == 0:
+                    self.Grid[lab][glab].SetFont(wx.Font(pointSize=12, family=wx.MODERN, style=wx.NORMAL, weight=wx.BOLD, underline=False, faceName=u'Courier', encoding=wx.FONTENCODING_DEFAULT))
+
+                grid_sizer.Add(self.Grid[lab][glab], proportion=0, flag=wx.ALL|wx.EXPAND, border=5)
+
+        center_sizer.Add(grid_sizer, proportion=0, flag=wx.EXPAND, border=5)
+        center_sizer.Add(valv_sizer, proportion=0, flag=wx.ALIGN_RIGHT, border=5)
+
+        # Overall arrangement of the panel
+        top_sizer.Add(title_sizer, proportion=0, flag=wx.CENTER, border=5)
+        top_sizer.Add(wx.StaticLine(self.panel), proportion=0, flag=wx.ALL|wx.EXPAND, border=5)
+        top_sizer.Add(first_sizer, proportion=0, flag=wx.CENTER|wx.EXPAND, border=5)
+        top_sizer.Add(center_sizer, proportion=0, flag=wx.ALL|wx.CENTER, border=5)
+        top_sizer.Add(last_sizer, proportion=0, flag=wx.ALIGN_LEFT, border=5)
+
+        # assigning the sizer to the panel
+        self.panel.SetSizer(top_sizer)
+
+        # fit the sizer to the panel
+        self.top_sizer = top_sizer
+        self.top_sizer.Fit(self)
+
+    # ------------------------------- Method --------------------------------- #
+    def UpdateFrame(self, sender=None, args=None):
+        """ Method updating GUI
+        """
+        self.top_sizer.Layout()
+
+    # ------------------------------- Method --------------------------------- #
+    def setSampleSpeed(self, args, event):
+        print event
+
+    # ------------------------------- Method --------------------------------- #
+    def ChangeSetpoint(self, event):
+        print event
+
+    def fromBarTo32BitDigit(pressure):
+        return (pressure/0.0689475729)*640
+
+# =============================== Class ====================================== #
+class AlicatLiquidFrame(FellesFrame):
+
+
+    """
+
+
+    """
+    # ------------------------------- Method --------------------------------- #
+    def __init__(self, module, parent=None, debug=False, *args, **kwargs):
+        """
+        """
+        self.Module = module
+
+        super(AlicatPressureFrame, self).__init__( title=self.Module['label'] )
+    
+        self.InitUI()
+        self.Show()   # Show frame
+       
+    def InitUI(self):
+        """ Method creating widgets
+        """
+        # Add a panel so it looks the correct on all platforms
+        self.panel = wx.Panel(self, wx.ID_ANY)
+
+        top_sizer = wx.BoxSizer(wx.VERTICAL) # Main sizer, all sizers are added
+        title_sizer = wx.BoxSizer(wx.HORIZONTAL) # Contains "status"
+
+        center_sizer = wx.BoxSizer(wx.HORIZONTAL) # Contains grid and valve
+        valv_sizer = wx.BoxSizer(wx.VERTICAL) # 
+
+        first_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        grid_sizer = wx.GridSizer(rows=4, cols=3, hgap=5, vgap=3)
+        last_sizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        # Create labels:
+        self.title_sizer = FellesLabel(self.panel, label='Title')
+        # self.combo_box = FellesComboBox(self.panel, id=wx.ID_ANY,
+        #                                  size=wx.DefaultSize,
+        #                                  choices=self.Module.resource.FLUIDS.keys(),
+        #                                  style=wx.CB_DROPDOWN|wx.CB_READONLY,
+        #                                  value="%s"%self.Module.resource.GetGas(),
+        #                                  source=self, target=self.Module.resource.ChangeGas )
+
+        self.smpl_speed = FellesTextInput(self.panel, value='%s' %1,
+                                          initial=1, min=0, max=10,
+                                          size=wx.Size(50,20),
+                                          name='asdf',
+                                          target=self.setSampleSpeed,
+                                          arg='sample_speed',
+                                          source=self )
+
+        self.lble_speed = FellesLabel(self.panel, label='Sampling rate')
+        self.valvLabel = FellesLabel(self.panel, label='Valve %')
+        self.valvSlder = FellesSlider(self.panel, source=self, target=self.Module.resource.setFlowrate)
+
+        self.labels = ['lables', 'Pressure', 'Temperature', 'Flow']
+        self.Gridlabels = ['label', 'value', 'unit']
+        self.Grid = { self.labels[0] : {
+                   self.Gridlabels[0]:FellesLabel(self.panel, label='Variable'), 
+                   self.Gridlabels[1]:FellesLabel(self.panel, label='Value'), 
+                   self.Gridlabels[2]:FellesLabel(self.panel, label='Unit'),
+                         } ,
+                    self.labels[1] : { 
+                self.Gridlabels[0]: FellesLabel(self.panel, label=self.labels[1]), 
+                    self.Gridlabels[1]: FellesLabel(self.panel, label='0.00'), 
+                    self.Gridlabels[2]: FellesLabel(self.panel, label='[bar]'),
+                         } ,
+                    self.labels[2] : { 
+                self.Gridlabels[0]: FellesLabel(self.panel, label=self.labels[2]), 
+                    self.Gridlabels[1]: FellesLabel(self.panel, label='0.00'), 
+                    self.Gridlabels[2]: FellesLabel(self.panel, label='[K]'),
+                         } ,
+                    self.labels[3]: {
+                self.Gridlabels[0]: FellesLabel(self.panel, label=self.labels[3]), 
+                self.Gridlabels[1]: FellesLabel(self.panel, label='0.00'), 
+                self.Gridlabels[2]: FellesLabel(self.panel, label='[cm^3/L]'),
+                         } ,
+                      }
+
+        # Add labels to sizers:
+        # first_sizer.Add(self.combo_box, proportion=0, flag=wx.ALIGN_LEFT|wx.EXPAND, border=5)
+        first_sizer.Add(wx.Size(90,25))
+        first_sizer.Add(self.lble_speed, proportion=0, flag=wx.EXPAND|wx.ALIGN_RIGHT, border=5)
+        first_sizer.Add(self.smpl_speed, proportion=0, flag=wx.ALIGN_RIGHT, border=5)
+
+        valv_sizer.Add(self.valvLabel, proportion=0, flag=wx.CENTER, border=5)
+        valv_sizer.Add(self.valvSlder, proportion=0, flag=wx.CENTER, border=5)
+
+        for i,lab in enumerate(self.labels):
+            for j,glab in enumerate(self.Gridlabels):
+                if i ==0 or j == 0:
+                    self.Grid[lab][glab].SetFont(wx.Font(pointSize=12, family=wx.MODERN, style=wx.NORMAL, weight=wx.BOLD, underline=False, faceName=u'Courier', encoding=wx.FONTENCODING_DEFAULT))
+
+                grid_sizer.Add(self.Grid[lab][glab], proportion=0, flag=wx.ALL|wx.EXPAND, border=5)
+
+        center_sizer.Add(grid_sizer, proportion=0, flag=wx.EXPAND, border=5)
+        center_sizer.Add(valv_sizer, proportion=0, flag=wx.ALIGN_RIGHT, border=5)
+
+        # Overall arrangement of the panel
+        top_sizer.Add(title_sizer, proportion=0, flag=wx.CENTER, border=5)
+        top_sizer.Add(wx.StaticLine(self.panel), proportion=0, flag=wx.ALL|wx.EXPAND, border=5)
+        top_sizer.Add(first_sizer, proportion=0, flag=wx.CENTER|wx.EXPAND, border=5)
+        top_sizer.Add(center_sizer, proportion=0, flag=wx.ALL|wx.CENTER, border=5)
+        top_sizer.Add(last_sizer, proportion=0, flag=wx.ALIGN_LEFT, border=5)
+
+        # assigning the sizer to the panel
+        self.panel.SetSizer(top_sizer)
+
+        # fit the sizer to the panel
+        self.top_sizer = top_sizer
+        self.top_sizer.Fit(self)
+
+    # ------------------------------- Method --------------------------------- #
+    def UpdateFrame(self, sender=None, args=None):
+        """ Method updating GUI
+        """
+        self.top_sizer.Layout()
+
+    # ------------------------------- Method --------------------------------- #
+    def setSampleSpeed(self, args, event):
+        print event
+
+    # ------------------------------- Method --------------------------------- #
+    def ChangeSetpoint(self, event):
+        print event
+
+
