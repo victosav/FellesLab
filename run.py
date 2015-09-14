@@ -1,4 +1,6 @@
+#!/usr/bin/python
 # -*- coding: ascii -*-
+
 """
 
 oooooooooooo       oooo oooo                    ooooo                 .o8
@@ -13,36 +15,30 @@ o888o     `Y8bod8P'o888oo888o`Y8bod8P'8""888P'  o888ooooood8`Y888""8o `Y8bod8P'
 @summary:      Felles lab GUI graphics parent classes
 @author:       Arne Tobias Elve
 @organization: Department of Chemical Engineering, NTNU, Norway
-@contact:      sigveka@ntnu.no
+@contact:      elve@stud.ntnu.no
 @license:      Free (GPL.v3)
 @requires:     Python 2.7.x or higher
-@since:        18.06.2015
+@since:        07.09.2015
 @version:      2.7
 @todo 1.0:
 @change:
 @note:
 
-Colors:
-b: blue
-g: green
-r: red
-c: cyan
-m: magenta
-y: yellow
-k: black
-w: white
 """
 
 __author__  = "Arne Tobias Elve"
-__email__   = "elve@stud.ntnu.no"
+__email__   = "elve@ntnu.no"
 __license__ = "GPL.v3"
-__date__    = "$Date: 2015-08-26 (Wed, 28 Aug 2015) $"
+__date__    = "$Date: 2015-09-07 (Mon, 07 Sep 2015) $"
+
+
 
 from adam_modules import Adam4019
 from mac_motor import Mac050
 from alicat_devices import AlicatFMC
 import minimalmodbus
 import math
+from time import sleep
 
 from FellesLab import MasterClass, Temperature, Voltage, Pump, AlicatFlowController, Pressure
 from FellesLab import Consentration, Humidity, AlicatPressureController, AlicatLiquidController
@@ -50,9 +46,13 @@ from FellesLab import Consentration, Humidity, AlicatPressureController, AlicatL
 def main(GUI=False):
     portName = '/dev/ttyUSB0'
     adamModule = Adam4019(portname=portName, slaveaddress=4)
+    # sleep(0.2)
     upperLeftAlicatGMFC = AlicatFMC(portname=portName, slaveaddress=17)
+    # sleep(0.2)
     lowerLeftAlicatGMFC = AlicatFMC(portname=portName, slaveaddress=21)
+    # sleep(0.2)
     upperRightAlicatBPC = AlicatFMC(portname=portName, slaveaddress=29)
+    # sleep(0.2)
     lowerRightAlicatLMFC = AlicatFMC(portname=portName, slaveaddress=23)
     
     Framework = MasterClass()
@@ -73,7 +73,7 @@ def main(GUI=False):
         data_processing = {
              'signalFiltering' : None, # Noise filter
              'signalProcessing' : None, # filter sensor output, Fourrier(?), Laplace(?)
-             'calibrationCurve' : lambda (x): (1.0/280.34)*x-121.7, # Calibration curve
+             'calibrationCurve' : lambda (x): (1.0/280.34)*x-122.09, # Calibration curve
          },
          gui_configuration = {
             'plot' : True,
@@ -81,6 +81,8 @@ def main(GUI=False):
             'color': 'green',
          },
         )
+
+    sleep(0.2)
 
     p2 = Pressure(
         resource = adamModule,
@@ -96,7 +98,7 @@ def main(GUI=False):
         data_processing = {
              'signalFiltering' : None, # Noise filter
              'signalProcessing' : None, # filter sensor output, Fourrier(?), Laplace(?)
-             'calibrationCurve' : lambda (x): (1.0/280.34)*x-121.7, # Calibration curve
+             'calibrationCurve' : lambda (x): (1.0/280.34)*x-122.09, # Calibration curve
          },
          gui_configuration = {
             'plot' : True,
@@ -104,6 +106,7 @@ def main(GUI=False):
             'color': 'red',
          },
         )
+    sleep(0.2)
 
     p3= Pressure(
         resource = adamModule,
@@ -119,7 +122,7 @@ def main(GUI=False):
         data_processing = {
              'signalFiltering' : None, # Noise filter
              'signalProcessing' : None, # filter sensor output, Fourrier(?), Laplace(?)
-             'calibrationCurve' : lambda (x): (1.0/280.34)*x-121.7, # Calibration curve
+             'calibrationCurve' : lambda (x): (1.0/280.34)*x-122.09, # Calibration curve
          },
          gui_configuration = {
             'plot' : True,
@@ -127,6 +130,7 @@ def main(GUI=False):
             'color': 'blue',
          },
         )
+    sleep(0.2)
 
     p4= Pressure(
         resource = adamModule,
@@ -142,7 +146,7 @@ def main(GUI=False):
         data_processing = {
              'signalFiltering' : None, # Noise filter
              'signalProcessing' : None, # filter sensor output, Fourrier(?), Laplace(?)
-             'calibrationCurve' : lambda (x): (1.0/280.34)*x-121.7, # Calibration curve
+             'calibrationCurve' : lambda (x): (1.0/280.34)*x-122.09, # Calibration curve
          },
          gui_configuration = {
             'plot' : True,
@@ -150,6 +154,7 @@ def main(GUI=False):
             'color': 'black',
          },
         )
+    sleep(0.2)
 
 
     c1 = Consentration(
@@ -160,13 +165,14 @@ def main(GUI=False):
          },
          meta_data = {
             'label' : 'CO_2 sensor',
-            'unit' : '[%]',
+            'unit' : '[-]',
             'sample_speed' : 1,
          },
          data_processing = {
              'signalFiltering' : None, # Noise filter
              'signalProcessing' : None, # filter sensor output, Fourrier(?), Laplace(?)
-             'calibrationCurve' : lambda (x): 1.0/6112 * x - 5.6451243, # Calibration curve
+             # 'calibrationCurve' : lambda (x): 1.0/6112 * x - 5.6451243, # Calibration curve
+             'calibrationCurve' : lambda (x): 1.0/7621 * x - 4.51158 # Calibration curve
          },
          gui_configuration = {
             'plot' : True,
@@ -174,6 +180,7 @@ def main(GUI=False):
             'color': 'cyan',
          },
     )
+    # sleep(0.2)
 
     h1 = Humidity(
         resource = adamModule,
@@ -197,11 +204,12 @@ def main(GUI=False):
             'color': 'cyan',
         },
     )
+    # sleep(0.2)
 
     t1 = Temperature(
          resource = adamModule,
          resource_settings = {
-            'channel' : 0, # Configure module, set channel etc...
+            'channel' : 6, # Configure module, set channel etc...
             'decimals' : 0,
          },
          meta_data = {
@@ -212,7 +220,8 @@ def main(GUI=False):
          data_processing = {
              'signalFiltering' : None, # Noise filter
              'signalProcessing' : None, # filter sensor output, Fourrier(?), Laplace(?)
-             'calibrationCurve' : lambda (x): (0.724/48.0)*x-(0.724/48.0)*37726, # Calibration curve
+             # 'calibrationCurve' : lambda (x): (0.9/71)*x-((0.9/71)*37655-22.8), # Calibration curve
+             'calibrationCurve' : lambda (x): 0.0159292*(x-37655)+22.8,#-22.8, # Calibration curve
          },
          gui_configuration = {
             'plot' : True,
@@ -220,6 +229,7 @@ def main(GUI=False):
             'color': 'blue',
          },
     )
+    # sleep(0.2)
 
     gmfc1 = AlicatFlowController(
          resource = upperLeftAlicatGMFC,
@@ -277,13 +287,13 @@ def main(GUI=False):
          },
          meta_data = {
             'label' : 'Pressure controller',
-            'unit' : '[bara]',
+            'unit' : '[psia]',
             'sample_speed' : 1,
          },
          data_processing = {
              'signalFiltering' : None, # Noise filter
              'signalProcessing' : None, # filter sensor output, Fourier(?), Laplace(?)
-             'calibrationCurve' : None, # Calibration curve
+             'calibrationCurve' : lambda (x): x, # Calibration curve
          },
          gui_configuration = {
             'plot' : False,
@@ -295,7 +305,7 @@ def main(GUI=False):
     lmfc = AlicatLiquidController(
          resource = lowerRightAlicatLMFC,
          resource_settings = {
-            'channel' : 2040, # Configure module, set channel etc...
+            'channel' : 2044, # Configure module, set channel etc...
          },
          meta_data = {
             'label' : 'Flow Liqid Controller',
