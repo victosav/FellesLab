@@ -10,7 +10,7 @@ o888o     `Y8bod8P'o888oo888o`Y8bod8P'8""888P'  o888ooooood8`Y888""8o `Y8bod8P'
 
 
 @summary:      Python driver for Alicat mass flow controller devices
-@author:       Sigve Karolius and Arne Tobias Elve
+@author:       Sigve Karolius
 @organization: Department of Chemical Engineering, NTNU, Norway
 @contact:      sigveka@ntnu.no
 @license:      Free (GPL.v3)
@@ -89,7 +89,6 @@ class DummyModbus(object):
         return None
     # ------------------------------- Method -------------------------------- #
     def read_float(self, channel):
-        # print 'jalla'
         return random()
     # ------------------------------- Method -------------------------------- #
     def read_long(self, channel):
@@ -229,9 +228,6 @@ class AlicatModule(object):
         """
         return self.metaData[key]
 
-    def readFloat(self, channel):
-        return self.read_float(channel) #-1
-
     # ------------------------------- Method -------------------------------- #
     @staticmethod
     def scan_ports():
@@ -257,11 +253,11 @@ class AlicatModule(object):
 class AlicatFM(AlicatModule):
     """
     """
-    WRITE_REGISTER = { 'ID': 64, 'setpoint': 23, 'gas': 45 }
-    READ_REGISTER = { 'ID': 2053, 'setpoint': 2048, 'gas': 2053 ,
+    WRITE_REGISTER = { 'ID': 65, 'setpoint': 24, 'gas': 46 }
+    READ_REGISTER = { 'ID': 2053, 'setpoint': 2048, 'gas': 2054 ,
                                         'pressure': 2040, 'temperature': 2042,
                                          'vol_flow': 2044, 'mass_flow' : 2046,
-                                  'totalized_massflow': 2051}
+                                 'setpoint': 2048, 'totalized_massflow': 2051}
 
     # ------------------------------- Method -------------------------------- #
     def __init__(self, *args, **kwargs):
@@ -291,10 +287,7 @@ class AlicatFM(AlicatModule):
     def GetSetpoint(self):
         """
         """
-        return self.read_register(self.READ_REGISTER['setpoint'])
-
-    def DoNothing(self):
-        pass
+        return self.read_float(self.READ_REGISTER['setpoint'])
 
     # ------------------------------- Method -------------------------------- #
     def GetGas(self):
@@ -317,18 +310,11 @@ class AlicatFM(AlicatModule):
         """
         self.write_register(self.WRITE_REGISTER['setpoint'], val)
 
-    # # ------------------------------- Method -------------------------------- #
-    # def ChangeGas(self, gas, value): # Sigve fail
-    #     """
-    #     """
-    #     self.write_register(self.WRITE_REGISTER['gas'], self.FLUIDS[key])
-
     # ------------------------------- Method -------------------------------- #
-    def ChangeGas(self, gas):
+    def ChangeGas(self, gas, value):
         """
         """
-        # print 'gas = ',gas
-        self.write_register(self.WRITE_REGISTER['gas'], self.FLUIDS[gas])
+        self.write_register(self.WRITE_REGISTER['gas'], self.FLUIDS[key])
 
 # ================================= Class =================================== #
 class AlicatFMC(AlicatFM):
@@ -343,12 +329,8 @@ class AlicatFMC(AlicatFM):
         super(AlicatFMC, self).__init__(*args, **kwargs)
 
     def setFlowrate(self, rate):
-        print 'rate = ', rate
         self.write_register(self.WRITE_REGISTER['setpoint'], rate)
     
-    def readFlowrate(self, channel):
-        return self.read_float(channel)
-
-    # def readFlowrate(self):
-    #     return random()
+    def readFlowrate(self):
+        return random()
 
