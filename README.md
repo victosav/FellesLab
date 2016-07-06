@@ -55,17 +55,10 @@ Install procedure (Ubuntu):
 ---------------------------
 
 ```{.bash}
-sudo apt-get install python-pip 
+sudo apt-get install python-pip, wx-common, python-matplotlib, python-wxtools
 ```
 
 ```{.bash}
-sudo pip install -U pyserial, minimalmodbus, wxmplot
+sudo pip install minimalmodbus, wxmplot
 ```
 
-```{.bash}
-sudo apt-get install python-numpy
-```
-
-```{.bash}
-sudo apt-get install python-matplotlib
-```

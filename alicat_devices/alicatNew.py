@@ -261,6 +261,6 @@ class AlicatGMF(AlicatModule):
 	"""Class used for the gasous mass flow controllers"""
 	def __init__(self, *args, **kwargs):
 		super(AlicatGMF, self).__init__(*args, **kwargs)
-*		self.args = args
-**		self.kwargs = kwargs
+		self.args = args
+		self.kwargs = kwargs
 		
